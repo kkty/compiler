@@ -1,0 +1,1854 @@
+
+state 0
+	$accept: .program $end 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	program  goto 1
+	exp  goto 2
+	simple_exp  goto 3
+	elems  goto 9
+
+state 1
+	$accept:  program.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	program:  exp.    (1)
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  reduce 1 (src line 70)
+
+
+state 3
+	simple_exp:  simple_exp.DOT LPAREN exp RPAREN 
+	exp:  simple_exp.    (9)
+	exp:  simple_exp.actual_args 
+	exp:  simple_exp.DOT LPAREN exp RPAREN LESS_MINUS exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	IDENT  shift 15
+	DOT  shift 30
+	LPAREN  shift 11
+	.  reduce 9 (src line 88)
+
+	simple_exp  goto 32
+	actual_args  goto 31
+
+state 4
+	exp:  NOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 33
+	simple_exp  goto 3
+	elems  goto 9
+
+state 5
+	exp:  MINUS.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 34
+	simple_exp  goto 3
+	elems  goto 9
+
+state 6
+	exp:  IF.exp THEN exp ELSE exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 35
+	simple_exp  goto 3
+	elems  goto 9
+
+state 7
+	exp:  MINUS_DOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 36
+	simple_exp  goto 3
+	elems  goto 9
+
+state 8
+	exp:  LET.IDENT EQUAL exp IN exp 
+	exp:  LET.REC IDENT formal_args EQUAL exp IN exp 
+	exp:  LET.LPAREN pat RPAREN EQUAL exp IN exp 
+
+	IDENT  shift 37
+	REC  shift 38
+	LPAREN  shift 39
+	.  error
+
+
+state 9
+	exp:  elems.    (29)
+	elems:  elems.COMMA exp 
+
+	COMMA  shift 40
+	.  reduce 29 (src line 135)
+
+
+state 10
+	exp:  ARRAY_CREATE.simple_exp simple_exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	IDENT  shift 15
+	LPAREN  shift 11
+	.  error
+
+	simple_exp  goto 41
+
+state 11
+	simple_exp:  LPAREN.exp RPAREN 
+	simple_exp:  LPAREN.RPAREN 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	RPAREN  shift 43
+	.  error
+
+	exp  goto 42
+	simple_exp  goto 3
+	elems  goto 9
+
+state 12
+	simple_exp:  BOOL.    (4)
+
+	.  reduce 4 (src line 77)
+
+
+state 13
+	simple_exp:  INT.    (5)
+
+	.  reduce 5 (src line 79)
+
+
+state 14
+	simple_exp:  FLOAT.    (6)
+
+	.  reduce 6 (src line 81)
+
+
+state 15
+	simple_exp:  IDENT.    (7)
+
+	.  reduce 7 (src line 83)
+
+
+state 16
+	exp:  exp PLUS.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 44
+	simple_exp  goto 3
+	elems  goto 9
+
+state 17
+	exp:  exp MINUS.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 45
+	simple_exp  goto 3
+	elems  goto 9
+
+state 18
+	exp:  exp EQUAL.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 46
+	simple_exp  goto 3
+	elems  goto 9
+
+state 19
+	exp:  exp LESS_GREATER.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 47
+	simple_exp  goto 3
+	elems  goto 9
+
+state 20
+	exp:  exp LESS.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 48
+	simple_exp  goto 3
+	elems  goto 9
+
+state 21
+	exp:  exp GREATER.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 49
+	simple_exp  goto 3
+	elems  goto 9
+
+state 22
+	exp:  exp LESS_EQUAL.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 50
+	simple_exp  goto 3
+	elems  goto 9
+
+state 23
+	exp:  exp GREATER_EQUAL.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 51
+	simple_exp  goto 3
+	elems  goto 9
+
+state 24
+	exp:  exp PLUS_DOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 52
+	simple_exp  goto 3
+	elems  goto 9
+
+state 25
+	exp:  exp MINUS_DOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 53
+	simple_exp  goto 3
+	elems  goto 9
+
+state 26
+	exp:  exp AST_DOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 54
+	simple_exp  goto 3
+	elems  goto 9
+
+state 27
+	exp:  exp SLASH_DOT.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 55
+	simple_exp  goto 3
+	elems  goto 9
+
+state 28
+	exp:  exp SEMICOLON.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 56
+	simple_exp  goto 3
+	elems  goto 9
+
+state 29
+	elems:  exp COMMA.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 57
+	simple_exp  goto 3
+	elems  goto 9
+
+state 30
+	simple_exp:  simple_exp DOT.LPAREN exp RPAREN 
+	exp:  simple_exp DOT.LPAREN exp RPAREN LESS_MINUS exp 
+
+	LPAREN  shift 58
+	.  error
+
+
+state 31
+	exp:  simple_exp actual_args.    (28)
+	actual_args:  actual_args.simple_exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	IDENT  shift 15
+	LPAREN  shift 11
+	.  reduce 28 (src line 132)
+
+	simple_exp  goto 59
+
+state 32
+	simple_exp:  simple_exp.DOT LPAREN exp RPAREN 
+	actual_args:  simple_exp.    (37)
+
+	DOT  shift 60
+	.  reduce 37 (src line 156)
+
+
+state 33
+	exp:  NOT exp.    (10)
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	.  reduce 10 (src line 90)
+
+
+state 34
+	exp:  MINUS exp.    (11)
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	.  reduce 11 (src line 93)
+
+
+state 35
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  IF exp.THEN exp ELSE exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	THEN  shift 61
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  error
+
+
+state 36
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  MINUS_DOT exp.    (21)
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	.  reduce 21 (src line 115)
+
+
+state 37
+	exp:  LET IDENT.EQUAL exp IN exp 
+
+	EQUAL  shift 62
+	.  error
+
+
+state 38
+	exp:  LET REC.IDENT formal_args EQUAL exp IN exp 
+
+	IDENT  shift 63
+	.  error
+
+
+state 39
+	exp:  LET LPAREN.pat RPAREN EQUAL exp IN exp 
+
+	IDENT  shift 65
+	.  error
+
+	pat  goto 64
+
+state 40
+	elems:  elems COMMA.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 66
+	simple_exp  goto 3
+	elems  goto 9
+
+state 41
+	simple_exp:  simple_exp.DOT LPAREN exp RPAREN 
+	exp:  ARRAY_CREATE simple_exp.simple_exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	IDENT  shift 15
+	DOT  shift 60
+	LPAREN  shift 11
+	.  error
+
+	simple_exp  goto 67
+
+state 42
+	simple_exp:  LPAREN exp.RPAREN 
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	RPAREN  shift 68
+	.  error
+
+
+state 43
+	simple_exp:  LPAREN RPAREN.    (3)
+
+	.  reduce 3 (src line 75)
+
+
+state 44
+	exp:  exp.PLUS exp 
+	exp:  exp PLUS exp.    (12)
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 12 (src line 96)
+
+
+state 45
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp MINUS exp.    (13)
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 13 (src line 98)
+
+
+state 46
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp EQUAL exp.    (14)
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 14 (src line 100)
+
+
+state 47
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp LESS_GREATER exp.    (15)
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 15 (src line 102)
+
+
+state 48
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp LESS exp.    (16)
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 16 (src line 104)
+
+
+state 49
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp GREATER exp.    (17)
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 17 (src line 106)
+
+
+state 50
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp LESS_EQUAL exp.    (18)
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 18 (src line 108)
+
+
+state 51
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp GREATER_EQUAL exp.    (19)
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 19 (src line 110)
+
+
+state 52
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp PLUS_DOT exp.    (22)
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 22 (src line 118)
+
+
+state 53
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp MINUS_DOT exp.    (23)
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	.  reduce 23 (src line 120)
+
+
+state 54
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp AST_DOT exp.    (24)
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	.  reduce 24 (src line 122)
+
+
+state 55
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp SLASH_DOT exp.    (25)
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	.  reduce 25 (src line 124)
+
+
+state 56
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	exp:  exp SEMICOLON exp.    (32)
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  reduce 32 (src line 142)
+
+
+state 57
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+	elems:  exp COMMA exp.    (39)
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	.  reduce 39 (src line 162)
+
+
+state 58
+	simple_exp:  simple_exp DOT LPAREN.exp RPAREN 
+	exp:  simple_exp DOT LPAREN.exp RPAREN LESS_MINUS exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 69
+	simple_exp  goto 3
+	elems  goto 9
+
+state 59
+	simple_exp:  simple_exp.DOT LPAREN exp RPAREN 
+	actual_args:  actual_args simple_exp.    (36)
+
+	DOT  shift 60
+	.  reduce 36 (src line 153)
+
+
+state 60
+	simple_exp:  simple_exp DOT.LPAREN exp RPAREN 
+
+	LPAREN  shift 70
+	.  error
+
+
+state 61
+	exp:  IF exp THEN.exp ELSE exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 71
+	simple_exp  goto 3
+	elems  goto 9
+
+state 62
+	exp:  LET IDENT EQUAL.exp IN exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 72
+	simple_exp  goto 3
+	elems  goto 9
+
+state 63
+	exp:  LET REC IDENT.formal_args EQUAL exp IN exp 
+
+	IDENT  shift 74
+	.  error
+
+	formal_args  goto 73
+
+state 64
+	exp:  LET LPAREN pat.RPAREN EQUAL exp IN exp 
+	pat:  pat.COMMA IDENT 
+
+	COMMA  shift 76
+	RPAREN  shift 75
+	.  error
+
+
+state 65
+	pat:  IDENT.COMMA IDENT 
+
+	COMMA  shift 77
+	.  error
+
+
+state 66
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  elems COMMA exp.    (38)
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	.  reduce 38 (src line 160)
+
+
+state 67
+	simple_exp:  simple_exp.DOT LPAREN exp RPAREN 
+	exp:  ARRAY_CREATE simple_exp simple_exp.    (33)
+
+	DOT  shift 60
+	.  reduce 33 (src line 144)
+
+
+state 68
+	simple_exp:  LPAREN exp RPAREN.    (2)
+
+	.  reduce 2 (src line 73)
+
+
+state 69
+	simple_exp:  simple_exp DOT LPAREN exp.RPAREN 
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  simple_exp DOT LPAREN exp.RPAREN LESS_MINUS exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	RPAREN  shift 78
+	.  error
+
+
+state 70
+	simple_exp:  simple_exp DOT LPAREN.exp RPAREN 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 79
+	simple_exp  goto 3
+	elems  goto 9
+
+state 71
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  IF exp THEN exp.ELSE exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	ELSE  shift 80
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  error
+
+
+state 72
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET IDENT EQUAL exp.IN exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	IN  shift 81
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  error
+
+
+state 73
+	exp:  LET REC IDENT formal_args.EQUAL exp IN exp 
+
+	EQUAL  shift 82
+	.  error
+
+
+state 74
+	formal_args:  IDENT.formal_args 
+	formal_args:  IDENT.    (35)
+
+	IDENT  shift 74
+	.  reduce 35 (src line 150)
+
+	formal_args  goto 83
+
+state 75
+	exp:  LET LPAREN pat RPAREN.EQUAL exp IN exp 
+
+	EQUAL  shift 84
+	.  error
+
+
+state 76
+	pat:  pat COMMA.IDENT 
+
+	IDENT  shift 85
+	.  error
+
+
+state 77
+	pat:  IDENT COMMA.IDENT 
+
+	IDENT  shift 86
+	.  error
+
+
+state 78
+	simple_exp:  simple_exp DOT LPAREN exp RPAREN.    (8)
+	exp:  simple_exp DOT LPAREN exp RPAREN.LESS_MINUS exp 
+
+	LESS_MINUS  shift 87
+	.  reduce 8 (src line 85)
+
+
+state 79
+	simple_exp:  simple_exp DOT LPAREN exp.RPAREN 
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	RPAREN  shift 88
+	.  error
+
+
+state 80
+	exp:  IF exp THEN exp ELSE.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 89
+	simple_exp  goto 3
+	elems  goto 9
+
+state 81
+	exp:  LET IDENT EQUAL exp IN.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 90
+	simple_exp  goto 3
+	elems  goto 9
+
+state 82
+	exp:  LET REC IDENT formal_args EQUAL.exp IN exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 91
+	simple_exp  goto 3
+	elems  goto 9
+
+state 83
+	formal_args:  IDENT formal_args.    (34)
+
+	.  reduce 34 (src line 148)
+
+
+state 84
+	exp:  LET LPAREN pat RPAREN EQUAL.exp IN exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 92
+	simple_exp  goto 3
+	elems  goto 9
+
+state 85
+	pat:  pat COMMA IDENT.    (40)
+
+	.  reduce 40 (src line 165)
+
+
+state 86
+	pat:  IDENT COMMA IDENT.    (41)
+
+	.  reduce 41 (src line 167)
+
+
+state 87
+	exp:  simple_exp DOT LPAREN exp RPAREN LESS_MINUS.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 93
+	simple_exp  goto 3
+	elems  goto 9
+
+state 88
+	simple_exp:  simple_exp DOT LPAREN exp RPAREN.    (8)
+
+	.  reduce 8 (src line 85)
+
+
+state 89
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  IF exp THEN exp ELSE exp.    (20)
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	.  reduce 20 (src line 112)
+
+
+state 90
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET IDENT EQUAL exp IN exp.    (26)
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  reduce 26 (src line 126)
+
+
+state 91
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET REC IDENT formal_args EQUAL exp.IN exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	IN  shift 94
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  error
+
+
+state 92
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET LPAREN pat RPAREN EQUAL exp.IN exp 
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	IN  shift 95
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  error
+
+
+state 93
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp.    (31)
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	.  reduce 31 (src line 140)
+
+
+state 94
+	exp:  LET REC IDENT formal_args EQUAL exp IN.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 96
+	simple_exp  goto 3
+	elems  goto 9
+
+state 95
+	exp:  LET LPAREN pat RPAREN EQUAL exp IN.exp 
+
+	BOOL  shift 12
+	INT  shift 13
+	FLOAT  shift 14
+	NOT  shift 4
+	MINUS  shift 5
+	MINUS_DOT  shift 7
+	IF  shift 6
+	IDENT  shift 15
+	LET  shift 8
+	ARRAY_CREATE  shift 10
+	LPAREN  shift 11
+	.  error
+
+	exp  goto 97
+	simple_exp  goto 3
+	elems  goto 9
+
+state 96
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET REC IDENT formal_args EQUAL exp IN exp.    (27)
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  reduce 27 (src line 129)
+
+
+state 97
+	exp:  exp.PLUS exp 
+	exp:  exp.MINUS exp 
+	exp:  exp.EQUAL exp 
+	exp:  exp.LESS_GREATER exp 
+	exp:  exp.LESS exp 
+	exp:  exp.GREATER exp 
+	exp:  exp.LESS_EQUAL exp 
+	exp:  exp.GREATER_EQUAL exp 
+	exp:  exp.PLUS_DOT exp 
+	exp:  exp.MINUS_DOT exp 
+	exp:  exp.AST_DOT exp 
+	exp:  exp.SLASH_DOT exp 
+	exp:  LET LPAREN pat RPAREN EQUAL exp IN exp.    (30)
+	exp:  exp.SEMICOLON exp 
+	elems:  exp.COMMA exp 
+
+	MINUS  shift 17
+	PLUS  shift 16
+	MINUS_DOT  shift 25
+	PLUS_DOT  shift 24
+	AST_DOT  shift 26
+	SLASH_DOT  shift 27
+	EQUAL  shift 18
+	LESS_GREATER  shift 19
+	LESS_EQUAL  shift 22
+	GREATER_EQUAL  shift 23
+	LESS  shift 20
+	GREATER  shift 21
+	COMMA  shift 29
+	SEMICOLON  shift 28
+	.  reduce 30 (src line 138)
+
+
+39 terminals, 8 nonterminals
+42 grammar rules, 98/8000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+57 working sets used
+memory: parser 116/120000
+88 extra closures
+681 shift entries, 1 exceptions
+43 goto entries
+62 entries saved by goto default
+Optimizer space used: output 395/120000
+395 table entries, 126 zero
+maximum spread: 33, maximum offset: 95
