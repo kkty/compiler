@@ -8,27 +8,36 @@ import (
 )
 
 type Type interface {
+	// Concrete removes TypeVars.
 	Concrete(mapping map[TypeVar]Type) Type
-	isType()
 }
 
 type atomic int
 
 const (
+	// UnitType is for unit values.
 	UnitType atomic = iota
+	// IntType is for int values.
 	IntType
+	// FloatType is for float values.
 	FloatType
+	// BoolType is for boolean values.
 	BoolType
 )
 
+// TupleType is for tuples.
 type TupleType struct{ Elements []Type }
+
+// ArrayType is for arrays.
 type ArrayType struct{ Inner Type }
 
+// FunctionType is for functions.
 type FunctionType struct {
 	Args   []Type
 	Return Type
 }
 
+// TypeVar is for values of unknown type.
 type TypeVar string
 
 func (t atomic) Concrete(mapping map[TypeVar]Type) Type { return t }
@@ -57,12 +66,6 @@ func (t TypeVar) Concrete(mapping map[TypeVar]Type) Type {
 	return mapping[t].Concrete(mapping)
 }
 
-func (t atomic) isType()       {}
-func (t TupleType) isType()    {}
-func (t ArrayType) isType()    {}
-func (t FunctionType) isType() {}
-func (t TypeVar) isType()      {}
-
 var nextTypeVarId = 0
 
 func newTypeVar() TypeVar {
@@ -70,174 +73,175 @@ func newTypeVar() TypeVar {
 	return TypeVar(fmt.Sprintf("_t_%d", nextTypeVarId))
 }
 
-func GetTypes(node mir.Node) map[string]Type {
-	typeEnv := map[string]Type{}
-	_, constraints := getTypeAndConstraints(node, typeEnv)
+type constraint [2]Type
+
+// GetTypes creates a mapping from names to types.
+func GetTypes(root mir.Node) map[string]Type {
+	nameToType := map[string]Type{}
+
+	constraints := []constraint{}
+
+	var getType func(node mir.Node) Type
+	getType = func(node mir.Node) Type {
+		switch node.(type) {
+		case mir.Variable:
+			return nameToType[node.(mir.Variable).Name]
+		case mir.Unit:
+			return UnitType
+		case mir.Int:
+			return IntType
+		case mir.Bool:
+			return BoolType
+		case mir.Float:
+			return FloatType
+		case mir.Add:
+			n := node.(mir.Add)
+			constraints = append(constraints, constraint{nameToType[n.Left], IntType})
+			constraints = append(constraints, constraint{nameToType[n.Right], IntType})
+			return IntType
+		case mir.Sub:
+			n := node.(mir.Sub)
+			constraints = append(constraints, constraint{nameToType[n.Left], IntType})
+			constraints = append(constraints, constraint{nameToType[n.Right], IntType})
+			return IntType
+		case mir.FloatAdd:
+			n := node.(mir.FloatAdd)
+			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
+			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
+			return FloatType
+		case mir.FloatSub:
+			n := node.(mir.FloatSub)
+			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
+			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
+			return FloatType
+		case mir.FloatDiv:
+			n := node.(mir.FloatDiv)
+			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
+			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
+			return FloatType
+		case mir.FloatMul:
+			n := node.(mir.FloatMul)
+			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
+			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
+			return FloatType
+		case mir.IfEqual:
+			n := node.(mir.IfEqual)
+			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
+			t1 := getType(n.True)
+			t2 := getType(n.False)
+			constraints = append(constraints, constraint{t1, t2})
+			return t2
+		case mir.IfLessThanOrEqual:
+			n := node.(mir.IfLessThanOrEqual)
+			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
+			t1 := getType(n.True)
+			t2 := getType(n.False)
+			constraints = append(constraints, constraint{t1, t2})
+			return t2
+		case mir.ValueBinding:
+			n := node.(mir.ValueBinding)
+			t := getType(n.Value)
+			nameToType[n.Name] = t
+			t = getType(n.Next)
+			return t
+		case mir.FunctionBinding:
+			n := node.(mir.FunctionBinding)
+
+			argTypes := []Type{}
+			for _ = range n.Args {
+				argTypes = append(argTypes, newTypeVar())
+			}
+
+			returnType := newTypeVar()
+
+			nameToType[n.Name] = FunctionType{argTypes, returnType}
+			for i, arg := range n.Args {
+				nameToType[arg] = argTypes[i]
+			}
+			t := getType(n.Body)
+			constraints = append(constraints, constraint{t, returnType})
+
+			nameToType[n.Name] = FunctionType{argTypes, returnType}
+
+			t = getType(n.Next)
+
+			return t
+		case mir.Application:
+			n := node.(mir.Application)
+			functionType := nameToType[n.Function]
+			argTypes := []Type{}
+			for _, arg := range n.Args {
+				argTypes = append(argTypes, nameToType[arg])
+			}
+			t := newTypeVar()
+			constraints = append(constraints, constraint{functionType, FunctionType{argTypes, t}})
+			return t
+		case mir.Tuple:
+			n := node.(mir.Tuple)
+
+			elements := []Type{}
+			for _, element := range n.Elements {
+				elements = append(elements, nameToType[element])
+			}
+
+			return TupleType{elements}
+		case mir.TupleBinding:
+			n := node.(mir.TupleBinding)
+
+			ts := []Type{}
+			for _ = range n.Names {
+				ts = append(ts, newTypeVar())
+			}
+
+			constraints = append(constraints, constraint{nameToType[n.Tuple], TupleType{ts}})
+
+			for i, name := range n.Names {
+				nameToType[name] = ts[i]
+			}
+
+			return getType(n.Next)
+		case mir.ArrayCreate:
+			n := node.(mir.ArrayCreate)
+			constraints = append(constraints, constraint{nameToType[n.Size], IntType})
+			return ArrayType{nameToType[n.Value]}
+		case mir.ArrayGet:
+			n := node.(mir.ArrayGet)
+			constraints = append(constraints, constraint{nameToType[n.Index], IntType})
+			t := newTypeVar()
+			constraints = append(constraints, constraint{nameToType[n.Array], ArrayType{t}})
+			return t
+		case mir.ArrayPut:
+			n := node.(mir.ArrayPut)
+			constraints = append(constraints, constraint{nameToType[n.Index], IntType})
+			constraints = append(constraints, constraint{nameToType[n.Array], ArrayType{nameToType[n.Value]}})
+			return UnitType
+		}
+
+		log.Fatal("invalid mir node")
+		return nil
+	}
+
+	rootType := getType(root)
 
 	mapping := unify(constraints)
 
-	for k := range typeEnv {
-		typeEnv[k] = typeEnv[k].Concrete(mapping)
+	for k := range nameToType {
+		nameToType[k] = nameToType[k].Concrete(mapping)
 	}
 
-	return typeEnv
-}
+	rootType = rootType.Concrete(mapping)
 
-type constraint [2]Type
-
-func getTypeAndConstraints(node mir.Node, typeEnv map[string]Type) (Type, []constraint) {
-	constraints := []constraint{}
-
-	switch node.(type) {
-	case mir.Variable:
-		return typeEnv[node.(mir.Variable).Name], constraints
-	case mir.Unit:
-		return UnitType, constraints
-	case mir.Int:
-		return IntType, constraints
-	case mir.Bool:
-		return BoolType, constraints
-	case mir.Float:
-		return FloatType, constraints
-	case mir.Add:
-		n := node.(mir.Add)
-		constraints = append(constraints, constraint{typeEnv[n.Left], IntType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], IntType})
-		return IntType, constraints
-	case mir.Sub:
-		n := node.(mir.Sub)
-		constraints = append(constraints, constraint{typeEnv[n.Left], IntType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], IntType})
-		return IntType, constraints
-	case mir.FloatAdd:
-		n := node.(mir.FloatAdd)
-		constraints = append(constraints, constraint{typeEnv[n.Left], FloatType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], FloatType})
-		return FloatType, constraints
-	case mir.FloatSub:
-		n := node.(mir.FloatSub)
-		constraints = append(constraints, constraint{typeEnv[n.Left], FloatType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], FloatType})
-		return FloatType, constraints
-	case mir.FloatDiv:
-		n := node.(mir.FloatDiv)
-		constraints = append(constraints, constraint{typeEnv[n.Left], FloatType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], FloatType})
-		return FloatType, constraints
-	case mir.FloatMul:
-		n := node.(mir.FloatMul)
-		constraints = append(constraints, constraint{typeEnv[n.Left], FloatType})
-		constraints = append(constraints, constraint{typeEnv[n.Right], FloatType})
-		return FloatType, constraints
-	case mir.IfEqual:
-		n := node.(mir.IfEqual)
-		constraints = append(constraints, constraint{typeEnv[n.Left], typeEnv[n.Right]})
-		t1, c := getTypeAndConstraints(n.True, typeEnv)
-		constraints = append(constraints, c...)
-		t2, c := getTypeAndConstraints(n.False, typeEnv)
-		constraints = append(constraints, c...)
-		constraints = append(constraints, constraint{t1, t2})
-		return t2, constraints
-	case mir.IfLessThanOrEqual:
-		n := node.(mir.IfLessThanOrEqual)
-		constraints = append(constraints, constraint{typeEnv[n.Left], typeEnv[n.Right]})
-		t1, c := getTypeAndConstraints(n.True, typeEnv)
-		constraints = append(constraints, c...)
-		t2, c := getTypeAndConstraints(n.False, typeEnv)
-		constraints = append(constraints, c...)
-		constraints = append(constraints, constraint{t1, t2})
-		return t2, constraints
-	case mir.ValueBinding:
-		n := node.(mir.ValueBinding)
-		t, c := getTypeAndConstraints(n.Value, typeEnv)
-		constraints = append(constraints, c...)
-		typeEnv[n.Name] = t
-		t, c = getTypeAndConstraints(n.Next, typeEnv)
-		constraints = append(constraints, c...)
-		return t, constraints
-	case mir.FunctionBinding:
-		n := node.(mir.FunctionBinding)
-
-		argTypes := []Type{}
-		for _ = range n.Args {
-			argTypes = append(argTypes, newTypeVar())
-		}
-
-		returnType := newTypeVar()
-
-		typeEnv[n.Name] = FunctionType{argTypes, returnType}
-		for i, arg := range n.Args {
-			typeEnv[arg] = argTypes[i]
-		}
-		t, c := getTypeAndConstraints(n.Body, typeEnv)
-		constraints = append(constraints, c...)
-		constraints = append(constraints, constraint{t, returnType})
-
-		typeEnv[n.Name] = FunctionType{argTypes, returnType}
-		t, c = getTypeAndConstraints(n.Next, typeEnv)
-		constraints = append(constraints, c...)
-
-		return t, constraints
-	case mir.Application:
-		n := node.(mir.Application)
-		functionType := typeEnv[n.Function]
-		argTypes := []Type{}
-		for _, arg := range n.Args {
-			argTypes = append(argTypes, typeEnv[arg])
-		}
-		t := newTypeVar()
-		constraints = append(constraints, constraint{functionType, FunctionType{argTypes, t}})
-		return t, constraints
-	case mir.Tuple:
-		n := node.(mir.Tuple)
-
-		elements := []Type{}
-		for _, element := range n.Elements {
-			elements = append(elements, typeEnv[element])
-		}
-
-		return TupleType{elements}, constraints
-	case mir.TupleBinding:
-		n := node.(mir.TupleBinding)
-
-		ts := []Type{}
-		for _ = range n.Names {
-			ts = append(ts, newTypeVar())
-		}
-
-		constraints = append(constraints, constraint{typeEnv[n.Tuple], TupleType{ts}})
-
-		for i, name := range n.Names {
-			typeEnv[name] = ts[i]
-		}
-
-		t, c := getTypeAndConstraints(n.Next, typeEnv)
-		constraints = append(constraints, c...)
-
-		return t, constraints
-	case mir.ArrayCreate:
-		n := node.(mir.ArrayCreate)
-		constraints = append(constraints, constraint{typeEnv[n.Size], IntType})
-		return ArrayType{typeEnv[n.Value]}, constraints
-	case mir.ArrayGet:
-		n := node.(mir.ArrayGet)
-		constraints = append(constraints, constraint{typeEnv[n.Index], IntType})
-		t := newTypeVar()
-		constraints = append(constraints, constraint{typeEnv[n.Array], ArrayType{t}})
-		return t, constraints
-	case mir.ArrayPut:
-		n := node.(mir.ArrayPut)
-		constraints = append(constraints, constraint{typeEnv[n.Index], IntType})
-		constraints = append(constraints, constraint{typeEnv[n.Array], ArrayType{typeEnv[n.Value]}})
-		return UnitType, constraints
+	if rootType != UnitType {
+		log.Fatal("root should be unit type")
 	}
 
-	return nil, nil
+	return nameToType
 }
 
 func unify(constraints []constraint) map[TypeVar]Type {
 	mapping := map[TypeVar]Type{}
 
+	// Replaces the specified TypeVar with another Type.
 	updateConstraints := func(from TypeVar, to Type) {
 		for i := 0; i < len(constraints); i++ {
 			if _, ok := constraints[i][0].(TypeVar); ok && constraints[i][0] == from {
