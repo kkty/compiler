@@ -66,20 +66,20 @@ func (t TypeVar) Concrete(mapping map[TypeVar]Type) Type {
 	return mapping[t].Concrete(mapping)
 }
 
-var nextTypeVarId = 0
-
-func newTypeVar() TypeVar {
-	defer func() { nextTypeVarId++ }()
-	return TypeVar(fmt.Sprintf("_t_%d", nextTypeVarId))
-}
-
 type constraint [2]Type
 
 // GetTypes creates a mapping from names to types.
+// The program should be alpha transformed before this operation.
 func GetTypes(root mir.Node) map[string]Type {
 	nameToType := map[string]Type{}
 
 	constraints := []constraint{}
+
+	nextTypeVarId := 0
+	newTypeVar := func() TypeVar {
+		defer func() { nextTypeVarId++ }()
+		return TypeVar(fmt.Sprintf("_5_%d", nextTypeVarId))
+	}
 
 	// Gets the type of a node, while gathering constraints.
 	var getType func(node mir.Node) Type
@@ -243,6 +243,7 @@ func GetTypes(root mir.Node) map[string]Type {
 	return nameToType
 }
 
+// Solves constraints and returns a mapping from TypeVar to Type.
 func unify(constraints []constraint) map[TypeVar]Type {
 	mapping := map[TypeVar]Type{}
 
