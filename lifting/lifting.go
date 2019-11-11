@@ -10,6 +10,7 @@ import (
 )
 
 func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, map[string]typing.Type) {
+	// Gathers functions in the program.
 	queue := []mir.Node{root}
 	functions := map[string]mir.FunctionBinding{}
 	for len(queue) > 0 {
@@ -36,6 +37,8 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 		}
 	}
 
+	// Constructs ir.Node from mir.Node.
+	// Function bindings are removed and function applications are modified.
 	var construct func(node mir.Node) ir.Node
 	construct = func(node mir.Node) ir.Node {
 		switch node.(type) {
@@ -108,23 +111,28 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 
 	constructed := construct(root)
 
-	newFunctions := []ir.Function{}
-
-	nextTemporaryId := 0
-	temporary := func() string {
-		defer func() { nextTemporaryId++ }()
-		return fmt.Sprintf("_l_%d", nextTemporaryId)
+	nextVarId := 0
+	newVar := func() string {
+		defer func() { nextVarId++ }()
+		return fmt.Sprintf("_l_%d", nextVarId)
 	}
+
+	// Creates ir.Function from mir.FunctionBinding and updates their types.
+	newFunctions := []ir.Function{}
 
 	for _, function := range functions {
 		mapping := map[string]string{}
 		args := function.Args
 
 		for _, freeVariable := range function.FreeVariables(map[string]struct{}{}) {
-			t := temporary()
-			mapping[freeVariable] = t
-			types[t] = types[freeVariable]
-			args = append(args, t)
+			v := newVar()
+			mapping[freeVariable] = v
+			types[v] = types[freeVariable]
+			args = append(args, v)
+			types[function.Name] = typing.FunctionType{
+				append(types[function.Name].(typing.FunctionType).Args, types[v]),
+				types[function.Name].(typing.FunctionType).Return,
+			}
 		}
 
 		body := construct(function.Body)
