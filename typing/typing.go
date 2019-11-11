@@ -81,6 +81,7 @@ func GetTypes(root mir.Node) map[string]Type {
 
 	constraints := []constraint{}
 
+	// Gets the type of a node, while gathering constraints.
 	var getType func(node mir.Node) Type
 	getType = func(node mir.Node) Type {
 		switch node.(type) {
@@ -148,33 +149,27 @@ func GetTypes(root mir.Node) map[string]Type {
 			n := node.(mir.FunctionBinding)
 
 			argTypes := []Type{}
-			for _ = range n.Args {
-				argTypes = append(argTypes, newTypeVar())
+			for _, arg := range n.Args {
+				t := newTypeVar()
+				argTypes = append(argTypes, t)
+				nameToType[arg] = t
 			}
 
 			returnType := newTypeVar()
 
 			nameToType[n.Name] = FunctionType{argTypes, returnType}
-			for i, arg := range n.Args {
-				nameToType[arg] = argTypes[i]
-			}
-			t := getType(n.Body)
-			constraints = append(constraints, constraint{t, returnType})
 
-			nameToType[n.Name] = FunctionType{argTypes, returnType}
+			constraints = append(constraints, constraint{getType(n.Body), returnType})
 
-			t = getType(n.Next)
-
-			return t
+			return getType(n.Next)
 		case mir.Application:
 			n := node.(mir.Application)
-			functionType := nameToType[n.Function]
 			argTypes := []Type{}
 			for _, arg := range n.Args {
 				argTypes = append(argTypes, nameToType[arg])
 			}
 			t := newTypeVar()
-			constraints = append(constraints, constraint{functionType, FunctionType{argTypes, t}})
+			constraints = append(constraints, constraint{nameToType[n.Function], FunctionType{argTypes, t}})
 			return t
 		case mir.Tuple:
 			n := node.(mir.Tuple)
@@ -189,15 +184,13 @@ func GetTypes(root mir.Node) map[string]Type {
 			n := node.(mir.TupleBinding)
 
 			ts := []Type{}
-			for _ = range n.Names {
-				ts = append(ts, newTypeVar())
+			for _, name := range n.Names {
+				t := newTypeVar()
+				ts = append(ts, t)
+				nameToType[name] = t
 			}
 
 			constraints = append(constraints, constraint{nameToType[n.Tuple], TupleType{ts}})
-
-			for i, name := range n.Names {
-				nameToType[name] = ts[i]
-			}
 
 			return getType(n.Next)
 		case mir.ArrayCreate:
@@ -232,7 +225,7 @@ func GetTypes(root mir.Node) map[string]Type {
 	rootType = rootType.Concrete(mapping)
 
 	if rootType != UnitType {
-		log.Fatal("root should be unit type")
+		log.Fatal("the program should be of unit type")
 	}
 
 	return nameToType
