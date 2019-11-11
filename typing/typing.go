@@ -234,7 +234,6 @@ func GetTypes(root mir.Node) map[string]Type {
 	mapping := unify(constraints)
 
 	for k := range nameToType {
-		fmt.Println(k)
 		nameToType[k] = nameToType[k].Replace(mapping)
 	}
 
