@@ -8,8 +8,8 @@ import (
 )
 
 type Type interface {
-	// Concrete removes TypeVars.
-	Concrete(mapping map[TypeVar]Type) Type
+	// Replace replaces TypeVars with Types.
+	Replace(mapping map[TypeVar]Type) Type
 }
 
 type atomic int
@@ -40,30 +40,33 @@ type FunctionType struct {
 // TypeVar is for values of unknown type.
 type TypeVar string
 
-func (t atomic) Concrete(mapping map[TypeVar]Type) Type { return t }
+func (t atomic) Replace(mapping map[TypeVar]Type) Type { return t }
 
-func (t TupleType) Concrete(mapping map[TypeVar]Type) Type {
+func (t TupleType) Replace(mapping map[TypeVar]Type) Type {
 	elements := []Type{}
 	for _, element := range t.Elements {
-		elements = append(elements, element.Concrete(mapping))
+		elements = append(elements, element.Replace(mapping))
 	}
 	return TupleType{elements}
 }
 
-func (t ArrayType) Concrete(mapping map[TypeVar]Type) Type {
-	return ArrayType{t.Inner.Concrete(mapping)}
+func (t ArrayType) Replace(mapping map[TypeVar]Type) Type {
+	return ArrayType{t.Inner.Replace(mapping)}
 }
 
-func (t FunctionType) Concrete(mapping map[TypeVar]Type) Type {
+func (t FunctionType) Replace(mapping map[TypeVar]Type) Type {
 	args := []Type{}
 	for _, arg := range t.Args {
-		args = append(args, arg.Concrete(mapping))
+		args = append(args, arg.Replace(mapping))
 	}
-	return FunctionType{args, t.Return.Concrete(mapping)}
+	return FunctionType{args, t.Return.Replace(mapping)}
 }
 
-func (t TypeVar) Concrete(mapping map[TypeVar]Type) Type {
-	return mapping[t].Concrete(mapping)
+func (t TypeVar) Replace(mapping map[TypeVar]Type) Type {
+	if v, ok := mapping[t]; ok {
+		return v
+	}
+	return t
 }
 
 type constraint [2]Type
@@ -78,7 +81,7 @@ func GetTypes(root mir.Node) map[string]Type {
 	nextTypeVarId := 0
 	newTypeVar := func() TypeVar {
 		defer func() { nextTypeVarId++ }()
-		return TypeVar(fmt.Sprintf("_5_%d", nextTypeVarId))
+		return TypeVar(fmt.Sprintf("_t_%d", nextTypeVarId))
 	}
 
 	// Gets the type of a node, while gathering constraints.
@@ -231,10 +234,11 @@ func GetTypes(root mir.Node) map[string]Type {
 	mapping := unify(constraints)
 
 	for k := range nameToType {
-		nameToType[k] = nameToType[k].Concrete(mapping)
+		fmt.Println(k)
+		nameToType[k] = nameToType[k].Replace(mapping)
 	}
 
-	rootType = rootType.Concrete(mapping)
+	rootType = rootType.Replace(mapping)
 
 	if rootType != UnitType {
 		log.Fatal("the program should be of unit type")
@@ -249,14 +253,10 @@ func unify(constraints []constraint) map[TypeVar]Type {
 
 	// Replaces the specified TypeVar with another Type.
 	updateConstraints := func(from TypeVar, to Type) {
+		mapping := map[TypeVar]Type{from: to}
 		for i := 0; i < len(constraints); i++ {
-			if _, ok := constraints[i][0].(TypeVar); ok && constraints[i][0] == from {
-				constraints[i][0] = to
-			}
-
-			if _, ok := constraints[i][1].(TypeVar); ok && constraints[i][1] == from {
-				constraints[i][1] = to
-			}
+			constraints[i][0] = constraints[i][0].Replace(mapping)
+			constraints[i][1] = constraints[i][1].Replace(mapping)
 		}
 	}
 
