@@ -55,6 +55,11 @@ type ArrayPut struct {
 	Array, Index, Value Node
 }
 
+type ReadInt struct{}
+type ReadFloat struct{}
+type PrintInt struct{ Inner Node }
+type PrintChar struct{ Inner Node }
+
 func (n Variable) astNode()        {}
 func (n Unit) astNode()            {}
 func (n Int) astNode()             {}
@@ -80,3 +85,7 @@ func (n TupleBinding) astNode()    {}
 func (n ArrayCreate) astNode()     {}
 func (n ArrayGet) astNode()        {}
 func (n ArrayPut) astNode()        {}
+func (n ReadInt) astNode()         {}
+func (n ReadFloat) astNode()       {}
+func (n PrintInt) astNode()        {}
+func (n PrintChar) astNode()       {}

@@ -95,6 +95,10 @@ func (l *lexer) Lex(lval *yySymType) int {
 		{",", COMMA, nil},
 		{"_", 0, nil}, // TODO
 		{"create_array", ARRAY_CREATE, nil},
+		{"read_int", READ_INT, nil},
+		{"read_float", READ_FLOAT, nil},
+		{"print_int", PRINT_INT, nil},
+		{"print_char", PRINT_CHAR, nil},
 		{"\\.", DOT, nil},
 		{";", SEMICOLON, nil},
 		{"[a-z][0-9a-zA-Z_]*", IDENT, func(s string) { lval.val = s }},

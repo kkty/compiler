@@ -55,6 +55,10 @@ type TupleBinding struct {
 type ArrayCreate struct{ Size, Value string }
 type ArrayGet struct{ Array, Index string }
 type ArrayPut struct{ Array, Index, Value string }
+type ReadInt struct{}
+type ReadFloat struct{}
+type PrintInt struct{ Arg string }
+type PrintChar struct{ Arg string }
 
 func (n Variable) irNode()          {}
 func (n Unit) irNode()              {}
@@ -76,6 +80,10 @@ func (n TupleBinding) irNode()      {}
 func (n ArrayCreate) irNode()       {}
 func (n ArrayGet) irNode()          {}
 func (n ArrayPut) irNode()          {}
+func (n ReadInt) irNode()           {}
+func (n ReadFloat) irNode()         {}
+func (n PrintInt) irNode()          {}
+func (n PrintChar) irNode()         {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -157,4 +165,15 @@ func (n ArrayGet) UpdateNames(mapping map[string]string) Node {
 
 func (n ArrayPut) UpdateNames(mapping map[string]string) Node {
 	return ArrayPut{replaceIfFound(n.Array, mapping), replaceIfFound(n.Index, mapping), replaceIfFound(n.Value, mapping)}
+}
+
+func (n ReadInt) UpdateNames(mapping map[string]string) Node   { return n }
+func (n ReadFloat) UpdateNames(mapping map[string]string) Node { return n }
+
+func (n PrintInt) UpdateNames(mapping map[string]string) Node {
+	return PrintInt{replaceIfFound(n.Arg, mapping)}
+}
+
+func (n PrintChar) UpdateNames(mapping map[string]string) Node {
+	return PrintChar{replaceIfFound(n.Arg, mapping)}
 }

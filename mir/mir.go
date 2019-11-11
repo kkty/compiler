@@ -56,6 +56,11 @@ type ArrayCreate struct{ Size, Value string }
 type ArrayGet struct{ Array, Index string }
 type ArrayPut struct{ Array, Index, Value string }
 
+type ReadInt struct{}
+type ReadFloat struct{}
+type PrintInt struct{ Arg string }
+type PrintChar struct{ Arg string }
+
 func (n Variable) mirNode()          {}
 func (n Unit) mirNode()              {}
 func (n Int) mirNode()               {}
@@ -77,6 +82,10 @@ func (n TupleBinding) mirNode()      {}
 func (n ArrayCreate) mirNode()       {}
 func (n ArrayGet) mirNode()          {}
 func (n ArrayPut) mirNode()          {}
+func (n ReadInt) mirNode()           {}
+func (n ReadFloat) mirNode()         {}
+func (n PrintInt) mirNode()          {}
+func (n PrintChar) mirNode()         {}
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	s := map[string]struct{}{}
@@ -298,5 +307,28 @@ func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
 	if _, ok := bound[n.Value]; !ok {
 		ret = append(ret, n.Value)
 	}
+	return ret
+}
+
+func (n ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
+func (n ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
+
+func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+
+func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
 	return ret
 }

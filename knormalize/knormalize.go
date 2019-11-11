@@ -199,6 +199,20 @@ func KNormalize(node ast.Node) mir.Node {
 			mir.ValueBinding{index, KNormalize(n.Index),
 				mir.ValueBinding{value, KNormalize(n.Value),
 					mir.ArrayPut{array, index, value}}}}
+	case ast.ReadInt:
+		return mir.ReadInt{}
+	case ast.ReadFloat:
+		return mir.ReadFloat{}
+	case ast.PrintInt:
+		n := node.(ast.PrintInt)
+		arg := temporary()
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.PrintInt{arg}}
+	case ast.PrintChar:
+		n := node.(ast.PrintChar)
+		arg := temporary()
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.PrintChar{arg}}
 	default:
 		log.Fatal("invalid ast node")
 	}

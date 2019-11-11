@@ -133,7 +133,16 @@ func AlphaTransform(node ast.Node) ast.Node {
 		case ast.ArrayPut:
 			n := node.(ast.ArrayPut)
 			return ast.ArrayPut{transform(n.Array, mapping), transform(n.Index, mapping), transform(n.Value, mapping)}
-
+		case ast.ReadInt:
+			return node
+		case ast.ReadFloat:
+			return node
+		case ast.PrintInt:
+			n := node.(ast.PrintInt)
+			return ast.PrintInt{transform(n.Inner, mapping)}
+		case ast.PrintChar:
+			n := node.(ast.PrintChar)
+			return ast.PrintChar{transform(n.Inner, mapping)}
 		}
 
 		log.Fatal("invalid ast node")

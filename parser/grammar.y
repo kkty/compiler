@@ -34,6 +34,10 @@ import "github.com/kkty/mincaml-go/ast"
 %token<> REC
 %token<> COMMA
 %token<> ARRAY_CREATE
+%token<> READ_INT
+%token<> READ_FLOAT
+%token<> PRINT_INT
+%token<> PRINT_CHAR
 %token<> DOT
 %token<> LESS_MINUS
 %token<> SEMICOLON
@@ -144,6 +148,18 @@ exp: simple_exp
 | ARRAY_CREATE simple_exp simple_exp
   %prec prec_app
   { $$ = ast.ArrayCreate{$2, $3} }
+| READ_INT LPAREN RPAREN
+  %prec prec_app
+  { $$ = ast.ReadInt{} }
+| READ_FLOAT LPAREN RPAREN
+  %prec prec_app
+  { $$ = ast.ReadFloat{} }
+| PRINT_INT simple_exp
+  %prec prec_app
+  { $$ = ast.PrintInt{$2} }
+| PRINT_CHAR simple_exp
+  %prec prec_app
+  { $$ = ast.PrintChar{$2} }
 
 formal_args: IDENT formal_args
   { $$ = append([]string{$1.(string)}, $2.([]string)...) }

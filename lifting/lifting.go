@@ -103,6 +103,14 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 		case mir.ArrayPut:
 			n := node.(mir.ArrayPut)
 			return ir.ArrayPut{n.Array, n.Index, n.Value}
+		case mir.ReadInt:
+			return ir.ReadInt{}
+		case mir.ReadFloat:
+			return ir.ReadFloat{}
+		case mir.PrintInt:
+			return ir.PrintInt{node.(mir.PrintInt).Arg}
+		case mir.PrintChar:
+			return ir.PrintChar{node.(mir.PrintChar).Arg}
 		}
 
 		log.Fatal("invalid mir node")
