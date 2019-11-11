@@ -9,8 +9,10 @@ import (
 	"github.com/kkty/mincaml-go/typing"
 )
 
+// Lift separates function definitions and the main program.
+// Functions (and function applications) are modified so that they do not have free variables.
 func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, map[string]typing.Type) {
-	// Gathers functions in the program.
+	// Traverses the program tree and gathers functions in the program.
 	queue := []mir.Node{root}
 	functions := map[string]mir.FunctionBinding{}
 	for len(queue) > 0 {
