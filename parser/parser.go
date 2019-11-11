@@ -43,18 +43,32 @@ func (l *lexer) Lex(lval *yySymType) int {
 		return strings.HasPrefix(l.program, s)
 	}
 
-	// Skips whitespaces.
-	for hasPrefix(" ") || hasPrefix("\n") || hasPrefix("\t") {
-		advance(1)
-	}
-
-	// Skips comments.
-	if hasPrefix("(*") {
-		for !hasPrefix("*)") {
+	skipWhitespaces := func() bool {
+		modified := false
+		for hasPrefix(" ") || hasPrefix("\n") || hasPrefix("\t") {
+			modified = true
 			advance(1)
 		}
+		return modified
+	}
 
-		advance(2)
+	skipComments := func() bool {
+		modified := false
+		if hasPrefix("(*") {
+			advance(2)
+
+			for !hasPrefix("*)") {
+				advance(1)
+			}
+
+			advance(2)
+
+			modified = true
+		}
+		return modified
+	}
+
+	for skipComments() || skipWhitespaces() {
 	}
 
 	if len(l.program) == 0 {
@@ -93,7 +107,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 		{"in", IN, nil},
 		{"rec", REC, nil},
 		{",", COMMA, nil},
-		{"_", 0, nil}, // TODO
+		{"_", IDENT, func(s string) { lval.val = "" }},
 		{"create_array", ARRAY_CREATE, nil},
 		{"read_int", READ_INT, nil},
 		{"read_float", READ_FLOAT, nil},
@@ -120,6 +134,10 @@ func (l *lexer) Lex(lval *yySymType) int {
 			longestMatch.found = found
 			longestMatch.f = pattern.f
 		}
+	}
+
+	if longestMatch.pattern == "" {
+		log.Fatal("no matching token")
 	}
 
 	if f := longestMatch.f; f != nil {

@@ -828,13 +828,13 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:177
 		{
-			yyVAL.val = append(yyDollar[1].val.([]interface{}), yyDollar[3].node)
+			yyVAL.val = append(yyDollar[1].val.([]ast.Node), yyDollar[3].node)
 		}
 	case 43:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:179
 		{
-			yyVAL.val = append([]interface{}{yyDollar[1].node}, yyDollar[3].node)
+			yyVAL.val = append([]ast.Node{yyDollar[1].node}, yyDollar[3].node)
 		}
 	case 44:
 		yyDollar = yyS[yypt-3 : yypt+1]

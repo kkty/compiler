@@ -174,9 +174,9 @@ actual_args: actual_args simple_exp
   { $$ = []ast.Node{$1} }
 
 elems: elems COMMA exp
-  { $$ = append($1.([]interface{}), $3) }
+  { $$ = append($1.([]ast.Node), $3) }
 | exp COMMA exp
-  { $$ = append([]interface{}{$1}, $3) }
+  { $$ = append([]ast.Node{$1}, $3) }
 
 pat: pat COMMA IDENT
   { $$ = append($1.([]string), $3.(string)) }
