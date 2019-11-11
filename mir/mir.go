@@ -242,9 +242,7 @@ func (n FunctionBinding) FreeVariables(bound map[string]struct{}) []string {
 
 func (n Application) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
-	if _, ok := bound[n.Function]; !ok {
-		ret = append(ret, n.Function)
-	}
+
 	for _, arg := range n.Args {
 		if _, ok := bound[arg]; !ok {
 			ret = append(ret, arg)
