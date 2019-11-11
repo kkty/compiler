@@ -9,12 +9,12 @@ import (
 	"github.com/kkty/mincaml-go/typing"
 )
 
-func Lift(node mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, map[string]typing.Type) {
-	queue := []mir.Node{node}
+func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, map[string]typing.Type) {
+	queue := []mir.Node{root}
 	functions := map[string]mir.FunctionBinding{}
 	for len(queue) > 0 {
 		node := queue[0]
-		queue := queue[1:]
+		queue = queue[1:]
 
 		switch node.(type) {
 		case mir.FunctionBinding:
@@ -77,7 +77,9 @@ func Lift(node mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 			n := node.(mir.ValueBinding)
 			return ir.ValueBinding{n.Name, construct(n.Value), construct(n.Next)}
 		case mir.FunctionBinding:
-			return construct(node.(mir.FunctionBinding).Next)
+			n := node.(mir.FunctionBinding)
+			functions[n.Name] = n
+			return construct(n.Next)
 		case mir.Application:
 			n := node.(mir.Application)
 			return ir.Application{
@@ -104,6 +106,8 @@ func Lift(node mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 		return nil
 	}
 
+	constructed := construct(root)
+
 	newFunctions := []ir.Function{}
 
 	nextTemporaryId := 0
@@ -129,5 +133,5 @@ func Lift(node mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 			ir.Function{function.Name, args, body.UpdateNames(mapping)})
 	}
 
-	return construct(node), newFunctions, types
+	return constructed, newFunctions, types
 }
