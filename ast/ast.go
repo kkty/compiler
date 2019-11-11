@@ -34,7 +34,7 @@ type FunctionBinding struct {
 }
 
 type Application struct {
-	Function Node
+	Function string
 	Args     []Node
 }
 

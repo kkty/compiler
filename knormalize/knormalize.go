@@ -138,19 +138,17 @@ func KNormalize(node ast.Node) mir.Node {
 	case ast.Application:
 		n := node.(ast.Application)
 
-		function := temporary()
-
 		args := []string{}
 		for _ = range n.Args {
 			args = append(args, temporary())
 		}
 
-		var ret mir.Node = mir.Application{function, args}
+		var ret mir.Node = mir.Application{n.Function, args}
 		for i := len(n.Args) - 1; i >= 0; i-- {
 			ret = mir.ValueBinding{args[i], KNormalize(n.Args[i]), ret}
 		}
 
-		return mir.ValueBinding{function, KNormalize(n.Function), ret}
+		return ret
 	case ast.Tuple:
 		n := node.(ast.Tuple)
 

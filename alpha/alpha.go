@@ -104,7 +104,7 @@ func AlphaTransform(node ast.Node) ast.Node {
 				args = append(args, transform(arg, mapping))
 			}
 
-			return ast.Application{transform(n.Function, mapping), args}
+			return ast.Application{mapping[n.Function], args}
 		case ast.Tuple:
 			n := node.(ast.Tuple)
 			elements := []ast.Node{}

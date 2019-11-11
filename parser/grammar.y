@@ -129,9 +129,9 @@ exp: simple_exp
 | LET REC IDENT formal_args EQUAL exp IN exp
   %prec prec_let
   { $$ = ast.FunctionBinding{$3.(string), $4.([]string), $6, $8} }
-| simple_exp actual_args
+| IDENT actual_args
   %prec prec_app
-  { $$ = ast.Application{$1, $2.([]ast.Node)} }
+  { $$ = ast.Application{$1.(string), $2.([]ast.Node)} }
 | elems
   %prec prec_tuple
   { $$ = ast.Tuple{$1.([]ast.Node)} }
