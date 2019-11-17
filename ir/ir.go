@@ -106,21 +106,21 @@ func (n Add) UpdateNames(mapping map[string]string) Node {
 	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 func (n Sub) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+	return Sub{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 
 func (n FloatAdd) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+	return FloatAdd{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 func (n FloatSub) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+	return FloatSub{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 func (n FloatDiv) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+	return FloatDiv{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 
 func (n FloatMul) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+	return FloatMul{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
 }
 
 func (n IfEqual) UpdateNames(mapping map[string]string) Node {
