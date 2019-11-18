@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 
 	"github.com/kkty/mincaml-go/ir"
 )
@@ -147,6 +148,15 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			n := node.(ir.PrintChar)
 			fmt.Fprintf(w, "%c", rune(values[n.Arg].(int32)))
 			return nil
+		case ir.IntToFloat:
+			n := node.(ir.IntToFloat)
+			return float32(values[n.Arg].(int32))
+		case ir.FloatToInt:
+			n := node.(ir.FloatToInt)
+			return int32(math.Round(float64(values[n.Arg].(float32))))
+		case ir.Sqrt:
+			n := node.(ir.Sqrt)
+			return float32(math.Sqrt(float64(values[n.Arg].(float32))))
 		default:
 			log.Fatal("invalid ir node")
 		}

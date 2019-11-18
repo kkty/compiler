@@ -38,6 +38,9 @@ import "github.com/kkty/mincaml-go/ast"
 %token<> READ_FLOAT
 %token<> PRINT_INT
 %token<> PRINT_CHAR
+%token<> INT_TO_FLOAT
+%token<> FLOAT_TO_INT
+%token<> SQRT
 %token<> DOT
 %token<> LESS_MINUS
 %token<> SEMICOLON
@@ -160,6 +163,15 @@ exp: simple_exp
 | PRINT_CHAR simple_exp
   %prec prec_app
   { $$ = ast.PrintChar{$2} }
+| INT_TO_FLOAT simple_exp
+  %prec prec_app
+  { $$ = ast.IntToFloat{$2} }
+| FLOAT_TO_INT simple_exp
+  %prec prec_app
+  { $$ = ast.FloatToInt{$2} }
+| SQRT simple_exp
+  %prec prec_app
+  { $$ = ast.Sqrt{$2} }
 
 formal_args: IDENT formal_args
   { $$ = append([]string{$1.(string)}, $2.([]string)...) }

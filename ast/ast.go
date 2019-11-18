@@ -59,6 +59,9 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type PrintInt struct{ Inner Node }
 type PrintChar struct{ Inner Node }
+type IntToFloat struct{ Inner Node }
+type FloatToInt struct{ Inner Node }
+type Sqrt struct{ Inner Node }
 
 func (n Variable) astNode()        {}
 func (n Unit) astNode()            {}
@@ -89,3 +92,6 @@ func (n ReadInt) astNode()         {}
 func (n ReadFloat) astNode()       {}
 func (n PrintInt) astNode()        {}
 func (n PrintChar) astNode()       {}
+func (n IntToFloat) astNode()      {}
+func (n FloatToInt) astNode()      {}
+func (n Sqrt) astNode()            {}

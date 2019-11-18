@@ -223,6 +223,21 @@ func GetTypes(root mir.Node) map[string]Type {
 			n := node.(mir.PrintChar)
 			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
 			return UnitType
+		case mir.IntToFloat:
+			n := node.(mir.IntToFloat)
+			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
+			return FloatType
+		case mir.FloatToInt:
+			n := node.(mir.FloatToInt)
+			constraints = append(constraints, constraint{FloatType, nameToType[n.Arg]})
+			return IntType
+		case mir.Sqrt:
+			n := node.(mir.Sqrt)
+			constraints = append(constraints, constraint{FloatType, nameToType[n.Arg]})
+			return FloatType
+		case mir.Neg:
+			n := node.(mir.Neg)
+			return nameToType[n.Arg]
 		}
 
 		log.Fatal("invalid mir node")

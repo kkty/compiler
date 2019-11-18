@@ -143,6 +143,15 @@ func AlphaTransform(node ast.Node) ast.Node {
 		case ast.PrintChar:
 			n := node.(ast.PrintChar)
 			return ast.PrintChar{transform(n.Inner, mapping)}
+		case ast.IntToFloat:
+			n := node.(ast.IntToFloat)
+			return ast.IntToFloat{transform(n.Inner, mapping)}
+		case ast.FloatToInt:
+			n := node.(ast.FloatToInt)
+			return ast.FloatToInt{transform(n.Inner, mapping)}
+		case ast.Sqrt:
+			n := node.(ast.Sqrt)
+			return ast.Sqrt{transform(n.Inner, mapping)}
 		}
 
 		log.Fatal("invalid ast node")

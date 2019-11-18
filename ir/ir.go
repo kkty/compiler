@@ -59,6 +59,9 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type PrintInt struct{ Arg string }
 type PrintChar struct{ Arg string }
+type IntToFloat struct{ Arg string }
+type FloatToInt struct{ Arg string }
+type Sqrt struct{ Arg string }
 
 func (n Variable) irNode()          {}
 func (n Unit) irNode()              {}
@@ -84,6 +87,9 @@ func (n ReadInt) irNode()           {}
 func (n ReadFloat) irNode()         {}
 func (n PrintInt) irNode()          {}
 func (n PrintChar) irNode()         {}
+func (n IntToFloat) irNode()        {}
+func (n FloatToInt) irNode()        {}
+func (n Sqrt) irNode()              {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -176,4 +182,13 @@ func (n PrintInt) UpdateNames(mapping map[string]string) Node {
 
 func (n PrintChar) UpdateNames(mapping map[string]string) Node {
 	return PrintChar{replaceIfFound(n.Arg, mapping)}
+}
+func (n IntToFloat) UpdateNames(mapping map[string]string) Node {
+	return IntToFloat{replaceIfFound(n.Arg, mapping)}
+}
+func (n FloatToInt) UpdateNames(mapping map[string]string) Node {
+	return FloatToInt{replaceIfFound(n.Arg, mapping)}
+}
+func (n Sqrt) UpdateNames(mapping map[string]string) Node {
+	return Sqrt{replaceIfFound(n.Arg, mapping)}
 }

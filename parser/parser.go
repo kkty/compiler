@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -113,6 +114,9 @@ func (l *lexer) Lex(lval *yySymType) int {
 		{"read_float", READ_FLOAT, nil},
 		{"print_int", PRINT_INT, nil},
 		{"print_char", PRINT_CHAR, nil},
+		{"int_to_float", INT_TO_FLOAT, nil},
+		{"float_to_int", FLOAT_TO_INT, nil},
+		{"sqrt", SQRT, nil},
 		{"\\.", DOT, nil},
 		{"<-", LESS_MINUS, nil},
 		{";", SEMICOLON, nil},
@@ -138,6 +142,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 	}
 
 	if longestMatch.pattern == "" {
+		fmt.Println(l.program[:10])
 		log.Fatal("no matching token")
 	}
 

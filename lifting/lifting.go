@@ -12,6 +12,13 @@ import (
 // Lift separates function definitions and the main program.
 // Functions (and function applications) are modified so that they do not have free variables.
 func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, map[string]typing.Type) {
+
+	nextTemporaryId := 0
+	temporary := func() string {
+		defer func() { nextTemporaryId++ }()
+		return fmt.Sprintf("_lifting_%d", nextTemporaryId)
+	}
+
 	// Traverses the program tree and gathers functions in the program.
 	queue := []mir.Node{root}
 	functions := map[string]mir.FunctionBinding{}
@@ -113,6 +120,25 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 			return ir.PrintInt{node.(mir.PrintInt).Arg}
 		case mir.PrintChar:
 			return ir.PrintChar{node.(mir.PrintChar).Arg}
+		case mir.IntToFloat:
+			return ir.IntToFloat{node.(mir.IntToFloat).Arg}
+		case mir.FloatToInt:
+			return ir.FloatToInt{node.(mir.FloatToInt).Arg}
+		case mir.Sqrt:
+			return ir.Sqrt{node.(mir.Sqrt).Arg}
+		case mir.Neg:
+			n := node.(mir.Neg)
+			zero := temporary()
+
+			if types[n.Arg] == typing.IntType {
+				types[zero] = typing.IntType
+				return ir.ValueBinding{zero, ir.Int{0},
+					ir.Sub{zero, n.Arg}}
+			}
+
+			types[zero] = typing.FloatType
+			return ir.ValueBinding{zero, ir.Float{0},
+				ir.FloatSub{zero, n.Arg}}
 		}
 
 		log.Fatal("invalid mir node")

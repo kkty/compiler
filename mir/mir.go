@@ -60,6 +60,10 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type PrintInt struct{ Arg string }
 type PrintChar struct{ Arg string }
+type IntToFloat struct{ Arg string }
+type FloatToInt struct{ Arg string }
+type Sqrt struct{ Arg string }
+type Neg struct{ Arg string }
 
 func (n Variable) mirNode()          {}
 func (n Unit) mirNode()              {}
@@ -86,6 +90,10 @@ func (n ReadInt) mirNode()           {}
 func (n ReadFloat) mirNode()         {}
 func (n PrintInt) mirNode()          {}
 func (n PrintChar) mirNode()         {}
+func (n IntToFloat) mirNode()        {}
+func (n FloatToInt) mirNode()        {}
+func (n Sqrt) mirNode()              {}
+func (n Neg) mirNode()               {}
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	s := map[string]struct{}{}
@@ -322,6 +330,42 @@ func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
 }
 
 func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n Neg) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {

@@ -8,11 +8,11 @@ import (
 	"github.com/kkty/mincaml-go/mir"
 )
 
-var nextTemporaryId = 1
+var nextTemporaryId = 0
 
 func temporary() string {
 	defer func() { nextTemporaryId++ }()
-	return fmt.Sprintf("_%d", nextTemporaryId)
+	return fmt.Sprintf("_knormalize_%d", nextTemporaryId)
 }
 
 func KNormalize(node ast.Node) mir.Node {
@@ -96,11 +96,10 @@ func KNormalize(node ast.Node) mir.Node {
 	case ast.Neg:
 		n := node.(ast.Neg)
 
-		left := temporary()
-		right := temporary()
+		arg := temporary()
 
-		return mir.ValueBinding{left, mir.Int{0},
-			mir.ValueBinding{right, KNormalize(n.Inner), mir.Sub{left, right}}}
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.Neg{arg}}
 	case ast.FloatNeg:
 		n := node.(ast.FloatNeg)
 
@@ -213,6 +212,21 @@ func KNormalize(node ast.Node) mir.Node {
 		arg := temporary()
 		return mir.ValueBinding{arg, KNormalize(n.Inner),
 			mir.PrintChar{arg}}
+	case ast.IntToFloat:
+		n := node.(ast.IntToFloat)
+		arg := temporary()
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.IntToFloat{arg}}
+	case ast.FloatToInt:
+		n := node.(ast.FloatToInt)
+		arg := temporary()
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.FloatToInt{arg}}
+	case ast.Sqrt:
+		n := node.(ast.Sqrt)
+		arg := temporary()
+		return mir.ValueBinding{arg, KNormalize(n.Inner),
+			mir.Sqrt{arg}}
 	default:
 		log.Fatal("invalid ast node")
 	}
