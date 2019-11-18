@@ -2,6 +2,7 @@ package ir
 
 type Node interface {
 	UpdateNames(mapping map[string]string) Node
+	FreeVariables(bound map[string]struct{}) []string
 	irNode()
 }
 
@@ -191,4 +192,266 @@ func (n FloatToInt) UpdateNames(mapping map[string]string) Node {
 }
 func (n Sqrt) UpdateNames(mapping map[string]string) Node {
 	return Sqrt{replaceIfFound(n.Arg, mapping)}
+}
+
+func copyStringSet(original map[string]struct{}) map[string]struct{} {
+	s := map[string]struct{}{}
+
+	for k := range original {
+		s[k] = struct{}{}
+	}
+
+	return s
+}
+
+func (n Variable) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Name]; !ok {
+		ret = append(ret, n.Name)
+	}
+
+	return ret
+}
+
+func (n Unit) FreeVariables(bound map[string]struct{}) []string {
+	return []string{}
+}
+
+func (n Int) FreeVariables(bound map[string]struct{}) []string {
+	return []string{}
+}
+
+func (n Bool) FreeVariables(bound map[string]struct{}) []string {
+	return []string{}
+}
+
+func (n Float) FreeVariables(bound map[string]struct{}) []string {
+	return []string{}
+}
+
+func (n Add) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n Sub) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n FloatAdd) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n FloatSub) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n FloatDiv) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n FloatMul) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+	return ret
+}
+
+func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+
+	ret = append(ret, n.True.FreeVariables(bound)...)
+	ret = append(ret, n.False.FreeVariables(bound)...)
+
+	return ret
+}
+
+func (n IfLessThanOrEqual) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Left]; !ok {
+		ret = append(ret, n.Left)
+	}
+
+	if _, ok := bound[n.Right]; !ok {
+		ret = append(ret, n.Right)
+	}
+
+	ret = append(ret, n.True.FreeVariables(bound)...)
+	ret = append(ret, n.False.FreeVariables(bound)...)
+
+	return ret
+}
+
+func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	ret = append(ret, n.Value.FreeVariables(bound)...)
+	bound = copyStringSet(bound)
+	bound[n.Name] = struct{}{}
+	ret = append(ret, n.Next.FreeVariables(bound)...)
+	return ret
+}
+
+func (n Application) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	for _, arg := range n.Args {
+		if _, ok := bound[arg]; !ok {
+			ret = append(ret, arg)
+		}
+	}
+
+	return ret
+}
+
+func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	for _, element := range n.Elements {
+		if _, ok := bound[element]; !ok {
+			ret = append(ret, element)
+		}
+	}
+	return ret
+}
+
+func (n TupleBinding) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Tuple]; !ok {
+		ret = append(ret, n.Tuple)
+	}
+	bound = copyStringSet(bound)
+	for _, name := range n.Names {
+		bound[name] = struct{}{}
+	}
+	return append(ret, n.Next.FreeVariables(bound)...)
+}
+
+func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Size]; !ok {
+		ret = append(ret, n.Size)
+	}
+	if _, ok := bound[n.Value]; !ok {
+		ret = append(ret, n.Value)
+	}
+	return ret
+}
+func (n ArrayGet) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Array]; !ok {
+		ret = append(ret, n.Array)
+	}
+	if _, ok := bound[n.Index]; !ok {
+		ret = append(ret, n.Index)
+	}
+	return ret
+}
+func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+	if _, ok := bound[n.Array]; !ok {
+		ret = append(ret, n.Array)
+	}
+	if _, ok := bound[n.Index]; !ok {
+		ret = append(ret, n.Index)
+	}
+	if _, ok := bound[n.Value]; !ok {
+		ret = append(ret, n.Value)
+	}
+	return ret
+}
+
+func (n ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
+func (n ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
+
+func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+
+func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Arg]; !ok {
+		ret = append(ret, n.Arg)
+	}
+
+	return ret
 }
