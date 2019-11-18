@@ -2,13 +2,14 @@ package interpreter
 
 import (
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/kkty/mincaml-go/ir"
 )
 
 // Execute interprets and executes the program.
-func Execute(functions []ir.Function, main ir.Node) {
+func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 	findFunction := func(name string) ir.Function {
 		for _, function := range functions {
 			if function.Name == name {
@@ -132,19 +133,19 @@ func Execute(functions []ir.Function, main ir.Node) {
 			return nil
 		case ir.ReadInt:
 			var value int32
-			fmt.Scan(&value)
+			fmt.Fscan(r, &value)
 			return value
 		case ir.ReadFloat:
 			var value float32
-			fmt.Scan(&value)
+			fmt.Fscan(r, &value)
 			return value
 		case ir.PrintInt:
 			n := node.(ir.PrintInt)
-			fmt.Printf("%d", values[n.Arg].(int32))
+			fmt.Fprintf(w, "%d", values[n.Arg].(int32))
 			return nil
 		case ir.PrintChar:
 			n := node.(ir.PrintChar)
-			fmt.Printf("%c", rune(values[n.Arg].(int32)))
+			fmt.Fprintf(w, "%c", rune(values[n.Arg].(int32)))
 			return nil
 		default:
 			log.Fatal("invalid ir node")
