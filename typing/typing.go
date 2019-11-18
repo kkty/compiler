@@ -9,7 +9,7 @@ import (
 
 type Type interface {
 	// Replace replaces TypeVars with Types.
-	Replace(mapping map[TypeVar]Type) Type
+	Replace(mapping map[TypeVar]Type, recursive bool) Type
 }
 
 type atomic int
@@ -40,32 +40,37 @@ type FunctionType struct {
 // TypeVar is for values of unknown type.
 type TypeVar string
 
-func (t atomic) Replace(mapping map[TypeVar]Type) Type { return t }
+func (t atomic) Replace(mapping map[TypeVar]Type, recursive bool) Type { return t }
 
-func (t TupleType) Replace(mapping map[TypeVar]Type) Type {
+func (t TupleType) Replace(mapping map[TypeVar]Type, recursive bool) Type {
 	elements := []Type{}
 	for _, element := range t.Elements {
-		elements = append(elements, element.Replace(mapping))
+		elements = append(elements, element.Replace(mapping, recursive))
 	}
 	return TupleType{elements}
 }
 
-func (t ArrayType) Replace(mapping map[TypeVar]Type) Type {
-	return ArrayType{t.Inner.Replace(mapping)}
+func (t ArrayType) Replace(mapping map[TypeVar]Type, recursive bool) Type {
+	return ArrayType{t.Inner.Replace(mapping, recursive)}
 }
 
-func (t FunctionType) Replace(mapping map[TypeVar]Type) Type {
+func (t FunctionType) Replace(mapping map[TypeVar]Type, recursive bool) Type {
 	args := []Type{}
 	for _, arg := range t.Args {
-		args = append(args, arg.Replace(mapping))
+		args = append(args, arg.Replace(mapping, recursive))
 	}
-	return FunctionType{args, t.Return.Replace(mapping)}
+	return FunctionType{args, t.Return.Replace(mapping, recursive)}
 }
 
-func (t TypeVar) Replace(mapping map[TypeVar]Type) Type {
+func (t TypeVar) Replace(mapping map[TypeVar]Type, recursive bool) Type {
 	if v, ok := mapping[t]; ok {
+		if recursive {
+			return v.Replace(mapping, recursive)
+		}
+
 		return v
 	}
+
 	return t
 }
 
@@ -249,10 +254,10 @@ func GetTypes(root mir.Node) map[string]Type {
 	mapping := unify(constraints)
 
 	for k := range nameToType {
-		nameToType[k] = nameToType[k].Replace(mapping)
+		nameToType[k] = nameToType[k].Replace(mapping, true)
 	}
 
-	rootType = rootType.Replace(mapping)
+	rootType = rootType.Replace(mapping, true)
 
 	if rootType != UnitType {
 		log.Fatal("the program should be of unit type")
@@ -269,8 +274,8 @@ func unify(constraints []constraint) map[TypeVar]Type {
 	updateConstraints := func(from TypeVar, to Type) {
 		mapping := map[TypeVar]Type{from: to}
 		for i := 0; i < len(constraints); i++ {
-			constraints[i][0] = constraints[i][0].Replace(mapping)
-			constraints[i][1] = constraints[i][1].Replace(mapping)
+			constraints[i][0] = constraints[i][0].Replace(mapping, false)
+			constraints[i][1] = constraints[i][1].Replace(mapping, false)
 		}
 	}
 
