@@ -114,6 +114,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 		{"print_int", PRINT_INT, nil},
 		{"print_char", PRINT_CHAR, nil},
 		{"\\.", DOT, nil},
+		{"<-", LESS_MINUS, nil},
 		{";", SEMICOLON, nil},
 		{"[a-z][0-9a-zA-Z_]*", IDENT, func(s string) { lval.val = s }},
 	}
