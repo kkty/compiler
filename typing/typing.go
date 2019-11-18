@@ -81,7 +81,7 @@ func GetTypes(root mir.Node) map[string]Type {
 	nextTypeVarId := 0
 	newTypeVar := func() TypeVar {
 		defer func() { nextTypeVarId++ }()
-		return TypeVar(fmt.Sprintf("_t_%d", nextTypeVarId))
+		return TypeVar(fmt.Sprintf("_typing_%d", nextTypeVarId))
 	}
 
 	// Gets the type of a node, while gathering constraints.
