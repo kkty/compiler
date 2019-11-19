@@ -140,8 +140,8 @@ func GetTypes(root mir.Node) map[string]Type {
 			t2 := getType(n.False)
 			constraints = append(constraints, constraint{t1, t2})
 			return t2
-		case mir.IfLessThanOrEqual:
-			n := node.(mir.IfLessThanOrEqual)
+		case mir.IfLessThan:
+			n := node.(mir.IfLessThan)
 			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
 			t1 := getType(n.True)
 			t2 := getType(n.False)

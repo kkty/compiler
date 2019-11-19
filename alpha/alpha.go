@@ -61,9 +61,9 @@ func AlphaTransform(node ast.Node) ast.Node {
 		case ast.Equal:
 			n := node.(ast.Equal)
 			return ast.Equal{transform(n.Left, mapping), transform(n.Right, mapping)}
-		case ast.LessThanOrEqual:
-			n := node.(ast.LessThanOrEqual)
-			return ast.LessThanOrEqual{transform(n.Left, mapping), transform(n.Right, mapping)}
+		case ast.LessThan:
+			n := node.(ast.LessThan)
+			return ast.LessThan{transform(n.Left, mapping), transform(n.Right, mapping)}
 		case ast.Neg:
 			n := node.(ast.Neg)
 			return ast.Neg{transform(n.Inner, mapping)}

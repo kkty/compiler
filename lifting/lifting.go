@@ -34,8 +34,8 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 		case mir.IfEqual:
 			n := node.(mir.IfEqual)
 			queue = append(queue, n.True, n.False)
-		case mir.IfLessThanOrEqual:
-			n := node.(mir.IfLessThanOrEqual)
+		case mir.IfLessThan:
+			n := node.(mir.IfLessThan)
 			queue = append(queue, n.True, n.False)
 		case mir.ValueBinding:
 			n := node.(mir.ValueBinding)
@@ -82,9 +82,9 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 		case mir.IfEqual:
 			n := node.(mir.IfEqual)
 			return ir.IfEqual{n.Left, n.Right, construct(n.True), construct(n.False)}
-		case mir.IfLessThanOrEqual:
-			n := node.(mir.IfLessThanOrEqual)
-			return ir.IfLessThanOrEqual{n.Left, n.Right, construct(n.True), construct(n.False)}
+		case mir.IfLessThan:
+			n := node.(mir.IfLessThan)
+			return ir.IfLessThan{n.Left, n.Right, construct(n.True), construct(n.False)}
 		case mir.ValueBinding:
 			n := node.(mir.ValueBinding)
 			return ir.ValueBinding{n.Name, construct(n.Value), construct(n.Next)}

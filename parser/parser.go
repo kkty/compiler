@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -142,7 +141,6 @@ func (l *lexer) Lex(lval *yySymType) int {
 	}
 
 	if longestMatch.pattern == "" {
-		fmt.Println(l.program[:10])
 		log.Fatal("no matching token")
 	}
 

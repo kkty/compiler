@@ -109,13 +109,13 @@ exp: simple_exp
 | exp LESS_GREATER exp
   { $$ = ast.Not{ast.Equal{$1, $3}} }
 | exp LESS exp
-  { $$ = ast.Not{ast.LessThanOrEqual{$3, $1}} }
+  { $$ = ast.LessThan{$1, $3} }
 | exp GREATER exp
-  { $$ = ast.Not{ast.LessThanOrEqual{$1, $3}} }
+  { $$ = ast.LessThan{$3, $1} }
 | exp LESS_EQUAL exp
-  { $$ = ast.LessThanOrEqual{$1, $3} }
+  { $$ = ast.Not{ast.LessThan{$3, $1}} }
 | exp GREATER_EQUAL exp
-  { $$ = ast.LessThanOrEqual{$3, $1} }
+  { $$ = ast.Not{ast.LessThan{$1, $3}} }
 | IF exp THEN exp ELSE exp
   %prec prec_if
   { $$ = ast.If{$2, $4, $6} }

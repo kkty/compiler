@@ -16,7 +16,7 @@ type FloatSub struct{ Left, Right Node }
 type FloatDiv struct{ Left, Right Node }
 type FloatMul struct{ Left, Right Node }
 type Equal struct{ Left, Right Node }
-type LessThanOrEqual struct{ Left, Right Node }
+type LessThan struct{ Left, Right Node }
 type Neg struct{ Inner Node }
 type FloatNeg struct{ Inner Node }
 type Not struct{ Inner Node }
@@ -75,7 +75,7 @@ func (n FloatSub) astNode()        {}
 func (n FloatDiv) astNode()        {}
 func (n FloatMul) astNode()        {}
 func (n Equal) astNode()           {}
-func (n LessThanOrEqual) astNode() {}
+func (n LessThan) astNode()        {}
 func (n Neg) astNode()             {}
 func (n FloatNeg) astNode()        {}
 func (n Not) astNode()             {}

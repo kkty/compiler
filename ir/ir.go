@@ -24,7 +24,7 @@ type IfEqual struct {
 	True, False Node
 }
 
-type IfLessThanOrEqual struct {
+type IfLessThan struct {
 	Left, Right string
 	True, False Node
 }
@@ -63,33 +63,33 @@ type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 
-func (n Variable) irNode()          {}
-func (n Unit) irNode()              {}
-func (n Int) irNode()               {}
-func (n Bool) irNode()              {}
-func (n Float) irNode()             {}
-func (n Add) irNode()               {}
-func (n Sub) irNode()               {}
-func (n FloatAdd) irNode()          {}
-func (n FloatSub) irNode()          {}
-func (n FloatDiv) irNode()          {}
-func (n FloatMul) irNode()          {}
-func (n IfEqual) irNode()           {}
-func (n IfLessThanOrEqual) irNode() {}
-func (n ValueBinding) irNode()      {}
-func (n Application) irNode()       {}
-func (n Tuple) irNode()             {}
-func (n ArrayCreate) irNode()       {}
-func (n ArrayGet) irNode()          {}
-func (n ArrayPut) irNode()          {}
-func (n ReadInt) irNode()           {}
-func (n ReadFloat) irNode()         {}
-func (n PrintInt) irNode()          {}
-func (n PrintChar) irNode()         {}
-func (n IntToFloat) irNode()        {}
-func (n FloatToInt) irNode()        {}
-func (n Sqrt) irNode()              {}
-func (n TupleGet) irNode()          {}
+func (n Variable) irNode()     {}
+func (n Unit) irNode()         {}
+func (n Int) irNode()          {}
+func (n Bool) irNode()         {}
+func (n Float) irNode()        {}
+func (n Add) irNode()          {}
+func (n Sub) irNode()          {}
+func (n FloatAdd) irNode()     {}
+func (n FloatSub) irNode()     {}
+func (n FloatDiv) irNode()     {}
+func (n FloatMul) irNode()     {}
+func (n IfEqual) irNode()      {}
+func (n IfLessThan) irNode()   {}
+func (n ValueBinding) irNode() {}
+func (n Application) irNode()  {}
+func (n Tuple) irNode()        {}
+func (n ArrayCreate) irNode()  {}
+func (n ArrayGet) irNode()     {}
+func (n ArrayPut) irNode()     {}
+func (n ReadInt) irNode()      {}
+func (n ReadFloat) irNode()    {}
+func (n PrintInt) irNode()     {}
+func (n PrintChar) irNode()    {}
+func (n IntToFloat) irNode()   {}
+func (n FloatToInt) irNode()   {}
+func (n Sqrt) irNode()         {}
+func (n TupleGet) irNode()     {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -133,8 +133,8 @@ func (n IfEqual) UpdateNames(mapping map[string]string) Node {
 	return IfEqual{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping), n.True.UpdateNames(mapping), n.False.UpdateNames(mapping)}
 }
 
-func (n IfLessThanOrEqual) UpdateNames(mapping map[string]string) Node {
-	return IfLessThanOrEqual{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping), n.True.UpdateNames(mapping), n.False.UpdateNames(mapping)}
+func (n IfLessThan) UpdateNames(mapping map[string]string) Node {
+	return IfLessThan{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping), n.True.UpdateNames(mapping), n.False.UpdateNames(mapping)}
 }
 
 func (n ValueBinding) UpdateNames(mapping map[string]string) Node {
@@ -312,7 +312,7 @@ func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfLessThanOrEqual) FreeVariables(bound map[string]struct{}) []string {
+func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)

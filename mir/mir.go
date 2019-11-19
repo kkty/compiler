@@ -23,7 +23,7 @@ type IfEqual struct {
 	True, False Node
 }
 
-type IfLessThanOrEqual struct {
+type IfLessThan struct {
 	Left, Right string
 	True, False Node
 }
@@ -65,35 +65,35 @@ type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 type Neg struct{ Arg string }
 
-func (n Variable) mirNode()          {}
-func (n Unit) mirNode()              {}
-func (n Int) mirNode()               {}
-func (n Bool) mirNode()              {}
-func (n Float) mirNode()             {}
-func (n Add) mirNode()               {}
-func (n Sub) mirNode()               {}
-func (n FloatAdd) mirNode()          {}
-func (n FloatSub) mirNode()          {}
-func (n FloatDiv) mirNode()          {}
-func (n FloatMul) mirNode()          {}
-func (n IfEqual) mirNode()           {}
-func (n IfLessThanOrEqual) mirNode() {}
-func (n ValueBinding) mirNode()      {}
-func (n FunctionBinding) mirNode()   {}
-func (n Application) mirNode()       {}
-func (n Tuple) mirNode()             {}
-func (n TupleBinding) mirNode()      {}
-func (n ArrayCreate) mirNode()       {}
-func (n ArrayGet) mirNode()          {}
-func (n ArrayPut) mirNode()          {}
-func (n ReadInt) mirNode()           {}
-func (n ReadFloat) mirNode()         {}
-func (n PrintInt) mirNode()          {}
-func (n PrintChar) mirNode()         {}
-func (n IntToFloat) mirNode()        {}
-func (n FloatToInt) mirNode()        {}
-func (n Sqrt) mirNode()              {}
-func (n Neg) mirNode()               {}
+func (n Variable) mirNode()        {}
+func (n Unit) mirNode()            {}
+func (n Int) mirNode()             {}
+func (n Bool) mirNode()            {}
+func (n Float) mirNode()           {}
+func (n Add) mirNode()             {}
+func (n Sub) mirNode()             {}
+func (n FloatAdd) mirNode()        {}
+func (n FloatSub) mirNode()        {}
+func (n FloatDiv) mirNode()        {}
+func (n FloatMul) mirNode()        {}
+func (n IfEqual) mirNode()         {}
+func (n IfLessThan) mirNode()      {}
+func (n ValueBinding) mirNode()    {}
+func (n FunctionBinding) mirNode() {}
+func (n Application) mirNode()     {}
+func (n Tuple) mirNode()           {}
+func (n TupleBinding) mirNode()    {}
+func (n ArrayCreate) mirNode()     {}
+func (n ArrayGet) mirNode()        {}
+func (n ArrayPut) mirNode()        {}
+func (n ReadInt) mirNode()         {}
+func (n ReadFloat) mirNode()       {}
+func (n PrintInt) mirNode()        {}
+func (n PrintChar) mirNode()       {}
+func (n IntToFloat) mirNode()      {}
+func (n FloatToInt) mirNode()      {}
+func (n Sqrt) mirNode()            {}
+func (n Neg) mirNode()             {}
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	s := map[string]struct{}{}
@@ -214,7 +214,7 @@ func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfLessThanOrEqual) FreeVariables(bound map[string]struct{}) []string {
+func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)

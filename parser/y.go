@@ -3,13 +3,13 @@
 //line grammar.y:2
 package parser
 
-import (
-	__yyfmt__ "fmt"
+import __yyfmt__ "fmt"
 
-	"github.com/kkty/mincaml-go/ast"
-) //line grammar.y:2
+//line grammar.y:2
+
+import "github.com/kkty/mincaml-go/ast"
+
 //line grammar.y:7
-
 type yySymType struct {
 	yys  int
 	val  interface{}
@@ -270,7 +270,7 @@ var yyErrorMessages = [...]struct {
 
 var (
 	yyDebug        = 0
-	yyErrorVerbose = true
+	yyErrorVerbose = false
 )
 
 type yyLexer interface {
@@ -689,25 +689,25 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:112
 		{
-			yyVAL.node = ast.Not{ast.LessThanOrEqual{yyDollar[3].node, yyDollar[1].node}}
+			yyVAL.node = ast.LessThan{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:114
 		{
-			yyVAL.node = ast.Not{ast.LessThanOrEqual{yyDollar[1].node, yyDollar[3].node}}
+			yyVAL.node = ast.LessThan{yyDollar[3].node, yyDollar[1].node}
 		}
 	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:116
 		{
-			yyVAL.node = ast.LessThanOrEqual{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = ast.Not{ast.LessThan{yyDollar[3].node, yyDollar[1].node}}
 		}
 	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:118
 		{
-			yyVAL.node = ast.LessThanOrEqual{yyDollar[3].node, yyDollar[1].node}
+			yyVAL.node = ast.Not{ast.LessThan{yyDollar[1].node, yyDollar[3].node}}
 		}
 	case 20:
 		yyDollar = yyS[yypt-6 : yypt+1]

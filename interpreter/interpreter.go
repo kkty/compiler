@@ -69,15 +69,15 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			} else {
 				return evaluate(n.False, values)
 			}
-		case ir.IfLessThanOrEqual:
-			n := node.(ir.IfLessThanOrEqual)
+		case ir.IfLessThan:
+			n := node.(ir.IfLessThan)
 
 			var condition bool
 			switch values[n.Left].(type) {
 			case int32:
-				condition = values[n.Left].(int32) <= values[n.Right].(int32)
+				condition = values[n.Left].(int32) < values[n.Right].(int32)
 			case float32:
-				condition = values[n.Left].(float32) <= values[n.Right].(float32)
+				condition = values[n.Left].(float32) < values[n.Right].(float32)
 			}
 
 			if condition {

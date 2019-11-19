@@ -84,15 +84,15 @@ func KNormalize(node ast.Node) mir.Node {
 		return mir.ValueBinding{left, KNormalize(n.Left),
 			mir.ValueBinding{right, KNormalize(n.Right),
 				mir.IfEqual{left, right, mir.Bool{true}, mir.Bool{false}}}}
-	case ast.LessThanOrEqual:
-		n := node.(ast.LessThanOrEqual)
+	case ast.LessThan:
+		n := node.(ast.LessThan)
 
 		left := temporary()
 		right := temporary()
 
 		return mir.ValueBinding{left, KNormalize(n.Left),
 			mir.ValueBinding{right, KNormalize(n.Right),
-				mir.IfLessThanOrEqual{left, right, mir.Bool{true}, mir.Bool{false}}}}
+				mir.IfLessThan{left, right, mir.Bool{true}, mir.Bool{false}}}}
 	case ast.Neg:
 		n := node.(ast.Neg)
 
