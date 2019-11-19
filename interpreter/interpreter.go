@@ -104,13 +104,6 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 				tuple = append(tuple, values[element])
 			}
 			return tuple
-		case ir.TupleBinding:
-			n := node.(ir.TupleBinding)
-			for i, element := range values[n.Tuple].([]interface{}) {
-				values[n.Names[i]] = element
-			}
-
-			return evaluate(n.Next, values)
 		case ir.ArrayCreate:
 			n := node.(ir.ArrayCreate)
 			size := values[n.Size].(int32)
@@ -157,6 +150,10 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		case ir.Sqrt:
 			n := node.(ir.Sqrt)
 			return float32(math.Sqrt(float64(values[n.Arg].(float32))))
+		case ir.TupleGet:
+			n := node.(ir.TupleGet)
+			tuple := values[n.Tuple].([]interface{})
+			return tuple[n.Index]
 		default:
 			log.Fatal("invalid ir node")
 		}

@@ -102,7 +102,11 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 			return ir.Tuple{node.(mir.Tuple).Elements}
 		case mir.TupleBinding:
 			n := node.(mir.TupleBinding)
-			return ir.TupleBinding{n.Names, n.Tuple, construct(n.Next)}
+			ret := construct(n.Next)
+			for i, name := range n.Names {
+				ret = ir.ValueBinding{name, ir.TupleGet{n.Tuple, int32(i)}, ret}
+			}
+			return ret
 		case mir.ArrayCreate:
 			n := node.(mir.ArrayCreate)
 			return ir.ArrayCreate{n.Size, n.Value}

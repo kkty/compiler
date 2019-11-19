@@ -47,10 +47,9 @@ type Application struct {
 
 type Tuple struct{ Elements []string }
 
-type TupleBinding struct {
-	Names []string
+type TupleGet struct {
 	Tuple string
-	Next  Node
+	Index int32
 }
 
 type ArrayCreate struct{ Size, Value string }
@@ -80,7 +79,6 @@ func (n IfLessThanOrEqual) irNode() {}
 func (n ValueBinding) irNode()      {}
 func (n Application) irNode()       {}
 func (n Tuple) irNode()             {}
-func (n TupleBinding) irNode()      {}
 func (n ArrayCreate) irNode()       {}
 func (n ArrayGet) irNode()          {}
 func (n ArrayPut) irNode()          {}
@@ -91,6 +89,7 @@ func (n PrintChar) irNode()         {}
 func (n IntToFloat) irNode()        {}
 func (n FloatToInt) irNode()        {}
 func (n Sqrt) irNode()              {}
+func (n TupleGet) irNode()          {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -158,10 +157,6 @@ func (n Tuple) UpdateNames(mapping map[string]string) Node {
 	return Tuple{elements}
 }
 
-func (n TupleBinding) UpdateNames(mapping map[string]string) Node {
-	return TupleBinding{n.Names, replaceIfFound(n.Tuple, mapping), n.Next.UpdateNames(mapping)}
-}
-
 func (n ArrayCreate) UpdateNames(mapping map[string]string) Node {
 	return ArrayCreate{replaceIfFound(n.Size, mapping), replaceIfFound(n.Value, mapping)}
 }
@@ -192,6 +187,10 @@ func (n FloatToInt) UpdateNames(mapping map[string]string) Node {
 }
 func (n Sqrt) UpdateNames(mapping map[string]string) Node {
 	return Sqrt{replaceIfFound(n.Arg, mapping)}
+}
+
+func (n TupleGet) UpdateNames(mapping map[string]string) Node {
+	return TupleGet{replaceIfFound(n.Tuple, mapping), n.Index}
 }
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
@@ -360,18 +359,6 @@ func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n TupleBinding) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-	if _, ok := bound[n.Tuple]; !ok {
-		ret = append(ret, n.Tuple)
-	}
-	bound = copyStringSet(bound)
-	for _, name := range n.Names {
-		bound[name] = struct{}{}
-	}
-	return append(ret, n.Next.FreeVariables(bound)...)
-}
-
 func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Size]; !ok {
@@ -451,6 +438,16 @@ func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
 
 	if _, ok := bound[n.Arg]; !ok {
 		ret = append(ret, n.Arg)
+	}
+
+	return ret
+}
+
+func (n TupleGet) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Tuple]; !ok {
+		ret = append(ret, n.Tuple)
 	}
 
 	return ret
