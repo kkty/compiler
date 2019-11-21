@@ -3,6 +3,7 @@ package ir
 type Node interface {
 	UpdateNames(mapping map[string]string) Node
 	FreeVariables(bound map[string]struct{}) []string
+	FloatValues() []float32
 	irNode()
 }
 
@@ -452,3 +453,37 @@ func (n TupleGet) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
+
+func (n Variable) FloatValues() []float32 { return []float32{} }
+func (n Unit) FloatValues() []float32     { return []float32{} }
+func (n Int) FloatValues() []float32      { return []float32{} }
+func (n Bool) FloatValues() []float32     { return []float32{} }
+func (n Float) FloatValues() []float32    { return []float32{n.Value} }
+func (n Add) FloatValues() []float32      { return []float32{} }
+func (n Sub) FloatValues() []float32      { return []float32{} }
+func (n FloatAdd) FloatValues() []float32 { return []float32{} }
+func (n FloatSub) FloatValues() []float32 { return []float32{} }
+func (n FloatDiv) FloatValues() []float32 { return []float32{} }
+func (n FloatMul) FloatValues() []float32 { return []float32{} }
+func (n IfEqual) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+func (n IfLessThan) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+func (n ValueBinding) FloatValues() []float32 {
+	return append(n.Value.FloatValues(), n.Next.FloatValues()...)
+}
+func (n Application) FloatValues() []float32 { return []float32{} }
+func (n Tuple) FloatValues() []float32       { return []float32{} }
+func (n TupleGet) FloatValues() []float32    { return []float32{} }
+func (n ArrayCreate) FloatValues() []float32 { return []float32{} }
+func (n ArrayGet) FloatValues() []float32    { return []float32{} }
+func (n ArrayPut) FloatValues() []float32    { return []float32{} }
+func (n ReadInt) FloatValues() []float32     { return []float32{} }
+func (n ReadFloat) FloatValues() []float32   { return []float32{} }
+func (n PrintInt) FloatValues() []float32    { return []float32{} }
+func (n PrintChar) FloatValues() []float32   { return []float32{} }
+func (n IntToFloat) FloatValues() []float32  { return []float32{} }
+func (n FloatToInt) FloatValues() []float32  { return []float32{} }
+func (n Sqrt) FloatValues() []float32        { return []float32{} }
