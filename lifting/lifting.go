@@ -21,32 +21,7 @@ func Lift(
 		return fmt.Sprintf("_lifting_%d", nextTemporaryId)
 	}
 
-	// Traverses the program tree and gathers functions in the program.
-	queue := []mir.Node{root}
-	functions := map[string]*mir.FunctionBinding{}
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-
-		switch node.(type) {
-		case *mir.FunctionBinding:
-			n := node.(*mir.FunctionBinding)
-			functions[n.Name] = n
-			queue = append(queue, n.Body, n.Next)
-		case *mir.IfEqual:
-			n := node.(*mir.IfEqual)
-			queue = append(queue, n.True, n.False)
-		case *mir.IfLessThan:
-			n := node.(*mir.IfLessThan)
-			queue = append(queue, n.True, n.False)
-		case *mir.ValueBinding:
-			n := node.(*mir.ValueBinding)
-			queue = append(queue, n.Value, n.Next)
-		case *mir.TupleBinding:
-			n := node.(*mir.TupleBinding)
-			queue = append(queue, n.Next)
-		}
-	}
+	functions := map[string]*ir.Function{}
 
 	// Constructs ir.Node from mir.Node.
 	// Function bindings are removed and function applications are modified.
@@ -92,13 +67,11 @@ func Lift(
 			return &ir.ValueBinding{n.Name, construct(n.Value), construct(n.Next)}
 		case *mir.FunctionBinding:
 			n := node.(*mir.FunctionBinding)
+			functions[n.Name] = &ir.Function{n.Name, n.Args, construct(n.Body)}
 			return construct(n.Next)
 		case *mir.Application:
 			n := node.(*mir.Application)
-			return &ir.Application{
-				n.Function,
-				append(n.Args, functions[n.Function].FreeVariables(map[string]struct{}{})...),
-			}
+			return &ir.Application{n.Function, n.Args}
 		case *mir.Tuple:
 			return &ir.Tuple{node.(*mir.Tuple).Elements}
 		case *mir.TupleBinding:
@@ -152,37 +125,70 @@ func Lift(
 
 	constructed := construct(root)
 
+	functionToFreeVariables := map[string][]string{}
+
+	for _, function := range functions {
+		functionToFreeVariables[function.Name] = function.FreeVariables()
+	}
+
 	nextVarId := 0
 	newVar := func() string {
 		defer func() { nextVarId++ }()
 		return fmt.Sprintf("_l_%d", nextVarId)
 	}
 
-	// Creates ir.Function from mir.FunctionBinding and updates their types.
-	newFunctions := []*ir.Function{}
+	// Adds the free variables in functions as arguments.
+	var updateApplications func(node ir.Node)
+	updateApplications = func(node ir.Node) {
+		switch node.(type) {
+		case *ir.IfEqual:
+			n := node.(*ir.IfEqual)
+			updateApplications(n.True)
+			updateApplications(n.False)
+		case *ir.IfLessThan:
+			n := node.(*ir.IfLessThan)
+			updateApplications(n.True)
+			updateApplications(n.False)
+		case *ir.ValueBinding:
+			n := node.(*ir.ValueBinding)
+			updateApplications(n.Value)
+			updateApplications(n.Next)
+		case *ir.Application:
+			n := node.(*ir.Application)
+			for _, freeVariable := range functionToFreeVariables[n.Function] {
+				n.Args = append(n.Args, freeVariable)
+			}
+		}
+	}
+
+	updateApplications(constructed)
 
 	for _, function := range functions {
-		mapping := map[string]string{}
-		args := function.Args
+		updateApplications(function.Body)
+	}
 
-		for _, freeVariable := range function.FreeVariables(map[string]struct{}{}) {
+	// Adds arguments and removes free variables.
+	for _, function := range functions {
+		mapping := map[string]string{}
+
+		for _, freeVariable := range functionToFreeVariables[function.Name] {
 			v := newVar()
 			mapping[freeVariable] = v
 			types[v] = types[freeVariable]
-			args = append(args, v)
+			function.Args = append(function.Args, v)
 			types[function.Name] = typing.FunctionType{
 				append(types[function.Name].(typing.FunctionType).Args, types[v]),
 				types[function.Name].(typing.FunctionType).Return,
 			}
 		}
 
-		body := construct(function.Body)
-
-		body.UpdateNames(mapping)
-
-		newFunctions = append(newFunctions,
-			&ir.Function{function.Name, args, body})
+		function.Body.UpdateNames(mapping)
 	}
 
-	return constructed, newFunctions, types
+	functionsAsSlice := []*ir.Function{}
+	for _, function := range functions {
+		functionsAsSlice = append(functionsAsSlice, function)
+	}
+
+	return constructed, functionsAsSlice, types
 }
