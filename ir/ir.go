@@ -1,5 +1,23 @@
 package ir
 
+type Function struct {
+	Name string
+	Args []string
+	Body Node
+}
+
+func (f Function) FreeVariables() []string {
+	bound := map[string]struct{}{}
+
+	bound[f.Name] = struct{}{}
+
+	for _, arg := range f.Args {
+		bound[arg] = struct{}{}
+	}
+
+	return f.Body.FreeVariables(bound)
+}
+
 type Node interface {
 	UpdateNames(mapping map[string]string)
 	FreeVariables(bound map[string]struct{}) []string
@@ -33,12 +51,6 @@ type IfLessThan struct {
 type ValueBinding struct {
 	Name        string
 	Value, Next Node
-}
-
-type Function struct {
-	Name string
-	Args []string
-	Body Node
 }
 
 type Application struct {
