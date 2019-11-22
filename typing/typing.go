@@ -93,68 +93,68 @@ func GetTypes(root mir.Node) map[string]Type {
 	var getType func(node mir.Node) Type
 	getType = func(node mir.Node) Type {
 		switch node.(type) {
-		case mir.Variable:
-			return nameToType[node.(mir.Variable).Name]
-		case mir.Unit:
+		case *mir.Variable:
+			return nameToType[node.(*mir.Variable).Name]
+		case *mir.Unit:
 			return UnitType
-		case mir.Int:
+		case *mir.Int:
 			return IntType
-		case mir.Bool:
+		case *mir.Bool:
 			return BoolType
-		case mir.Float:
+		case *mir.Float:
 			return FloatType
-		case mir.Add:
-			n := node.(mir.Add)
+		case *mir.Add:
+			n := node.(*mir.Add)
 			constraints = append(constraints, constraint{nameToType[n.Left], IntType})
 			constraints = append(constraints, constraint{nameToType[n.Right], IntType})
 			return IntType
-		case mir.Sub:
-			n := node.(mir.Sub)
+		case *mir.Sub:
+			n := node.(*mir.Sub)
 			constraints = append(constraints, constraint{nameToType[n.Left], IntType})
 			constraints = append(constraints, constraint{nameToType[n.Right], IntType})
 			return IntType
-		case mir.FloatAdd:
-			n := node.(mir.FloatAdd)
+		case *mir.FloatAdd:
+			n := node.(*mir.FloatAdd)
 			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
 			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
 			return FloatType
-		case mir.FloatSub:
-			n := node.(mir.FloatSub)
+		case *mir.FloatSub:
+			n := node.(*mir.FloatSub)
 			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
 			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
 			return FloatType
-		case mir.FloatDiv:
-			n := node.(mir.FloatDiv)
+		case *mir.FloatDiv:
+			n := node.(*mir.FloatDiv)
 			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
 			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
 			return FloatType
-		case mir.FloatMul:
-			n := node.(mir.FloatMul)
+		case *mir.FloatMul:
+			n := node.(*mir.FloatMul)
 			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
 			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
 			return FloatType
-		case mir.IfEqual:
-			n := node.(mir.IfEqual)
+		case *mir.IfEqual:
+			n := node.(*mir.IfEqual)
 			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
 			t1 := getType(n.True)
 			t2 := getType(n.False)
 			constraints = append(constraints, constraint{t1, t2})
 			return t2
-		case mir.IfLessThan:
-			n := node.(mir.IfLessThan)
+		case *mir.IfLessThan:
+			n := node.(*mir.IfLessThan)
 			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
 			t1 := getType(n.True)
 			t2 := getType(n.False)
 			constraints = append(constraints, constraint{t1, t2})
 			return t2
-		case mir.ValueBinding:
-			n := node.(mir.ValueBinding)
+		case *mir.ValueBinding:
+			n := node.(*mir.ValueBinding)
 			t := getType(n.Value)
 			nameToType[n.Name] = t
 			t = getType(n.Next)
 			return t
-		case mir.FunctionBinding:
-			n := node.(mir.FunctionBinding)
+		case *mir.FunctionBinding:
+			n := node.(*mir.FunctionBinding)
 
 			argTypes := []Type{}
 			for _, arg := range n.Args {
@@ -170,8 +170,8 @@ func GetTypes(root mir.Node) map[string]Type {
 			constraints = append(constraints, constraint{getType(n.Body), returnType})
 
 			return getType(n.Next)
-		case mir.Application:
-			n := node.(mir.Application)
+		case *mir.Application:
+			n := node.(*mir.Application)
 			argTypes := []Type{}
 			for _, arg := range n.Args {
 				argTypes = append(argTypes, nameToType[arg])
@@ -179,8 +179,8 @@ func GetTypes(root mir.Node) map[string]Type {
 			t := newTypeVar()
 			constraints = append(constraints, constraint{nameToType[n.Function], FunctionType{argTypes, t}})
 			return t
-		case mir.Tuple:
-			n := node.(mir.Tuple)
+		case *mir.Tuple:
+			n := node.(*mir.Tuple)
 
 			elements := []Type{}
 			for _, element := range n.Elements {
@@ -188,8 +188,8 @@ func GetTypes(root mir.Node) map[string]Type {
 			}
 
 			return TupleType{elements}
-		case mir.TupleBinding:
-			n := node.(mir.TupleBinding)
+		case *mir.TupleBinding:
+			n := node.(*mir.TupleBinding)
 
 			ts := []Type{}
 			for _, name := range n.Names {
@@ -201,47 +201,47 @@ func GetTypes(root mir.Node) map[string]Type {
 			constraints = append(constraints, constraint{nameToType[n.Tuple], TupleType{ts}})
 
 			return getType(n.Next)
-		case mir.ArrayCreate:
-			n := node.(mir.ArrayCreate)
+		case *mir.ArrayCreate:
+			n := node.(*mir.ArrayCreate)
 			constraints = append(constraints, constraint{nameToType[n.Size], IntType})
 			return ArrayType{nameToType[n.Value]}
-		case mir.ArrayGet:
-			n := node.(mir.ArrayGet)
+		case *mir.ArrayGet:
+			n := node.(*mir.ArrayGet)
 			constraints = append(constraints, constraint{nameToType[n.Index], IntType})
 			t := newTypeVar()
 			constraints = append(constraints, constraint{nameToType[n.Array], ArrayType{t}})
 			return t
-		case mir.ArrayPut:
-			n := node.(mir.ArrayPut)
+		case *mir.ArrayPut:
+			n := node.(*mir.ArrayPut)
 			constraints = append(constraints, constraint{nameToType[n.Index], IntType})
 			constraints = append(constraints, constraint{nameToType[n.Array], ArrayType{nameToType[n.Value]}})
 			return UnitType
-		case mir.ReadInt:
+		case *mir.ReadInt:
 			return IntType
-		case mir.ReadFloat:
+		case *mir.ReadFloat:
 			return FloatType
-		case mir.PrintInt:
-			n := node.(mir.PrintInt)
+		case *mir.PrintInt:
+			n := node.(*mir.PrintInt)
 			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
 			return UnitType
-		case mir.PrintChar:
-			n := node.(mir.PrintChar)
+		case *mir.PrintChar:
+			n := node.(*mir.PrintChar)
 			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
 			return UnitType
-		case mir.IntToFloat:
-			n := node.(mir.IntToFloat)
+		case *mir.IntToFloat:
+			n := node.(*mir.IntToFloat)
 			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
 			return FloatType
-		case mir.FloatToInt:
-			n := node.(mir.FloatToInt)
+		case *mir.FloatToInt:
+			n := node.(*mir.FloatToInt)
 			constraints = append(constraints, constraint{FloatType, nameToType[n.Arg]})
 			return IntType
-		case mir.Sqrt:
-			n := node.(mir.Sqrt)
+		case *mir.Sqrt:
+			n := node.(*mir.Sqrt)
 			constraints = append(constraints, constraint{FloatType, nameToType[n.Arg]})
 			return FloatType
-		case mir.Neg:
-			n := node.(mir.Neg)
+		case *mir.Neg:
+			n := node.(*mir.Neg)
 			return nameToType[n.Arg]
 		}
 

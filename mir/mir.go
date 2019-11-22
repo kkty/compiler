@@ -65,35 +65,35 @@ type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 type Neg struct{ Arg string }
 
-func (n Variable) mirNode()        {}
-func (n Unit) mirNode()            {}
-func (n Int) mirNode()             {}
-func (n Bool) mirNode()            {}
-func (n Float) mirNode()           {}
-func (n Add) mirNode()             {}
-func (n Sub) mirNode()             {}
-func (n FloatAdd) mirNode()        {}
-func (n FloatSub) mirNode()        {}
-func (n FloatDiv) mirNode()        {}
-func (n FloatMul) mirNode()        {}
-func (n IfEqual) mirNode()         {}
-func (n IfLessThan) mirNode()      {}
-func (n ValueBinding) mirNode()    {}
-func (n FunctionBinding) mirNode() {}
-func (n Application) mirNode()     {}
-func (n Tuple) mirNode()           {}
-func (n TupleBinding) mirNode()    {}
-func (n ArrayCreate) mirNode()     {}
-func (n ArrayGet) mirNode()        {}
-func (n ArrayPut) mirNode()        {}
-func (n ReadInt) mirNode()         {}
-func (n ReadFloat) mirNode()       {}
-func (n PrintInt) mirNode()        {}
-func (n PrintChar) mirNode()       {}
-func (n IntToFloat) mirNode()      {}
-func (n FloatToInt) mirNode()      {}
-func (n Sqrt) mirNode()            {}
-func (n Neg) mirNode()             {}
+func (n *Variable) mirNode()        {}
+func (n *Unit) mirNode()            {}
+func (n *Int) mirNode()             {}
+func (n *Bool) mirNode()            {}
+func (n *Float) mirNode()           {}
+func (n *Add) mirNode()             {}
+func (n *Sub) mirNode()             {}
+func (n *FloatAdd) mirNode()        {}
+func (n *FloatSub) mirNode()        {}
+func (n *FloatDiv) mirNode()        {}
+func (n *FloatMul) mirNode()        {}
+func (n *IfEqual) mirNode()         {}
+func (n *IfLessThan) mirNode()      {}
+func (n *ValueBinding) mirNode()    {}
+func (n *FunctionBinding) mirNode() {}
+func (n *Application) mirNode()     {}
+func (n *Tuple) mirNode()           {}
+func (n *TupleBinding) mirNode()    {}
+func (n *ArrayCreate) mirNode()     {}
+func (n *ArrayGet) mirNode()        {}
+func (n *ArrayPut) mirNode()        {}
+func (n *ReadInt) mirNode()         {}
+func (n *ReadFloat) mirNode()       {}
+func (n *PrintInt) mirNode()        {}
+func (n *PrintChar) mirNode()       {}
+func (n *IntToFloat) mirNode()      {}
+func (n *FloatToInt) mirNode()      {}
+func (n *Sqrt) mirNode()            {}
+func (n *Neg) mirNode()             {}
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	s := map[string]struct{}{}
@@ -105,7 +105,7 @@ func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	return s
 }
 
-func (n Variable) FreeVariables(bound map[string]struct{}) []string {
+func (n *Variable) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Name]; !ok {
@@ -115,23 +115,23 @@ func (n Variable) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Unit) FreeVariables(bound map[string]struct{}) []string {
+func (n *Unit) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Int) FreeVariables(bound map[string]struct{}) []string {
+func (n *Int) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Bool) FreeVariables(bound map[string]struct{}) []string {
+func (n *Bool) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Float) FreeVariables(bound map[string]struct{}) []string {
+func (n *Float) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Add) FreeVariables(bound map[string]struct{}) []string {
+func (n *Add) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -142,7 +142,7 @@ func (n Add) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Sub) FreeVariables(bound map[string]struct{}) []string {
+func (n *Sub) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -153,7 +153,7 @@ func (n Sub) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatAdd) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatAdd) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -164,7 +164,7 @@ func (n FloatAdd) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatSub) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatSub) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -175,7 +175,7 @@ func (n FloatSub) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatDiv) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatDiv) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -186,7 +186,7 @@ func (n FloatDiv) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatMul) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatMul) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -197,7 +197,7 @@ func (n FloatMul) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
+func (n *IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Left]; !ok {
@@ -214,7 +214,7 @@ func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
+func (n *IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -230,7 +230,7 @@ func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
+func (n *ValueBinding) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	ret = append(ret, n.Value.FreeVariables(bound)...)
 	bound = copyStringSet(bound)
@@ -239,7 +239,7 @@ func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FunctionBinding) FreeVariables(bound map[string]struct{}) []string {
+func (n *FunctionBinding) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	{
@@ -260,7 +260,7 @@ func (n FunctionBinding) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Application) FreeVariables(bound map[string]struct{}) []string {
+func (n *Application) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	for _, arg := range n.Args {
@@ -272,7 +272,7 @@ func (n Application) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
+func (n *Tuple) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	for _, element := range n.Elements {
 		if _, ok := bound[element]; !ok {
@@ -282,7 +282,7 @@ func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n TupleBinding) FreeVariables(bound map[string]struct{}) []string {
+func (n *TupleBinding) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Tuple]; !ok {
 		ret = append(ret, n.Tuple)
@@ -294,7 +294,7 @@ func (n TupleBinding) FreeVariables(bound map[string]struct{}) []string {
 	return append(ret, n.Next.FreeVariables(bound)...)
 }
 
-func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Size]; !ok {
 		ret = append(ret, n.Size)
@@ -304,7 +304,7 @@ func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
 	}
 	return ret
 }
-func (n ArrayGet) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayGet) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Array]; !ok {
 		ret = append(ret, n.Array)
@@ -314,7 +314,7 @@ func (n ArrayGet) FreeVariables(bound map[string]struct{}) []string {
 	}
 	return ret
 }
-func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayPut) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Array]; !ok {
 		ret = append(ret, n.Array)
@@ -328,10 +328,10 @@ func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
-func (n ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
+func (n *ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
+func (n *ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
 
-func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
+func (n *PrintInt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -341,7 +341,7 @@ func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
+func (n *PrintChar) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -350,7 +350,7 @@ func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
+func (n *IntToFloat) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -359,7 +359,7 @@ func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatToInt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -368,7 +368,7 @@ func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
+func (n *Sqrt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -377,7 +377,7 @@ func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n Neg) FreeVariables(bound map[string]struct{}) []string {
+func (n *Neg) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
