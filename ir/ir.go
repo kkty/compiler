@@ -1,7 +1,7 @@
 package ir
 
 type Node interface {
-	UpdateNames(mapping map[string]string) Node
+	UpdateNames(mapping map[string]string)
 	FreeVariables(bound map[string]struct{}) []string
 	FloatValues() []float32
 	irNode()
@@ -64,33 +64,33 @@ type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 
-func (n Variable) irNode()     {}
-func (n Unit) irNode()         {}
-func (n Int) irNode()          {}
-func (n Bool) irNode()         {}
-func (n Float) irNode()        {}
-func (n Add) irNode()          {}
-func (n Sub) irNode()          {}
-func (n FloatAdd) irNode()     {}
-func (n FloatSub) irNode()     {}
-func (n FloatDiv) irNode()     {}
-func (n FloatMul) irNode()     {}
-func (n IfEqual) irNode()      {}
-func (n IfLessThan) irNode()   {}
-func (n ValueBinding) irNode() {}
-func (n Application) irNode()  {}
-func (n Tuple) irNode()        {}
-func (n ArrayCreate) irNode()  {}
-func (n ArrayGet) irNode()     {}
-func (n ArrayPut) irNode()     {}
-func (n ReadInt) irNode()      {}
-func (n ReadFloat) irNode()    {}
-func (n PrintInt) irNode()     {}
-func (n PrintChar) irNode()    {}
-func (n IntToFloat) irNode()   {}
-func (n FloatToInt) irNode()   {}
-func (n Sqrt) irNode()         {}
-func (n TupleGet) irNode()     {}
+func (n *Variable) irNode()     {}
+func (n *Unit) irNode()         {}
+func (n *Int) irNode()          {}
+func (n *Bool) irNode()         {}
+func (n *Float) irNode()        {}
+func (n *Add) irNode()          {}
+func (n *Sub) irNode()          {}
+func (n *FloatAdd) irNode()     {}
+func (n *FloatSub) irNode()     {}
+func (n *FloatDiv) irNode()     {}
+func (n *FloatMul) irNode()     {}
+func (n *IfEqual) irNode()      {}
+func (n *IfLessThan) irNode()   {}
+func (n *ValueBinding) irNode() {}
+func (n *Application) irNode()  {}
+func (n *Tuple) irNode()        {}
+func (n *ArrayCreate) irNode()  {}
+func (n *ArrayGet) irNode()     {}
+func (n *ArrayPut) irNode()     {}
+func (n *ReadInt) irNode()      {}
+func (n *ReadFloat) irNode()    {}
+func (n *PrintInt) irNode()     {}
+func (n *PrintChar) irNode()    {}
+func (n *IntToFloat) irNode()   {}
+func (n *FloatToInt) irNode()   {}
+func (n *Sqrt) irNode()         {}
+func (n *TupleGet) irNode()     {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -100,98 +100,113 @@ func replaceIfFound(k string, m map[string]string) string {
 	return k
 }
 
-func (n Variable) UpdateNames(mapping map[string]string) Node {
-	return Variable{replaceIfFound(n.Name, mapping)}
+func (n *Variable) UpdateNames(mapping map[string]string) {
+	n.Name = replaceIfFound(n.Name, mapping)
 }
 
-func (n Unit) UpdateNames(mapping map[string]string) Node  { return n }
-func (n Int) UpdateNames(mapping map[string]string) Node   { return n }
-func (n Bool) UpdateNames(mapping map[string]string) Node  { return n }
-func (n Float) UpdateNames(mapping map[string]string) Node { return n }
+func (n *Unit) UpdateNames(mapping map[string]string)  {}
+func (n *Int) UpdateNames(mapping map[string]string)   {}
+func (n *Bool) UpdateNames(mapping map[string]string)  {}
+func (n *Float) UpdateNames(mapping map[string]string) {}
 
-func (n Add) UpdateNames(mapping map[string]string) Node {
-	return Add{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+func (n *Add) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
 }
-func (n Sub) UpdateNames(mapping map[string]string) Node {
-	return Sub{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
-}
-
-func (n FloatAdd) UpdateNames(mapping map[string]string) Node {
-	return FloatAdd{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
-}
-func (n FloatSub) UpdateNames(mapping map[string]string) Node {
-	return FloatSub{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
-}
-func (n FloatDiv) UpdateNames(mapping map[string]string) Node {
-	return FloatDiv{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+func (n *Sub) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n FloatMul) UpdateNames(mapping map[string]string) Node {
-	return FloatMul{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping)}
+func (n *FloatAdd) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+}
+func (n *FloatSub) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+}
+func (n *FloatDiv) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n IfEqual) UpdateNames(mapping map[string]string) Node {
-	return IfEqual{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping), n.True.UpdateNames(mapping), n.False.UpdateNames(mapping)}
+func (n *FloatMul) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n IfLessThan) UpdateNames(mapping map[string]string) Node {
-	return IfLessThan{replaceIfFound(n.Left, mapping), replaceIfFound(n.Right, mapping), n.True.UpdateNames(mapping), n.False.UpdateNames(mapping)}
+func (n *IfEqual) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
 }
 
-func (n ValueBinding) UpdateNames(mapping map[string]string) Node {
-	return ValueBinding{n.Name, n.Value.UpdateNames(mapping), n.Next.UpdateNames(mapping)}
+func (n *IfLessThan) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
 }
 
-func (n Application) UpdateNames(mapping map[string]string) Node {
-	args := []string{}
-	for _, arg := range n.Args {
-		args = append(args, replaceIfFound(arg, mapping))
+func (n *ValueBinding) UpdateNames(mapping map[string]string) {
+	n.Name = replaceIfFound(n.Name, mapping)
+	n.Value.UpdateNames(mapping)
+	n.Next.UpdateNames(mapping)
+}
+
+func (n *Application) UpdateNames(mapping map[string]string) {
+	n.Function = replaceIfFound(n.Function, mapping)
+	for i := range n.Args {
+		n.Args[i] = replaceIfFound(n.Args[i], mapping)
 	}
-	return Application{n.Function, args}
 }
 
-func (n Tuple) UpdateNames(mapping map[string]string) Node {
-	elements := []string{}
-	for _, element := range n.Elements {
-		elements = append(elements, replaceIfFound(element, mapping))
+func (n *Tuple) UpdateNames(mapping map[string]string) {
+	for i := range n.Elements {
+		n.Elements[i] = replaceIfFound(n.Elements[i], mapping)
 	}
-	return Tuple{elements}
 }
 
-func (n ArrayCreate) UpdateNames(mapping map[string]string) Node {
-	return ArrayCreate{replaceIfFound(n.Size, mapping), replaceIfFound(n.Value, mapping)}
+func (n *ArrayCreate) UpdateNames(mapping map[string]string) {
+	n.Size = replaceIfFound(n.Size, mapping)
+	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n ArrayGet) UpdateNames(mapping map[string]string) Node {
-	return ArrayGet{replaceIfFound(n.Array, mapping), replaceIfFound(n.Index, mapping)}
+func (n *ArrayGet) UpdateNames(mapping map[string]string) {
+	n.Array = replaceIfFound(n.Array, mapping)
+	n.Index = replaceIfFound(n.Index, mapping)
 }
 
-func (n ArrayPut) UpdateNames(mapping map[string]string) Node {
-	return ArrayPut{replaceIfFound(n.Array, mapping), replaceIfFound(n.Index, mapping), replaceIfFound(n.Value, mapping)}
+func (n *ArrayPut) UpdateNames(mapping map[string]string) {
+	n.Array = replaceIfFound(n.Array, mapping)
+	n.Index = replaceIfFound(n.Index, mapping)
+	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n ReadInt) UpdateNames(mapping map[string]string) Node   { return n }
-func (n ReadFloat) UpdateNames(mapping map[string]string) Node { return n }
+func (n *ReadInt) UpdateNames(mapping map[string]string)   {}
+func (n *ReadFloat) UpdateNames(mapping map[string]string) {}
 
-func (n PrintInt) UpdateNames(mapping map[string]string) Node {
-	return PrintInt{replaceIfFound(n.Arg, mapping)}
-}
-
-func (n PrintChar) UpdateNames(mapping map[string]string) Node {
-	return PrintChar{replaceIfFound(n.Arg, mapping)}
-}
-func (n IntToFloat) UpdateNames(mapping map[string]string) Node {
-	return IntToFloat{replaceIfFound(n.Arg, mapping)}
-}
-func (n FloatToInt) UpdateNames(mapping map[string]string) Node {
-	return FloatToInt{replaceIfFound(n.Arg, mapping)}
-}
-func (n Sqrt) UpdateNames(mapping map[string]string) Node {
-	return Sqrt{replaceIfFound(n.Arg, mapping)}
+func (n *PrintInt) UpdateNames(mapping map[string]string) {
+	n.Arg = replaceIfFound(n.Arg, mapping)
 }
 
-func (n TupleGet) UpdateNames(mapping map[string]string) Node {
-	return TupleGet{replaceIfFound(n.Tuple, mapping), n.Index}
+func (n *PrintChar) UpdateNames(mapping map[string]string) {
+	n.Arg = replaceIfFound(n.Arg, mapping)
+}
+func (n *IntToFloat) UpdateNames(mapping map[string]string) {
+	n.Arg = replaceIfFound(n.Arg, mapping)
+}
+func (n *FloatToInt) UpdateNames(mapping map[string]string) {
+	n.Arg = replaceIfFound(n.Arg, mapping)
+}
+func (n *Sqrt) UpdateNames(mapping map[string]string) {
+	n.Arg = replaceIfFound(n.Arg, mapping)
+}
+
+func (n *TupleGet) UpdateNames(mapping map[string]string) {
+	n.Tuple = replaceIfFound(n.Tuple, mapping)
 }
 
 func copyStringSet(original map[string]struct{}) map[string]struct{} {
@@ -204,7 +219,7 @@ func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	return s
 }
 
-func (n Variable) FreeVariables(bound map[string]struct{}) []string {
+func (n *Variable) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Name]; !ok {
@@ -214,23 +229,23 @@ func (n Variable) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Unit) FreeVariables(bound map[string]struct{}) []string {
+func (n *Unit) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Int) FreeVariables(bound map[string]struct{}) []string {
+func (n *Int) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Bool) FreeVariables(bound map[string]struct{}) []string {
+func (n *Bool) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Float) FreeVariables(bound map[string]struct{}) []string {
+func (n *Float) FreeVariables(bound map[string]struct{}) []string {
 	return []string{}
 }
 
-func (n Add) FreeVariables(bound map[string]struct{}) []string {
+func (n *Add) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -241,7 +256,7 @@ func (n Add) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Sub) FreeVariables(bound map[string]struct{}) []string {
+func (n *Sub) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -252,7 +267,7 @@ func (n Sub) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatAdd) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatAdd) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -263,7 +278,7 @@ func (n FloatAdd) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatSub) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatSub) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -274,7 +289,7 @@ func (n FloatSub) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatDiv) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatDiv) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -285,7 +300,7 @@ func (n FloatDiv) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n FloatMul) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatMul) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -296,7 +311,7 @@ func (n FloatMul) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
+func (n *IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Left]; !ok {
@@ -313,7 +328,7 @@ func (n IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
+func (n *IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
 		ret = append(ret, n.Left)
@@ -329,7 +344,7 @@ func (n IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
+func (n *ValueBinding) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	ret = append(ret, n.Value.FreeVariables(bound)...)
 	bound = copyStringSet(bound)
@@ -338,7 +353,7 @@ func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Application) FreeVariables(bound map[string]struct{}) []string {
+func (n *Application) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	for _, arg := range n.Args {
@@ -350,7 +365,7 @@ func (n Application) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
+func (n *Tuple) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	for _, element := range n.Elements {
 		if _, ok := bound[element]; !ok {
@@ -360,7 +375,7 @@ func (n Tuple) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Size]; !ok {
 		ret = append(ret, n.Size)
@@ -370,7 +385,7 @@ func (n ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
 	}
 	return ret
 }
-func (n ArrayGet) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayGet) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Array]; !ok {
 		ret = append(ret, n.Array)
@@ -380,7 +395,7 @@ func (n ArrayGet) FreeVariables(bound map[string]struct{}) []string {
 	}
 	return ret
 }
-func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
+func (n *ArrayPut) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Array]; !ok {
 		ret = append(ret, n.Array)
@@ -394,10 +409,10 @@ func (n ArrayPut) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
-func (n ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
+func (n *ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
+func (n *ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
 
-func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
+func (n *PrintInt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -407,7 +422,7 @@ func (n PrintInt) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
+func (n *PrintChar) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -416,7 +431,7 @@ func (n PrintChar) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
+func (n *IntToFloat) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -425,7 +440,7 @@ func (n IntToFloat) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatToInt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -434,7 +449,7 @@ func (n FloatToInt) FreeVariables(bound map[string]struct{}) []string {
 
 	return ret
 }
-func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
+func (n *Sqrt) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Arg]; !ok {
@@ -444,7 +459,7 @@ func (n Sqrt) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n TupleGet) FreeVariables(bound map[string]struct{}) []string {
+func (n *TupleGet) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 
 	if _, ok := bound[n.Tuple]; !ok {
@@ -454,36 +469,36 @@ func (n TupleGet) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n Variable) FloatValues() []float32 { return []float32{} }
-func (n Unit) FloatValues() []float32     { return []float32{} }
-func (n Int) FloatValues() []float32      { return []float32{} }
-func (n Bool) FloatValues() []float32     { return []float32{} }
-func (n Float) FloatValues() []float32    { return []float32{n.Value} }
-func (n Add) FloatValues() []float32      { return []float32{} }
-func (n Sub) FloatValues() []float32      { return []float32{} }
-func (n FloatAdd) FloatValues() []float32 { return []float32{} }
-func (n FloatSub) FloatValues() []float32 { return []float32{} }
-func (n FloatDiv) FloatValues() []float32 { return []float32{} }
-func (n FloatMul) FloatValues() []float32 { return []float32{} }
-func (n IfEqual) FloatValues() []float32 {
+func (n *Variable) FloatValues() []float32 { return []float32{} }
+func (n *Unit) FloatValues() []float32     { return []float32{} }
+func (n *Int) FloatValues() []float32      { return []float32{} }
+func (n *Bool) FloatValues() []float32     { return []float32{} }
+func (n *Float) FloatValues() []float32    { return []float32{n.Value} }
+func (n *Add) FloatValues() []float32      { return []float32{} }
+func (n *Sub) FloatValues() []float32      { return []float32{} }
+func (n *FloatAdd) FloatValues() []float32 { return []float32{} }
+func (n *FloatSub) FloatValues() []float32 { return []float32{} }
+func (n *FloatDiv) FloatValues() []float32 { return []float32{} }
+func (n *FloatMul) FloatValues() []float32 { return []float32{} }
+func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
-func (n IfLessThan) FloatValues() []float32 {
+func (n *IfLessThan) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
-func (n ValueBinding) FloatValues() []float32 {
+func (n *ValueBinding) FloatValues() []float32 {
 	return append(n.Value.FloatValues(), n.Next.FloatValues()...)
 }
-func (n Application) FloatValues() []float32 { return []float32{} }
-func (n Tuple) FloatValues() []float32       { return []float32{} }
-func (n TupleGet) FloatValues() []float32    { return []float32{} }
-func (n ArrayCreate) FloatValues() []float32 { return []float32{} }
-func (n ArrayGet) FloatValues() []float32    { return []float32{} }
-func (n ArrayPut) FloatValues() []float32    { return []float32{} }
-func (n ReadInt) FloatValues() []float32     { return []float32{} }
-func (n ReadFloat) FloatValues() []float32   { return []float32{} }
-func (n PrintInt) FloatValues() []float32    { return []float32{} }
-func (n PrintChar) FloatValues() []float32   { return []float32{} }
-func (n IntToFloat) FloatValues() []float32  { return []float32{} }
-func (n FloatToInt) FloatValues() []float32  { return []float32{} }
-func (n Sqrt) FloatValues() []float32        { return []float32{} }
+func (n *Application) FloatValues() []float32 { return []float32{} }
+func (n *Tuple) FloatValues() []float32       { return []float32{} }
+func (n *TupleGet) FloatValues() []float32    { return []float32{} }
+func (n *ArrayCreate) FloatValues() []float32 { return []float32{} }
+func (n *ArrayGet) FloatValues() []float32    { return []float32{} }
+func (n *ArrayPut) FloatValues() []float32    { return []float32{} }
+func (n *ReadInt) FloatValues() []float32     { return []float32{} }
+func (n *ReadFloat) FloatValues() []float32   { return []float32{} }
+func (n *PrintInt) FloatValues() []float32    { return []float32{} }
+func (n *PrintChar) FloatValues() []float32   { return []float32{} }
+func (n *IntToFloat) FloatValues() []float32  { return []float32{} }
+func (n *FloatToInt) FloatValues() []float32  { return []float32{} }
+func (n *Sqrt) FloatValues() []float32        { return []float32{} }

@@ -10,8 +10,8 @@ import (
 )
 
 // Execute interprets and executes the program.
-func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
-	findFunction := func(name string) ir.Function {
+func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
+	findFunction := func(name string) *ir.Function {
 		for _, function := range functions {
 			if function.Name == name {
 				return function
@@ -19,7 +19,7 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		}
 
 		log.Fatal("function not found")
-		return ir.Function{}
+		return nil
 	}
 
 	copyValues := func(original map[string]interface{}) map[string]interface{} {
@@ -33,44 +33,44 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 	var evaluate func(ir.Node, map[string]interface{}) interface{}
 	evaluate = func(node ir.Node, values map[string]interface{}) interface{} {
 		switch node.(type) {
-		case ir.Variable:
-			n := node.(ir.Variable)
+		case *ir.Variable:
+			n := node.(*ir.Variable)
 			return values[n.Name]
-		case ir.Unit:
+		case *ir.Unit:
 			return nil
-		case ir.Int:
-			return node.(ir.Int).Value
-		case ir.Bool:
-			return node.(ir.Bool).Value
-		case ir.Float:
-			return node.(ir.Float).Value
-		case ir.Add:
-			n := node.(ir.Add)
+		case *ir.Int:
+			return node.(*ir.Int).Value
+		case *ir.Bool:
+			return node.(*ir.Bool).Value
+		case *ir.Float:
+			return node.(*ir.Float).Value
+		case *ir.Add:
+			n := node.(*ir.Add)
 			return values[n.Left].(int32) + values[n.Right].(int32)
-		case ir.Sub:
-			n := node.(ir.Sub)
+		case *ir.Sub:
+			n := node.(*ir.Sub)
 			return values[n.Left].(int32) - values[n.Right].(int32)
-		case ir.FloatAdd:
-			n := node.(ir.FloatAdd)
+		case *ir.FloatAdd:
+			n := node.(*ir.FloatAdd)
 			return values[n.Left].(float32) + values[n.Right].(float32)
-		case ir.FloatSub:
-			n := node.(ir.FloatSub)
+		case *ir.FloatSub:
+			n := node.(*ir.FloatSub)
 			return values[n.Left].(float32) - values[n.Right].(float32)
-		case ir.FloatDiv:
-			n := node.(ir.FloatDiv)
+		case *ir.FloatDiv:
+			n := node.(*ir.FloatDiv)
 			return values[n.Left].(float32) / values[n.Right].(float32)
-		case ir.FloatMul:
-			n := node.(ir.FloatMul)
+		case *ir.FloatMul:
+			n := node.(*ir.FloatMul)
 			return values[n.Left].(float32) * values[n.Right].(float32)
-		case ir.IfEqual:
-			n := node.(ir.IfEqual)
+		case *ir.IfEqual:
+			n := node.(*ir.IfEqual)
 			if values[n.Left] == values[n.Right] {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
-		case ir.IfLessThan:
-			n := node.(ir.IfLessThan)
+		case *ir.IfLessThan:
+			n := node.(*ir.IfLessThan)
 
 			var condition bool
 			switch values[n.Left].(type) {
@@ -85,27 +85,27 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			}
 
 			return evaluate(n.False, values)
-		case ir.ValueBinding:
-			n := node.(ir.ValueBinding)
+		case *ir.ValueBinding:
+			n := node.(*ir.ValueBinding)
 			values[n.Name] = evaluate(n.Value, values)
 			return evaluate(n.Next, values)
-		case ir.Application:
-			n := node.(ir.Application)
+		case *ir.Application:
+			n := node.(*ir.Application)
 			f := findFunction(n.Function)
 			values := copyValues(values)
 			for i, arg := range f.Args {
 				values[arg] = values[n.Args[i]]
 			}
 			return evaluate(f.Body, values)
-		case ir.Tuple:
-			n := node.(ir.Tuple)
+		case *ir.Tuple:
+			n := node.(*ir.Tuple)
 			tuple := []interface{}{}
 			for _, element := range n.Elements {
 				tuple = append(tuple, values[element])
 			}
 			return tuple
-		case ir.ArrayCreate:
-			n := node.(ir.ArrayCreate)
+		case *ir.ArrayCreate:
+			n := node.(*ir.ArrayCreate)
 			size := values[n.Size].(int32)
 			value := values[n.Value]
 			array := []interface{}{}
@@ -113,45 +113,45 @@ func Execute(functions []ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 				array = append(array, value)
 			}
 			return array
-		case ir.ArrayGet:
-			n := node.(ir.ArrayGet)
+		case *ir.ArrayGet:
+			n := node.(*ir.ArrayGet)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			return array[index]
-		case ir.ArrayPut:
-			n := node.(ir.ArrayPut)
+		case *ir.ArrayPut:
+			n := node.(*ir.ArrayPut)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			value := values[n.Value]
 			array[index] = value
 			return nil
-		case ir.ReadInt:
+		case *ir.ReadInt:
 			var value int32
 			fmt.Fscan(r, &value)
 			return value
-		case ir.ReadFloat:
+		case *ir.ReadFloat:
 			var value float32
 			fmt.Fscan(r, &value)
 			return value
-		case ir.PrintInt:
-			n := node.(ir.PrintInt)
+		case *ir.PrintInt:
+			n := node.(*ir.PrintInt)
 			fmt.Fprintf(w, "%d", values[n.Arg].(int32))
 			return nil
-		case ir.PrintChar:
-			n := node.(ir.PrintChar)
+		case *ir.PrintChar:
+			n := node.(*ir.PrintChar)
 			fmt.Fprintf(w, "%c", rune(values[n.Arg].(int32)))
 			return nil
-		case ir.IntToFloat:
-			n := node.(ir.IntToFloat)
+		case *ir.IntToFloat:
+			n := node.(*ir.IntToFloat)
 			return float32(values[n.Arg].(int32))
-		case ir.FloatToInt:
-			n := node.(ir.FloatToInt)
+		case *ir.FloatToInt:
+			n := node.(*ir.FloatToInt)
 			return int32(math.Round(float64(values[n.Arg].(float32))))
-		case ir.Sqrt:
-			n := node.(ir.Sqrt)
+		case *ir.Sqrt:
+			n := node.(*ir.Sqrt)
 			return float32(math.Sqrt(float64(values[n.Arg].(float32))))
-		case ir.TupleGet:
-			n := node.(ir.TupleGet)
+		case *ir.TupleGet:
+			n := node.(*ir.TupleGet)
 			tuple := values[n.Tuple].([]interface{})
 			return tuple[n.Index]
 		default:
