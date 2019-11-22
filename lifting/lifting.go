@@ -90,7 +90,6 @@ func Lift(root mir.Node, types map[string]typing.Type) (ir.Node, []ir.Function, 
 			return ir.ValueBinding{n.Name, construct(n.Value), construct(n.Next)}
 		case mir.FunctionBinding:
 			n := node.(mir.FunctionBinding)
-			functions[n.Name] = n
 			return construct(n.Next)
 		case mir.Application:
 			n := node.(mir.Application)
