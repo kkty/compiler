@@ -240,12 +240,24 @@ func (n ValueBinding) FreeVariables(bound map[string]struct{}) []string {
 }
 
 func (n FunctionBinding) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	{
+		bound := copyStringSet(bound)
+		bound[n.Name] = struct{}{}
+		for _, arg := range n.Args {
+			bound[arg] = struct{}{}
+		}
+
+		ret = n.Body.FreeVariables(bound)
+	}
+
 	bound = copyStringSet(bound)
 	bound[n.Name] = struct{}{}
-	for _, arg := range n.Args {
-		bound[arg] = struct{}{}
-	}
-	return n.Body.FreeVariables(bound)
+
+	ret = append(ret, n.Next.FreeVariables(bound)...)
+
+	return ret
 }
 
 func (n Application) FreeVariables(bound map[string]struct{}) []string {
