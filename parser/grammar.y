@@ -80,98 +80,98 @@ program: exp
 simple_exp: LPAREN exp RPAREN
   { $$ = $2 }
 | LPAREN RPAREN
-  { $$ = ast.Unit{} }
+  { $$ = &ast.Unit{} }
 | BOOL
-  { $$ = ast.Bool{$1.(bool)} }
+  { $$ = &ast.Bool{$1.(bool)} }
 | INT
-  { $$ = ast.Int{$1.(int32)} }
+  { $$ = &ast.Int{$1.(int32)} }
 | FLOAT
-  { $$ = ast.Float{$1.(float32)} }
+  { $$ = &ast.Float{$1.(float32)} }
 | IDENT
-  { $$ = ast.Variable{$1.(string)} }
+  { $$ = &ast.Variable{$1.(string)} }
 | simple_exp DOT LPAREN exp RPAREN
-  { $$ = ast.ArrayGet{$1, $4} }
+  { $$ = &ast.ArrayGet{$1, $4} }
 
 exp: simple_exp
   { $$ = $1 }
 | NOT exp
   %prec prec_app
-  { $$ = ast.Not{$2} }
+  { $$ = &ast.Not{$2} }
 | MINUS exp
   %prec prec_unary_minus
-  { $$ = ast.Neg{$2} }
+  { $$ = &ast.Neg{$2} }
 | exp PLUS exp 
-  { $$ = ast.Add{$1, $3} }
+  { $$ = &ast.Add{$1, $3} }
 | exp MINUS exp
-  { $$ = ast.Sub{$1, $3} }
+  { $$ = &ast.Sub{$1, $3} }
 | exp EQUAL exp
-  { $$ = ast.Equal{$1, $3} }
+  { $$ = &ast.Equal{$1, $3} }
 | exp LESS_GREATER exp
-  { $$ = ast.Not{ast.Equal{$1, $3}} }
+  { $$ = &ast.Not{&ast.Equal{$1, $3}} }
 | exp LESS exp
-  { $$ = ast.LessThan{$1, $3} }
+  { $$ = &ast.LessThan{$1, $3} }
 | exp GREATER exp
-  { $$ = ast.LessThan{$3, $1} }
+  { $$ = &ast.LessThan{$3, $1} }
 | exp LESS_EQUAL exp
-  { $$ = ast.Not{ast.LessThan{$3, $1}} }
+  { $$ = &ast.Not{&ast.LessThan{$3, $1}} }
 | exp GREATER_EQUAL exp
-  { $$ = ast.Not{ast.LessThan{$1, $3}} }
+  { $$ = &ast.Not{&ast.LessThan{$1, $3}} }
 | IF exp THEN exp ELSE exp
   %prec prec_if
-  { $$ = ast.If{$2, $4, $6} }
+  { $$ = &ast.If{$2, $4, $6} }
 | MINUS_DOT exp
   %prec prec_unary_minus
-  { $$ = ast.FloatNeg{$2} }
+  { $$ = &ast.FloatNeg{$2} }
 | exp PLUS_DOT exp
-  { $$ = ast.FloatAdd{$1, $3} }
+  { $$ = &ast.FloatAdd{$1, $3} }
 | exp MINUS_DOT exp
-  { $$ = ast.FloatSub{$1, $3} }
+  { $$ = &ast.FloatSub{$1, $3} }
 | exp AST_DOT exp
-  { $$ = ast.FloatMul{$1, $3} }
+  { $$ = &ast.FloatMul{$1, $3} }
 | exp SLASH_DOT exp
-  { $$ = ast.FloatDiv{$1, $3} }
+  { $$ = &ast.FloatDiv{$1, $3} }
 | LET IDENT EQUAL exp IN exp
   %prec prec_let
-  { $$ = ast.ValueBinding{$2.(string), $4, $6} }
+  { $$ = &ast.ValueBinding{$2.(string), $4, $6} }
 | LET REC IDENT formal_args EQUAL exp IN exp
   %prec prec_let
-  { $$ = ast.FunctionBinding{$3.(string), $4.([]string), $6, $8} }
+  { $$ = &ast.FunctionBinding{$3.(string), $4.([]string), $6, $8} }
 | IDENT actual_args
   %prec prec_app
-  { $$ = ast.Application{$1.(string), $2.([]ast.Node)} }
+  { $$ = &ast.Application{$1.(string), $2.([]ast.Node)} }
 | elems
   %prec prec_tuple
-  { $$ = ast.Tuple{$1.([]ast.Node)} }
+  { $$ = &ast.Tuple{$1.([]ast.Node)} }
 | LET LPAREN pat RPAREN EQUAL exp IN exp
-  { $$ = ast.TupleBinding{$3.([]string), $6, $8} }
+  { $$ = &ast.TupleBinding{$3.([]string), $6, $8} }
 | simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp
-  { $$ = ast.ArrayPut{$1, $4, $7} }
+  { $$ = &ast.ArrayPut{$1, $4, $7} }
 | exp SEMICOLON exp
-  { $$ = ast.ValueBinding{"", $1, $3} }
+  { $$ = &ast.ValueBinding{"", $1, $3} }
 | ARRAY_CREATE simple_exp simple_exp
   %prec prec_app
-  { $$ = ast.ArrayCreate{$2, $3} }
+  { $$ = &ast.ArrayCreate{$2, $3} }
 | READ_INT LPAREN RPAREN
   %prec prec_app
-  { $$ = ast.ReadInt{} }
+  { $$ = &ast.ReadInt{} }
 | READ_FLOAT LPAREN RPAREN
   %prec prec_app
-  { $$ = ast.ReadFloat{} }
+  { $$ = &ast.ReadFloat{} }
 | PRINT_INT simple_exp
   %prec prec_app
-  { $$ = ast.PrintInt{$2} }
+  { $$ = &ast.PrintInt{$2} }
 | PRINT_CHAR simple_exp
   %prec prec_app
-  { $$ = ast.PrintChar{$2} }
+  { $$ = &ast.PrintChar{$2} }
 | INT_TO_FLOAT simple_exp
   %prec prec_app
-  { $$ = ast.IntToFloat{$2} }
+  { $$ = &ast.IntToFloat{$2} }
 | FLOAT_TO_INT simple_exp
   %prec prec_app
-  { $$ = ast.FloatToInt{$2} }
+  { $$ = &ast.FloatToInt{$2} }
 | SQRT simple_exp
   %prec prec_app
-  { $$ = ast.Sqrt{$2} }
+  { $$ = &ast.Sqrt{$2} }
 
 formal_args: IDENT formal_args
   { $$ = append([]string{$1.(string)}, $2.([]string)...) }

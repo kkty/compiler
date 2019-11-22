@@ -30,7 +30,7 @@ func TestIntegration(t *testing.T) {
 		}
 		program := string(b)
 		astNode := parser.Parse(program)
-		astNode = alpha.AlphaTransform(astNode)
+		alpha.AlphaTransform(astNode)
 		mirNode := knormalize.KNormalize(astNode)
 		types := typing.GetTypes(mirNode)
 		main, functions, _ := lifting.Lift(mirNode, types)

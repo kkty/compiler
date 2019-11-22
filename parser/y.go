@@ -611,37 +611,37 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:83
 		{
-			yyVAL.node = ast.Unit{}
+			yyVAL.node = &ast.Unit{}
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line grammar.y:85
 		{
-			yyVAL.node = ast.Bool{yyDollar[1].val.(bool)}
+			yyVAL.node = &ast.Bool{yyDollar[1].val.(bool)}
 		}
 	case 5:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line grammar.y:87
 		{
-			yyVAL.node = ast.Int{yyDollar[1].val.(int32)}
+			yyVAL.node = &ast.Int{yyDollar[1].val.(int32)}
 		}
 	case 6:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line grammar.y:89
 		{
-			yyVAL.node = ast.Float{yyDollar[1].val.(float32)}
+			yyVAL.node = &ast.Float{yyDollar[1].val.(float32)}
 		}
 	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line grammar.y:91
 		{
-			yyVAL.node = ast.Variable{yyDollar[1].val.(string)}
+			yyVAL.node = &ast.Variable{yyDollar[1].val.(string)}
 		}
 	case 8:
 		yyDollar = yyS[yypt-5 : yypt+1]
 //line grammar.y:93
 		{
-			yyVAL.node = ast.ArrayGet{yyDollar[1].node, yyDollar[4].node}
+			yyVAL.node = &ast.ArrayGet{yyDollar[1].node, yyDollar[4].node}
 		}
 	case 9:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -653,187 +653,187 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:99
 		{
-			yyVAL.node = ast.Not{yyDollar[2].node}
+			yyVAL.node = &ast.Not{yyDollar[2].node}
 		}
 	case 11:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:102
 		{
-			yyVAL.node = ast.Neg{yyDollar[2].node}
+			yyVAL.node = &ast.Neg{yyDollar[2].node}
 		}
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:104
 		{
-			yyVAL.node = ast.Add{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.Add{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:106
 		{
-			yyVAL.node = ast.Sub{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.Sub{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 14:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:108
 		{
-			yyVAL.node = ast.Equal{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.Equal{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:110
 		{
-			yyVAL.node = ast.Not{ast.Equal{yyDollar[1].node, yyDollar[3].node}}
+			yyVAL.node = &ast.Not{&ast.Equal{yyDollar[1].node, yyDollar[3].node}}
 		}
 	case 16:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:112
 		{
-			yyVAL.node = ast.LessThan{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.LessThan{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:114
 		{
-			yyVAL.node = ast.LessThan{yyDollar[3].node, yyDollar[1].node}
+			yyVAL.node = &ast.LessThan{yyDollar[3].node, yyDollar[1].node}
 		}
 	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:116
 		{
-			yyVAL.node = ast.Not{ast.LessThan{yyDollar[3].node, yyDollar[1].node}}
+			yyVAL.node = &ast.Not{&ast.LessThan{yyDollar[3].node, yyDollar[1].node}}
 		}
 	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:118
 		{
-			yyVAL.node = ast.Not{ast.LessThan{yyDollar[1].node, yyDollar[3].node}}
+			yyVAL.node = &ast.Not{&ast.LessThan{yyDollar[1].node, yyDollar[3].node}}
 		}
 	case 20:
 		yyDollar = yyS[yypt-6 : yypt+1]
 //line grammar.y:121
 		{
-			yyVAL.node = ast.If{yyDollar[2].node, yyDollar[4].node, yyDollar[6].node}
+			yyVAL.node = &ast.If{yyDollar[2].node, yyDollar[4].node, yyDollar[6].node}
 		}
 	case 21:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:124
 		{
-			yyVAL.node = ast.FloatNeg{yyDollar[2].node}
+			yyVAL.node = &ast.FloatNeg{yyDollar[2].node}
 		}
 	case 22:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:126
 		{
-			yyVAL.node = ast.FloatAdd{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.FloatAdd{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 23:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:128
 		{
-			yyVAL.node = ast.FloatSub{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.FloatSub{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 24:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:130
 		{
-			yyVAL.node = ast.FloatMul{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.FloatMul{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 25:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:132
 		{
-			yyVAL.node = ast.FloatDiv{yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.FloatDiv{yyDollar[1].node, yyDollar[3].node}
 		}
 	case 26:
 		yyDollar = yyS[yypt-6 : yypt+1]
 //line grammar.y:135
 		{
-			yyVAL.node = ast.ValueBinding{yyDollar[2].val.(string), yyDollar[4].node, yyDollar[6].node}
+			yyVAL.node = &ast.ValueBinding{yyDollar[2].val.(string), yyDollar[4].node, yyDollar[6].node}
 		}
 	case 27:
 		yyDollar = yyS[yypt-8 : yypt+1]
 //line grammar.y:138
 		{
-			yyVAL.node = ast.FunctionBinding{yyDollar[3].val.(string), yyDollar[4].val.([]string), yyDollar[6].node, yyDollar[8].node}
+			yyVAL.node = &ast.FunctionBinding{yyDollar[3].val.(string), yyDollar[4].val.([]string), yyDollar[6].node, yyDollar[8].node}
 		}
 	case 28:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:141
 		{
-			yyVAL.node = ast.Application{yyDollar[1].val.(string), yyDollar[2].val.([]ast.Node)}
+			yyVAL.node = &ast.Application{yyDollar[1].val.(string), yyDollar[2].val.([]ast.Node)}
 		}
 	case 29:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line grammar.y:144
 		{
-			yyVAL.node = ast.Tuple{yyDollar[1].val.([]ast.Node)}
+			yyVAL.node = &ast.Tuple{yyDollar[1].val.([]ast.Node)}
 		}
 	case 30:
 		yyDollar = yyS[yypt-8 : yypt+1]
 //line grammar.y:146
 		{
-			yyVAL.node = ast.TupleBinding{yyDollar[3].val.([]string), yyDollar[6].node, yyDollar[8].node}
+			yyVAL.node = &ast.TupleBinding{yyDollar[3].val.([]string), yyDollar[6].node, yyDollar[8].node}
 		}
 	case 31:
 		yyDollar = yyS[yypt-7 : yypt+1]
 //line grammar.y:148
 		{
-			yyVAL.node = ast.ArrayPut{yyDollar[1].node, yyDollar[4].node, yyDollar[7].node}
+			yyVAL.node = &ast.ArrayPut{yyDollar[1].node, yyDollar[4].node, yyDollar[7].node}
 		}
 	case 32:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:150
 		{
-			yyVAL.node = ast.ValueBinding{"", yyDollar[1].node, yyDollar[3].node}
+			yyVAL.node = &ast.ValueBinding{"", yyDollar[1].node, yyDollar[3].node}
 		}
 	case 33:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:153
 		{
-			yyVAL.node = ast.ArrayCreate{yyDollar[2].node, yyDollar[3].node}
+			yyVAL.node = &ast.ArrayCreate{yyDollar[2].node, yyDollar[3].node}
 		}
 	case 34:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:156
 		{
-			yyVAL.node = ast.ReadInt{}
+			yyVAL.node = &ast.ReadInt{}
 		}
 	case 35:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line grammar.y:159
 		{
-			yyVAL.node = ast.ReadFloat{}
+			yyVAL.node = &ast.ReadFloat{}
 		}
 	case 36:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:162
 		{
-			yyVAL.node = ast.PrintInt{yyDollar[2].node}
+			yyVAL.node = &ast.PrintInt{yyDollar[2].node}
 		}
 	case 37:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:165
 		{
-			yyVAL.node = ast.PrintChar{yyDollar[2].node}
+			yyVAL.node = &ast.PrintChar{yyDollar[2].node}
 		}
 	case 38:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:168
 		{
-			yyVAL.node = ast.IntToFloat{yyDollar[2].node}
+			yyVAL.node = &ast.IntToFloat{yyDollar[2].node}
 		}
 	case 39:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:171
 		{
-			yyVAL.node = ast.FloatToInt{yyDollar[2].node}
+			yyVAL.node = &ast.FloatToInt{yyDollar[2].node}
 		}
 	case 40:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:174
 		{
-			yyVAL.node = ast.Sqrt{yyDollar[2].node}
+			yyVAL.node = &ast.Sqrt{yyDollar[2].node}
 		}
 	case 41:
 		yyDollar = yyS[yypt-2 : yypt+1]
