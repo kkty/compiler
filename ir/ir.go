@@ -1,5 +1,7 @@
 package ir
 
+import "github.com/thoas/go-funk"
+
 type Function struct {
 	Name string
 	Args []string
@@ -15,7 +17,7 @@ func (f Function) FreeVariables() []string {
 		bound[arg] = struct{}{}
 	}
 
-	return f.Body.FreeVariables(bound)
+	return funk.UniqString(f.Body.FreeVariables(bound))
 }
 
 type Node interface {
