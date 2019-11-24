@@ -9,6 +9,33 @@ import (
 	"github.com/kkty/mincaml-go/typing"
 )
 
+func findApplications(node ir.Node) []*ir.Application {
+	applications := []*ir.Application{}
+
+	queue := []ir.Node{node}
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		switch node.(type) {
+		case *ir.IfEqual:
+			n := node.(*ir.IfEqual)
+			queue = append(queue, n.True, n.False)
+		case *ir.IfLessThan:
+			n := node.(*ir.IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *ir.ValueBinding:
+			n := node.(*ir.ValueBinding)
+			queue = append(queue, n.Value, n.Next)
+		case *ir.Application:
+			applications = append(applications, node.(*ir.Application))
+		}
+	}
+
+	return applications
+}
+
 // Lift separates function definitions and the main program.
 // Functions (and function applications) are modified so that they do not have free variables.
 func Lift(
@@ -125,64 +152,61 @@ func Lift(
 
 	constructed := construct(root)
 
-	functionToFreeVariables := map[string][]string{}
+	functionToApplications := map[string][]*ir.Application{}
 
 	for _, function := range functions {
-		functionToFreeVariables[function.Name] = function.FreeVariables()
+		functionToApplications[function.Name] = findApplications(function.Body)
 	}
+
+	applicationsInMain := findApplications(constructed)
 
 	nextVarId := 0
 	newVar := func() string {
 		defer func() { nextVarId++ }()
-		return fmt.Sprintf("_l_%d", nextVarId)
+		return fmt.Sprintf("_lifting_%d", nextVarId)
 	}
 
-	// Adds the free variables in functions as arguments.
-	var updateApplications func(node ir.Node)
-	updateApplications = func(node ir.Node) {
-		switch node.(type) {
-		case *ir.IfEqual:
-			n := node.(*ir.IfEqual)
-			updateApplications(n.True)
-			updateApplications(n.False)
-		case *ir.IfLessThan:
-			n := node.(*ir.IfLessThan)
-			updateApplications(n.True)
-			updateApplications(n.False)
-		case *ir.ValueBinding:
-			n := node.(*ir.ValueBinding)
-			updateApplications(n.Value)
-			updateApplications(n.Next)
-		case *ir.Application:
-			n := node.(*ir.Application)
-			for _, freeVariable := range functionToFreeVariables[n.Function] {
-				n.Args = append(n.Args, freeVariable)
+	for {
+		for _, function := range functions {
+			freeVariables := function.FreeVariables()
+
+			// Adds arguments to the applications.
+			functionToApplications["main"] = applicationsInMain
+			for _, applications := range functionToApplications {
+				for _, application := range applications {
+					if application.Function == function.Name {
+						application.Args = append(application.Args, freeVariables...)
+					}
+				}
 			}
+			delete(functionToApplications, "main")
+
+			// Adds arguments to the function.
+			mapping := map[string]string{}
+			for _, freeVariable := range freeVariables {
+				v := newVar()
+				mapping[freeVariable] = v
+				types[v] = types[freeVariable]
+				function.Args = append(function.Args, v)
+				types[function.Name] = typing.FunctionType{
+					append(types[function.Name].(typing.FunctionType).Args, types[v]),
+					types[function.Name].(typing.FunctionType).Return,
+				}
+			}
+
+			function.Body.UpdateNames(mapping)
 		}
-	}
 
-	updateApplications(constructed)
-
-	for _, function := range functions {
-		updateApplications(function.Body)
-	}
-
-	// Adds arguments and removes free variables.
-	for _, function := range functions {
-		mapping := map[string]string{}
-
-		for _, freeVariable := range functionToFreeVariables[function.Name] {
-			v := newVar()
-			mapping[freeVariable] = v
-			types[v] = types[freeVariable]
-			function.Args = append(function.Args, v)
-			types[function.Name] = typing.FunctionType{
-				append(types[function.Name].(typing.FunctionType).Args, types[v]),
-				types[function.Name].(typing.FunctionType).Return,
+		ok := true
+		for _, function := range functions {
+			if len(function.FreeVariables()) > 0 {
+				ok = false
 			}
 		}
 
-		function.Body.UpdateNames(mapping)
+		if ok {
+			break
+		}
 	}
 
 	functionsAsSlice := []*ir.Function{}
