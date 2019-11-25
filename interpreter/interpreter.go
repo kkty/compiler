@@ -22,14 +22,6 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		return nil
 	}
 
-	copyValues := func(original map[string]interface{}) map[string]interface{} {
-		copied := map[string]interface{}{}
-		for k, v := range original {
-			copied[k] = v
-		}
-		return copied
-	}
-
 	var evaluate func(ir.Node, map[string]interface{}) interface{}
 	evaluate = func(node ir.Node, values map[string]interface{}) interface{} {
 		switch node.(type) {
@@ -92,11 +84,11 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		case *ir.Application:
 			n := node.(*ir.Application)
 			f := findFunction(n.Function)
-			values := copyValues(values)
+			updated := map[string]interface{}{}
 			for i, arg := range f.Args {
-				values[arg] = values[n.Args[i]]
+				updated[arg] = values[n.Args[i]]
 			}
-			return evaluate(f.Body, values)
+			return evaluate(f.Body, updated)
 		case *ir.Tuple:
 			n := node.(*ir.Tuple)
 			tuple := []interface{}{}
