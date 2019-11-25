@@ -24,6 +24,7 @@ type Node interface {
 	UpdateNames(mapping map[string]string)
 	FreeVariables(bound map[string]struct{}) []string
 	FloatValues() []float32
+	Clone() Node
 	irNode()
 }
 
@@ -516,3 +517,57 @@ func (n *PrintChar) FloatValues() []float32   { return []float32{} }
 func (n *IntToFloat) FloatValues() []float32  { return []float32{} }
 func (n *FloatToInt) FloatValues() []float32  { return []float32{} }
 func (n *Sqrt) FloatValues() []float32        { return []float32{} }
+
+func (n *Variable) Clone() Node { return &Variable{n.Name} }
+func (n *Unit) Clone() Node     { return &Unit{} }
+func (n *Int) Clone() Node      { return &Int{n.Value} }
+func (n *Bool) Clone() Node     { return &Bool{n.Value} }
+func (n *Float) Clone() Node    { return &Float{n.Value} }
+func (n *Add) Clone() Node      { return &Add{n.Left, n.Right} }
+func (n *Sub) Clone() Node      { return &Sub{n.Left, n.Right} }
+func (n *FloatAdd) Clone() Node { return &FloatAdd{n.Left, n.Right} }
+func (n *FloatSub) Clone() Node { return &FloatSub{n.Left, n.Right} }
+func (n *FloatDiv) Clone() Node { return &FloatDiv{n.Left, n.Right} }
+func (n *FloatMul) Clone() Node { return &FloatMul{n.Left, n.Right} }
+func (n *IfEqual) Clone() Node {
+	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
+}
+func (n *IfLessThan) Clone() Node {
+	return &IfLessThan{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
+}
+func (n *ValueBinding) Clone() Node {
+	return &ValueBinding{n.Name, n.Value.Clone(), n.Next.Clone()}
+}
+func (n *Application) Clone() Node {
+	args := []string{}
+	for _, arg := range n.Args {
+		args = append(args, arg)
+	}
+	return &Application{n.Function, args}
+}
+func (n *Tuple) Clone() Node {
+	elements := []string{}
+	for _, element := range n.Elements {
+		elements = append(elements, element)
+	}
+	return &Tuple{elements}
+}
+func (n *TupleGet) Clone() Node {
+	return &TupleGet{n.Tuple, n.Index}
+}
+func (n *ArrayCreate) Clone() Node {
+	return &ArrayCreate{n.Size, n.Value}
+}
+func (n *ArrayGet) Clone() Node {
+	return &ArrayGet{n.Array, n.Index}
+}
+func (n *ArrayPut) Clone() Node {
+	return &ArrayPut{n.Array, n.Index, n.Value}
+}
+func (n *ReadInt) Clone() Node    { return &ReadInt{} }
+func (n *ReadFloat) Clone() Node  { return &ReadFloat{} }
+func (n *PrintInt) Clone() Node   { return &PrintInt{n.Arg} }
+func (n *PrintChar) Clone() Node  { return &PrintChar{n.Arg} }
+func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
+func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
+func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
