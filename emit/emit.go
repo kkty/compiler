@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	argumentsToPassWithRegisters = 10
+	argumentsToPassWithRegisters = 20
 )
 
 type Register interface {
@@ -246,6 +246,18 @@ func (m registerMapping) add(variable string, register Register) registerMapping
 	}
 
 	return append(m, registerAndVariable{register, variable})
+}
+
+func (m registerMapping) union(mm registerMapping) registerMapping {
+	ret := newRegisterMapping()
+
+	for _, registerAndVariable := range m {
+		if funk.Contains(mm, registerAndVariable) {
+			ret = append(ret, registerAndVariable)
+		}
+	}
+
+	return ret
 }
 
 func (m registerMapping) remove(register Register) registerMapping {
@@ -666,15 +678,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			// There is no need to keep variables alive inside because
 			// all the registers that should be kept alive were stored to the stack.
-			emit(destination, n.True, registerMapping, storedVariables, []string{})
+			registerMapping1, _ := emit(destination, n.True, registerMapping, storedVariables, []string{})
 			fmt.Fprintf(w, "j %s\n", continueLabel)
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			emit(destination, n.False, registerMapping, storedVariables, []string{})
+			registerMapping2, _ := emit(destination, n.False, registerMapping, storedVariables, []string{})
 			fmt.Fprintf(w, "%s:\n", continueLabel)
 			fmt.Fprintf(w, "nop\n")
 
-			return newRegisterMapping(), storedVariables
+			return registerMapping1.union(registerMapping2), storedVariables
 		case *ir.IfLessThan:
 			n := node.(*ir.IfLessThan)
 
@@ -707,15 +719,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "j %s\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			emit(destination, n.True, registerMapping, storedVariables, []string{})
+			registerMapping1, _ := emit(destination, n.True, registerMapping, storedVariables, []string{})
 			fmt.Fprintf(w, "j %s\n", continueLabel)
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			emit(destination, n.False, registerMapping, storedVariables, []string{})
+			registerMapping2, _ := emit(destination, n.False, registerMapping, storedVariables, []string{})
 			fmt.Fprintf(w, "%s:\n", continueLabel)
 			fmt.Fprintf(w, "nop\n")
 
-			return newRegisterMapping(), storedVariables
+			return registerMapping1.union(registerMapping2), storedVariables
 		case *ir.ValueBinding:
 			n := node.(*ir.ValueBinding)
 
@@ -1208,8 +1220,8 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 	}
 
 	fmt.Fprintf(w, "start:\n")
-	fmt.Fprintf(w, "addi $sp, $zero, 1000000\n")
-	fmt.Fprintf(w, "addi $hp, $zero, 2000000\n")
+	fmt.Fprintf(w, "addi $sp, $zero, 10000000\n")
+	fmt.Fprintf(w, "addi $hp, $zero, 20000000\n")
 
 	emit(
 		IntRegister(0),
