@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kkty/mincaml-go/alpha"
+	"github.com/kkty/mincaml-go/ast"
 	"github.com/kkty/mincaml-go/emit"
 	"github.com/kkty/mincaml-go/interpreter"
 	"github.com/kkty/mincaml-go/ir"
@@ -28,7 +28,7 @@ func main() {
 	}
 	program := string(b)
 	astNode := parser.Parse(program)
-	alpha.AlphaTransform(astNode)
+	ast.AlphaTransform(astNode)
 	mirNode := knormalize.KNormalize(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := lifting.Lift(mirNode, types)

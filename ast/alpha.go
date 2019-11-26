@@ -1,14 +1,12 @@
-package alpha
+package ast
 
 import (
 	"fmt"
-
-	"github.com/kkty/mincaml-go/ast"
 )
 
 // AlphaTransform renames all the names in a program so that they are different
 // from each other, without changing the program's behaviour.
-func AlphaTransform(node ast.Node) {
+func AlphaTransform(node Node) {
 	nextId := 0
 
 	getNewName := func(name string) string {
@@ -26,68 +24,68 @@ func AlphaTransform(node ast.Node) {
 		return m
 	}
 
-	var transform func(node ast.Node, mapping map[string]string)
-	transform = func(node ast.Node, mapping map[string]string) {
+	var transform func(node Node, mapping map[string]string)
+	transform = func(node Node, mapping map[string]string) {
 		switch node.(type) {
-		case *ast.Variable:
-			n := node.(*ast.Variable)
+		case *Variable:
+			n := node.(*Variable)
 			n.Name = mapping[n.Name]
-		case *ast.Add:
-			n := node.(*ast.Add)
+		case *Add:
+			n := node.(*Add)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.Sub:
-			n := node.(*ast.Sub)
+		case *Sub:
+			n := node.(*Sub)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.FloatAdd:
-			n := node.(*ast.FloatAdd)
+		case *FloatAdd:
+			n := node.(*FloatAdd)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.FloatSub:
-			n := node.(*ast.FloatSub)
+		case *FloatSub:
+			n := node.(*FloatSub)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.FloatDiv:
-			n := node.(*ast.FloatDiv)
+		case *FloatDiv:
+			n := node.(*FloatDiv)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.FloatMul:
-			n := node.(*ast.FloatMul)
+		case *FloatMul:
+			n := node.(*FloatMul)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.Equal:
-			n := node.(*ast.Equal)
+		case *Equal:
+			n := node.(*Equal)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.LessThan:
-			n := node.(*ast.LessThan)
+		case *LessThan:
+			n := node.(*LessThan)
 			transform(n.Left, mapping)
 			transform(n.Right, mapping)
-		case *ast.Neg:
-			n := node.(*ast.Neg)
+		case *Neg:
+			n := node.(*Neg)
 			transform(n.Inner, mapping)
-		case *ast.FloatNeg:
-			n := node.(*ast.FloatNeg)
+		case *FloatNeg:
+			n := node.(*FloatNeg)
 			transform(n.Inner, mapping)
-		case *ast.Not:
-			n := node.(*ast.Not)
+		case *Not:
+			n := node.(*Not)
 			transform(n.Inner, mapping)
-		case *ast.If:
-			n := node.(*ast.If)
+		case *If:
+			n := node.(*If)
 			transform(n.Condition, mapping)
 			transform(n.True, mapping)
 			transform(n.False, mapping)
-		case *ast.ValueBinding:
-			n := node.(*ast.ValueBinding)
+		case *ValueBinding:
+			n := node.(*ValueBinding)
 			newMapping := copyMapping(mapping)
 			newName := getNewName(n.Name)
 			newMapping[n.Name] = newName
 			n.Name = newName
 			transform(n.Body, mapping)
 			transform(n.Next, newMapping)
-		case *ast.FunctionBinding:
-			n := node.(*ast.FunctionBinding)
+		case *FunctionBinding:
+			n := node.(*FunctionBinding)
 			newMapping := copyMapping(mapping)
 			newMappingForFunction := copyMapping(mapping)
 			newName := getNewName(n.Name)
@@ -102,22 +100,22 @@ func AlphaTransform(node ast.Node) {
 			n.Name, n.Args = newName, newArgNames
 			transform(n.Body, newMappingForFunction)
 			transform(n.Next, newMapping)
-		case *ast.Application:
-			n := node.(*ast.Application)
+		case *Application:
+			n := node.(*Application)
 
 			for i := range n.Args {
 				transform(n.Args[i], mapping)
 			}
 
 			n.Function = mapping[n.Function]
-		case *ast.Tuple:
-			n := node.(*ast.Tuple)
+		case *Tuple:
+			n := node.(*Tuple)
 
 			for i := range n.Elements {
 				transform(n.Elements[i], mapping)
 			}
-		case *ast.TupleBinding:
-			n := node.(*ast.TupleBinding)
+		case *TupleBinding:
+			n := node.(*TupleBinding)
 			newMapping := copyMapping(mapping)
 			newNames := []string{}
 			for _, name := range n.Names {
@@ -128,33 +126,33 @@ func AlphaTransform(node ast.Node) {
 			n.Names = newNames
 			transform(n.Tuple, mapping)
 			transform(n.Next, newMapping)
-		case *ast.ArrayCreate:
-			n := node.(*ast.ArrayCreate)
+		case *ArrayCreate:
+			n := node.(*ArrayCreate)
 			transform(n.Size, mapping)
 			transform(n.Value, mapping)
-		case *ast.ArrayGet:
-			n := node.(*ast.ArrayGet)
+		case *ArrayGet:
+			n := node.(*ArrayGet)
 			transform(n.Array, mapping)
 			transform(n.Index, mapping)
-		case *ast.ArrayPut:
-			n := node.(*ast.ArrayPut)
+		case *ArrayPut:
+			n := node.(*ArrayPut)
 			transform(n.Array, mapping)
 			transform(n.Index, mapping)
 			transform(n.Value, mapping)
-		case *ast.PrintInt:
-			n := node.(*ast.PrintInt)
+		case *PrintInt:
+			n := node.(*PrintInt)
 			transform(n.Inner, mapping)
-		case *ast.PrintChar:
-			n := node.(*ast.PrintChar)
+		case *PrintChar:
+			n := node.(*PrintChar)
 			transform(n.Inner, mapping)
-		case *ast.IntToFloat:
-			n := node.(*ast.IntToFloat)
+		case *IntToFloat:
+			n := node.(*IntToFloat)
 			transform(n.Inner, mapping)
-		case *ast.FloatToInt:
-			n := node.(*ast.FloatToInt)
+		case *FloatToInt:
+			n := node.(*FloatToInt)
 			transform(n.Inner, mapping)
-		case *ast.Sqrt:
-			n := node.(*ast.Sqrt)
+		case *Sqrt:
+			n := node.(*Sqrt)
 			transform(n.Inner, mapping)
 		}
 	}
