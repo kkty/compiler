@@ -33,6 +33,7 @@ func main() {
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := lifting.Lift(mirNode, types)
 	main, functions = ir.Inline(main, functions, *inline, types)
+	main = ir.RemoveRedundantVariables(main, functions)
 	if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
