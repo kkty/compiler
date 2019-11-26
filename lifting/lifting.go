@@ -45,7 +45,7 @@ func Lift(
 	nextTemporaryId := 0
 	temporary := func() string {
 		defer func() { nextTemporaryId++ }()
-		return fmt.Sprintf("_lifting_%d", nextTemporaryId)
+		return fmt.Sprintf("_lifting_tmp_%d", nextTemporaryId)
 	}
 
 	functions := map[string]*ir.Function{}
