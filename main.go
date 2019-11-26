@@ -9,6 +9,7 @@ import (
 	"github.com/kkty/mincaml-go/alpha"
 	"github.com/kkty/mincaml-go/emit"
 	"github.com/kkty/mincaml-go/interpreter"
+	"github.com/kkty/mincaml-go/ir"
 	"github.com/kkty/mincaml-go/knormalize"
 	"github.com/kkty/mincaml-go/lifting"
 	"github.com/kkty/mincaml-go/parser"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	interpret := flag.Bool("i", false, "interprets program instead of generating assembly")
+	inline := flag.Int("inline", 0, "number of inline expansions")
 	flag.Parse()
 
 	b, err := ioutil.ReadFile(flag.Arg(0))
@@ -30,6 +32,7 @@ func main() {
 	mirNode := knormalize.KNormalize(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := lifting.Lift(mirNode, types)
+	main, functions = ir.Inline(main, functions, *inline, types)
 	if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
