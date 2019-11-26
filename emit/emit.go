@@ -796,7 +796,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			// There is no need to keep variables alive inside because
 			// all the registers that should be kept alive were stored to the stack.
-			registerMapping1, _ := emit(
+			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, []string{})
 
 			if !tail {
@@ -805,12 +805,18 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping2, _ := emit(
+			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, []string{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
 				fmt.Fprintf(w, "nop\n")
+			}
+
+			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
+				if storedVariables1[i] == storedVariables2[i] {
+					storedVariables = append(storedVariables, storedVariables1[i])
+				}
 			}
 
 			return registerMapping1.union(registerMapping2), storedVariables
@@ -846,7 +852,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "j %s\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping1, _ := emit(
+			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, []string{})
 
 			if !tail {
@@ -855,12 +861,18 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping2, _ := emit(
+			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, []string{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
 				fmt.Fprintf(w, "nop\n")
+			}
+
+			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
+				if storedVariables1[i] == storedVariables2[i] {
+					storedVariables = append(storedVariables, storedVariables1[i])
+				}
 			}
 
 			return registerMapping1.union(registerMapping2), storedVariables
