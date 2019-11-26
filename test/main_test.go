@@ -8,8 +8,8 @@ import (
 	"github.com/kkty/mincaml-go/ast"
 	"github.com/kkty/mincaml-go/interpreter"
 	"github.com/kkty/mincaml-go/ir"
-	"github.com/kkty/mincaml-go/knormalize"
 	"github.com/kkty/mincaml-go/lifting"
+	"github.com/kkty/mincaml-go/mir"
 	"github.com/kkty/mincaml-go/parser"
 	"github.com/kkty/mincaml-go/typing"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestCompileAndExecution(t *testing.T) {
 		program := string(b)
 		astNode := parser.Parse(program)
 		ast.AlphaTransform(astNode)
-		mirNode := knormalize.KNormalize(astNode)
+		mirNode := mir.Generate(astNode)
 		types := typing.GetTypes(mirNode)
 		main, functions, _ := lifting.Lift(mirNode, types)
 		main, functions = ir.Inline(main, functions, 10, types)
@@ -50,7 +50,7 @@ func TestCompile(t *testing.T) {
 	program := string(b)
 	astNode := parser.Parse(program)
 	ast.AlphaTransform(astNode)
-	mirNode := knormalize.KNormalize(astNode)
+	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := lifting.Lift(mirNode, types)
 	ir.Inline(main, functions, 10, types)

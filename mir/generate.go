@@ -1,11 +1,10 @@
-package knormalize
+package mir
 
 import (
 	"fmt"
 	"log"
 
 	"github.com/kkty/mincaml-go/ast"
-	"github.com/kkty/mincaml-go/mir"
 )
 
 var nextTemporaryId = 0
@@ -15,13 +14,13 @@ func temporary() string {
 	return fmt.Sprintf("_knormalize_%d", nextTemporaryId)
 }
 
-func KNormalize(node ast.Node) mir.Node {
+func Generate(node ast.Node) Node {
 	insertTemporaries := func(
 		nodes []ast.Node,
-		constructor func(names []string) mir.Node,
-	) mir.Node {
+		constructor func(names []string) Node,
+	) Node {
 		names := []string{}
-		bindings := map[string]mir.Node{}
+		bindings := map[string]Node{}
 		for _, node := range nodes {
 			switch node.(type) {
 			case *ast.Variable:
@@ -29,14 +28,14 @@ func KNormalize(node ast.Node) mir.Node {
 			default:
 				t := temporary()
 				names = append(names, t)
-				bindings[t] = KNormalize(node)
+				bindings[t] = Generate(node)
 			}
 		}
 
 		ret := constructor(names)
 		for _, name := range names {
 			if value, ok := bindings[name]; ok {
-				ret = &mir.ValueBinding{name, value, ret}
+				ret = &ValueBinding{name, value, ret}
 			}
 		}
 
@@ -45,73 +44,73 @@ func KNormalize(node ast.Node) mir.Node {
 
 	switch node.(type) {
 	case *ast.Variable:
-		return &mir.Variable{node.(*ast.Variable).Name}
+		return &Variable{node.(*ast.Variable).Name}
 	case *ast.Unit:
-		return &mir.Unit{}
+		return &Unit{}
 	case *ast.Int:
-		return &mir.Int{node.(*ast.Int).Value}
+		return &Int{node.(*ast.Int).Value}
 	case *ast.Bool:
-		return &mir.Bool{node.(*ast.Bool).Value}
+		return &Bool{node.(*ast.Bool).Value}
 	case *ast.Float:
-		return &mir.Float{node.(*ast.Float).Value}
+		return &Float{node.(*ast.Float).Value}
 	case *ast.Add:
 		n := node.(*ast.Add)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.Add{names[0], names[1]} })
+			func(names []string) Node { return &Add{names[0], names[1]} })
 	case *ast.Sub:
 		n := node.(*ast.Sub)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.Sub{names[0], names[1]} })
+			func(names []string) Node { return &Sub{names[0], names[1]} })
 	case *ast.FloatAdd:
 		n := node.(*ast.FloatAdd)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.FloatAdd{names[0], names[1]} })
+			func(names []string) Node { return &FloatAdd{names[0], names[1]} })
 	case *ast.FloatSub:
 		n := node.(*ast.FloatSub)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.FloatSub{names[0], names[1]} })
+			func(names []string) Node { return &FloatSub{names[0], names[1]} })
 	case *ast.FloatDiv:
 		n := node.(*ast.FloatDiv)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.FloatDiv{names[0], names[1]} })
+			func(names []string) Node { return &FloatDiv{names[0], names[1]} })
 	case *ast.FloatMul:
 		n := node.(*ast.FloatMul)
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node { return &mir.FloatMul{names[0], names[1]} })
+			func(names []string) Node { return &FloatMul{names[0], names[1]} })
 	case *ast.Equal:
 		n := node.(*ast.Equal)
 
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node {
-				return &mir.IfEqual{names[0], names[1], &mir.Bool{true}, &mir.Bool{false}}
+			func(names []string) Node {
+				return &IfEqual{names[0], names[1], &Bool{true}, &Bool{false}}
 			})
 	case *ast.LessThan:
 		n := node.(*ast.LessThan)
 
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
-			func(names []string) mir.Node {
-				return &mir.IfLessThan{names[0], names[1], &mir.Bool{true}, &mir.Bool{false}}
+			func(names []string) Node {
+				return &IfLessThan{names[0], names[1], &Bool{true}, &Bool{false}}
 			})
 	case *ast.Neg:
 		n := node.(*ast.Neg)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.Neg{names[0]} })
+			func(names []string) Node { return &Neg{names[0]} })
 	case *ast.FloatNeg:
 		n := node.(*ast.FloatNeg)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node {
+			func(names []string) Node {
 				t := temporary()
-				return &mir.ValueBinding{t, &mir.Float{0},
-					&mir.FloatSub{t, names[0]}}
+				return &ValueBinding{t, &Float{0},
+					&FloatSub{t, names[0]}}
 			})
 	case *ast.Not:
 		n := node.(*ast.Not)
 
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node {
+			func(names []string) Node {
 				t := temporary()
-				return &mir.ValueBinding{t, &mir.Bool{true},
-					&mir.IfEqual{t, names[0], &mir.Bool{false}, &mir.Bool{true}}}
+				return &ValueBinding{t, &Bool{true},
+					&IfEqual{t, names[0], &Bool{false}, &Bool{true}}}
 			})
 	case *ast.If:
 		n := node.(*ast.If)
@@ -120,98 +119,98 @@ func KNormalize(node ast.Node) mir.Node {
 		case *ast.Equal:
 			c := n.Condition.(*ast.Equal)
 			return insertTemporaries([]ast.Node{c.Left, c.Right},
-				func(names []string) mir.Node {
-					return &mir.IfEqual{names[0], names[1], KNormalize(n.True), KNormalize(n.False)}
+				func(names []string) Node {
+					return &IfEqual{names[0], names[1], Generate(n.True), Generate(n.False)}
 				})
 		case *ast.LessThan:
 			c := n.Condition.(*ast.LessThan)
 			return insertTemporaries([]ast.Node{c.Left, c.Right},
-				func(names []string) mir.Node {
-					return &mir.IfLessThan{names[0], names[1], KNormalize(n.True), KNormalize(n.False)}
+				func(names []string) Node {
+					return &IfLessThan{names[0], names[1], Generate(n.True), Generate(n.False)}
 				})
 		case *ast.Not:
 			c := n.Condition.(*ast.Not)
-			return KNormalize(&ast.If{c.Inner, n.False, n.True})
+			return Generate(&ast.If{c.Inner, n.False, n.True})
 		}
 
 		return insertTemporaries([]ast.Node{n.Condition},
-			func(names []string) mir.Node {
+			func(names []string) Node {
 				t := temporary()
-				return &mir.ValueBinding{t, &mir.Bool{true},
-					&mir.IfEqual{t, names[0], KNormalize(n.True), KNormalize(n.False)}}
+				return &ValueBinding{t, &Bool{true},
+					&IfEqual{t, names[0], Generate(n.True), Generate(n.False)}}
 			})
 	case *ast.ValueBinding:
 		n := node.(*ast.ValueBinding)
 
-		return &mir.ValueBinding{n.Name, KNormalize(n.Body), KNormalize(n.Next)}
+		return &ValueBinding{n.Name, Generate(n.Body), Generate(n.Next)}
 	case *ast.FunctionBinding:
 		n := node.(*ast.FunctionBinding)
 
-		return &mir.FunctionBinding{n.Name, n.Args, KNormalize(n.Body), KNormalize(n.Next)}
+		return &FunctionBinding{n.Name, n.Args, Generate(n.Body), Generate(n.Next)}
 	case *ast.Application:
 		n := node.(*ast.Application)
 
 		return insertTemporaries(n.Args,
-			func(names []string) mir.Node { return &mir.Application{n.Function, names} })
+			func(names []string) Node { return &Application{n.Function, names} })
 	case *ast.Tuple:
 		n := node.(*ast.Tuple)
 
 		return insertTemporaries(n.Elements,
-			func(names []string) mir.Node {
-				return &mir.Tuple{names}
+			func(names []string) Node {
+				return &Tuple{names}
 			})
 	case *ast.TupleBinding:
 		n := node.(*ast.TupleBinding)
 
 		return insertTemporaries([]ast.Node{n.Tuple},
-			func(names []string) mir.Node {
-				return &mir.TupleBinding{n.Names, names[0], KNormalize(n.Next)}
+			func(names []string) Node {
+				return &TupleBinding{n.Names, names[0], Generate(n.Next)}
 			})
 	case *ast.ArrayCreate:
 		n := node.(*ast.ArrayCreate)
 
 		return insertTemporaries([]ast.Node{n.Size, n.Value},
-			func(names []string) mir.Node {
-				return &mir.ArrayCreate{names[0], names[1]}
+			func(names []string) Node {
+				return &ArrayCreate{names[0], names[1]}
 			})
 	case *ast.ArrayGet:
 		n := node.(*ast.ArrayGet)
 
 		return insertTemporaries([]ast.Node{n.Array, n.Index},
-			func(names []string) mir.Node {
-				return &mir.ArrayGet{names[0], names[1]}
+			func(names []string) Node {
+				return &ArrayGet{names[0], names[1]}
 			})
 	case *ast.ArrayPut:
 		n := node.(*ast.ArrayPut)
 
 		return insertTemporaries([]ast.Node{n.Array, n.Index, n.Value},
-			func(names []string) mir.Node {
-				return &mir.ArrayPut{names[0], names[1], names[2]}
+			func(names []string) Node {
+				return &ArrayPut{names[0], names[1], names[2]}
 			})
 	case *ast.ReadInt:
-		return &mir.ReadInt{}
+		return &ReadInt{}
 	case *ast.ReadFloat:
-		return &mir.ReadFloat{}
+		return &ReadFloat{}
 	case *ast.PrintInt:
 		n := node.(*ast.PrintInt)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.PrintInt{names[0]} })
+			func(names []string) Node { return &PrintInt{names[0]} })
 	case *ast.PrintChar:
 		n := node.(*ast.PrintChar)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.PrintChar{names[0]} })
+			func(names []string) Node { return &PrintChar{names[0]} })
 	case *ast.IntToFloat:
 		n := node.(*ast.IntToFloat)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.IntToFloat{names[0]} })
+			func(names []string) Node { return &IntToFloat{names[0]} })
 	case *ast.FloatToInt:
 		n := node.(*ast.FloatToInt)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.FloatToInt{names[0]} })
+			func(names []string) Node { return &FloatToInt{names[0]} })
 	case *ast.Sqrt:
 		n := node.(*ast.Sqrt)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) mir.Node { return &mir.Sqrt{names[0]} })
+			func(names []string) Node { return &Sqrt{names[0]} })
 	default:
 		log.Fatal("invalid ast node")
 	}
