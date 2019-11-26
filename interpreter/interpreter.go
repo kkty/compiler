@@ -80,7 +80,9 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		case *ir.ValueBinding:
 			n := node.(*ir.ValueBinding)
 			values[n.Name] = evaluate(n.Value, values)
-			return evaluate(n.Next, values)
+			ret := evaluate(n.Next, values)
+			delete(values, n.Name)
+			return ret
 		case *ir.Application:
 			n := node.(*ir.Application)
 			f := findFunction(n.Function)
