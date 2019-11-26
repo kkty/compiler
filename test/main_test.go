@@ -34,7 +34,8 @@ func TestCompileAndExecution(t *testing.T) {
 		mirNode := mir.Generate(astNode)
 		types := typing.GetTypes(mirNode)
 		main, functions, _ := ir.Generate(mirNode, types)
-		main, functions = ir.Inline(main, functions, 10, types)
+		main, functions = ir.Inline(main, functions, 5, types)
+		main = ir.RemoveRedundantVariables(main, functions)
 		buf := bytes.Buffer{}
 		interpreter.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
 		assert.Equal(t, c.expected, buf.String())
@@ -52,5 +53,6 @@ func TestCompile(t *testing.T) {
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
-	ir.Inline(main, functions, 10, types)
+	main, _ = ir.Inline(main, functions, 5, types)
+	main = ir.RemoveRedundantVariables(main, functions)
 }
