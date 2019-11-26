@@ -7,6 +7,7 @@ import (
 
 	"github.com/kkty/mincaml-go/alpha"
 	"github.com/kkty/mincaml-go/interpreter"
+	"github.com/kkty/mincaml-go/ir"
 	"github.com/kkty/mincaml-go/knormalize"
 	"github.com/kkty/mincaml-go/lifting"
 	"github.com/kkty/mincaml-go/parser"
@@ -14,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIntegration(t *testing.T) {
+func TestCompileAndExecution(t *testing.T) {
 	for _, c := range []struct {
 		file     string
 		input    string
@@ -34,8 +35,23 @@ func TestIntegration(t *testing.T) {
 		mirNode := knormalize.KNormalize(astNode)
 		types := typing.GetTypes(mirNode)
 		main, functions, _ := lifting.Lift(mirNode, types)
+		main, functions = ir.Inline(main, functions, 10, types)
 		buf := bytes.Buffer{}
 		interpreter.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
 		assert.Equal(t, c.expected, buf.String())
 	}
+}
+
+func TestCompile(t *testing.T) {
+	b, err := ioutil.ReadFile("./min-rt.ml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program := string(b)
+	astNode := parser.Parse(program)
+	alpha.AlphaTransform(astNode)
+	mirNode := knormalize.KNormalize(astNode)
+	types := typing.GetTypes(mirNode)
+	main, functions, _ := lifting.Lift(mirNode, types)
+	ir.Inline(main, functions, 10, types)
 }
