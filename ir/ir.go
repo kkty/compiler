@@ -20,6 +20,34 @@ func (f Function) FreeVariables() []string {
 	return funk.UniqString(f.Body.FreeVariables(bound))
 }
 
+func (f *Function) IsRecursive() bool {
+	queue := []Node{f.Body}
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		switch node.(type) {
+		case *IfEqual:
+			n := node.(*IfEqual)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThan:
+			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *ValueBinding:
+			n := node.(*ValueBinding)
+			queue = append(queue, n.Value, n.Next)
+		case *Application:
+			n := node.(*Application)
+			if n.Function == f.Name {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type Node interface {
 	UpdateNames(mapping map[string]string)
 	FreeVariables(bound map[string]struct{}) []string
@@ -172,7 +200,6 @@ func (n *ValueBinding) UpdateNames(mapping map[string]string) {
 }
 
 func (n *Application) UpdateNames(mapping map[string]string) {
-	n.Function = replaceIfFound(n.Function, mapping)
 	for i := range n.Args {
 		n.Args[i] = replaceIfFound(n.Args[i], mapping)
 	}
