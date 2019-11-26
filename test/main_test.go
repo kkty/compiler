@@ -8,7 +8,6 @@ import (
 	"github.com/kkty/mincaml-go/ast"
 	"github.com/kkty/mincaml-go/interpreter"
 	"github.com/kkty/mincaml-go/ir"
-	"github.com/kkty/mincaml-go/lifting"
 	"github.com/kkty/mincaml-go/mir"
 	"github.com/kkty/mincaml-go/parser"
 	"github.com/kkty/mincaml-go/typing"
@@ -34,7 +33,7 @@ func TestCompileAndExecution(t *testing.T) {
 		ast.AlphaTransform(astNode)
 		mirNode := mir.Generate(astNode)
 		types := typing.GetTypes(mirNode)
-		main, functions, _ := lifting.Lift(mirNode, types)
+		main, functions, _ := ir.Generate(mirNode, types)
 		main, functions = ir.Inline(main, functions, 10, types)
 		buf := bytes.Buffer{}
 		interpreter.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
@@ -52,6 +51,6 @@ func TestCompile(t *testing.T) {
 	ast.AlphaTransform(astNode)
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
-	main, functions, _ := lifting.Lift(mirNode, types)
+	main, functions, _ := ir.Generate(mirNode, types)
 	ir.Inline(main, functions, 10, types)
 }

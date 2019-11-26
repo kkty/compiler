@@ -10,7 +10,7 @@ import (
 	"github.com/kkty/mincaml-go/emit"
 	"github.com/kkty/mincaml-go/interpreter"
 	"github.com/kkty/mincaml-go/ir"
-	"github.com/kkty/mincaml-go/lifting"
+	"github.com/kkty/mincaml-go/mir"
 	"github.com/kkty/mincaml-go/parser"
 	"github.com/kkty/mincaml-go/typing"
 )
@@ -30,7 +30,7 @@ func main() {
 	ast.AlphaTransform(astNode)
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
-	main, functions, _ := lifting.Lift(mirNode, types)
+	main, functions, _ := ir.Generate(mirNode, types)
 	main, functions = ir.Inline(main, functions, *inline, types)
 	main = ir.RemoveRedundantVariables(main, functions)
 	if *interpret {
