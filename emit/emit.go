@@ -548,6 +548,26 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "add %s, %s, %s\n", destination, registers[0], registers[1])
 
 			return registerMapping, storedVariables
+		case *ir.AddImmediate:
+			n := node.(*ir.AddImmediate)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Left},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			fmt.Fprintf(w, "addi %s, %s, %d\n", destination, registers[0], n.Right)
+
+			return registerMapping, storedVariables
 		case *ir.Sub:
 			n := node.(*ir.Sub)
 
@@ -566,6 +586,26 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, registers[0], registers[1])
+
+			return registerMapping, storedVariables
+		case *ir.SubFromZero:
+			n := node.(*ir.SubFromZero)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Inner},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, intZeroRegister, registers[0])
 
 			return registerMapping, storedVariables
 		case *ir.FloatAdd:
@@ -606,6 +646,26 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, registers[0], registers[1])
+
+			return registerMapping, storedVariables
+		case *ir.FloatSubFromZero:
+			n := node.(*ir.FloatSubFromZero)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Inner},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, floatZeroRegister, registers[0])
 
 			return registerMapping, storedVariables
 		case *ir.FloatDiv:

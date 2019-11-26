@@ -39,15 +39,24 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		case *ir.Add:
 			n := node.(*ir.Add)
 			return values[n.Left].(int32) + values[n.Right].(int32)
+		case *ir.AddImmediate:
+			n := node.(*ir.AddImmediate)
+			return values[n.Left].(int32) + n.Right
 		case *ir.Sub:
 			n := node.(*ir.Sub)
 			return values[n.Left].(int32) - values[n.Right].(int32)
+		case *ir.SubFromZero:
+			n := node.(*ir.SubFromZero)
+			return -values[n.Inner].(int32)
 		case *ir.FloatAdd:
 			n := node.(*ir.FloatAdd)
 			return values[n.Left].(float32) + values[n.Right].(float32)
 		case *ir.FloatSub:
 			n := node.(*ir.FloatSub)
 			return values[n.Left].(float32) - values[n.Right].(float32)
+		case *ir.FloatSubFromZero:
+			n := node.(*ir.FloatSubFromZero)
+			return -values[n.Inner].(float32)
 		case *ir.FloatDiv:
 			n := node.(*ir.FloatDiv)
 			return values[n.Left].(float32) / values[n.Right].(float32)

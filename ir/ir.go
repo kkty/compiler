@@ -63,9 +63,17 @@ type Bool struct{ Value bool }
 type Float struct{ Value float32 }
 
 type Add struct{ Left, Right string }
+
+type AddImmediate struct {
+	Left  string
+	Right int32
+}
+
 type Sub struct{ Left, Right string }
+type SubFromZero struct{ Inner string }
 type FloatAdd struct{ Left, Right string }
 type FloatSub struct{ Left, Right string }
+type FloatSubFromZero struct{ Inner string }
 type FloatDiv struct{ Left, Right string }
 type FloatMul struct{ Left, Right string }
 
@@ -107,33 +115,36 @@ type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 
-func (n *Variable) irNode()     {}
-func (n *Unit) irNode()         {}
-func (n *Int) irNode()          {}
-func (n *Bool) irNode()         {}
-func (n *Float) irNode()        {}
-func (n *Add) irNode()          {}
-func (n *Sub) irNode()          {}
-func (n *FloatAdd) irNode()     {}
-func (n *FloatSub) irNode()     {}
-func (n *FloatDiv) irNode()     {}
-func (n *FloatMul) irNode()     {}
-func (n *IfEqual) irNode()      {}
-func (n *IfLessThan) irNode()   {}
-func (n *ValueBinding) irNode() {}
-func (n *Application) irNode()  {}
-func (n *Tuple) irNode()        {}
-func (n *ArrayCreate) irNode()  {}
-func (n *ArrayGet) irNode()     {}
-func (n *ArrayPut) irNode()     {}
-func (n *ReadInt) irNode()      {}
-func (n *ReadFloat) irNode()    {}
-func (n *PrintInt) irNode()     {}
-func (n *PrintChar) irNode()    {}
-func (n *IntToFloat) irNode()   {}
-func (n *FloatToInt) irNode()   {}
-func (n *Sqrt) irNode()         {}
-func (n *TupleGet) irNode()     {}
+func (n *Variable) irNode()         {}
+func (n *Unit) irNode()             {}
+func (n *Int) irNode()              {}
+func (n *Bool) irNode()             {}
+func (n *Float) irNode()            {}
+func (n *Add) irNode()              {}
+func (n *AddImmediate) irNode()     {}
+func (n *Sub) irNode()              {}
+func (n *SubFromZero) irNode()      {}
+func (n *FloatAdd) irNode()         {}
+func (n *FloatSub) irNode()         {}
+func (n *FloatSubFromZero) irNode() {}
+func (n *FloatDiv) irNode()         {}
+func (n *FloatMul) irNode()         {}
+func (n *IfEqual) irNode()          {}
+func (n *IfLessThan) irNode()       {}
+func (n *ValueBinding) irNode()     {}
+func (n *Application) irNode()      {}
+func (n *Tuple) irNode()            {}
+func (n *ArrayCreate) irNode()      {}
+func (n *ArrayGet) irNode()         {}
+func (n *ArrayPut) irNode()         {}
+func (n *ReadInt) irNode()          {}
+func (n *ReadFloat) irNode()        {}
+func (n *PrintInt) irNode()         {}
+func (n *PrintChar) irNode()        {}
+func (n *IntToFloat) irNode()       {}
+func (n *FloatToInt) irNode()       {}
+func (n *Sqrt) irNode()             {}
+func (n *TupleGet) irNode()         {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -156,19 +167,34 @@ func (n *Add) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
+
+func (n *AddImmediate) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+}
+
 func (n *Sub) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
+}
+
+func (n *SubFromZero) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
 }
 
 func (n *FloatAdd) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
+
 func (n *FloatSub) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
+
+func (n *FloatSubFromZero) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
 func (n *FloatDiv) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
@@ -298,6 +324,14 @@ func (n *Add) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
+func (n *AddImmediate) FreeVariables(bound map[string]struct{}) []string {
+	if _, ok := bound[n.Left]; !ok {
+		return []string{n.Left}
+	}
+
+	return []string{}
+}
+
 func (n *Sub) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
@@ -307,6 +341,14 @@ func (n *Sub) FreeVariables(bound map[string]struct{}) []string {
 		ret = append(ret, n.Right)
 	}
 	return ret
+}
+
+func (n *SubFromZero) FreeVariables(bound map[string]struct{}) []string {
+	if _, ok := bound[n.Inner]; !ok {
+		return []string{n.Inner}
+	}
+
+	return []string{}
 }
 
 func (n *FloatAdd) FreeVariables(bound map[string]struct{}) []string {
@@ -329,6 +371,14 @@ func (n *FloatSub) FreeVariables(bound map[string]struct{}) []string {
 		ret = append(ret, n.Right)
 	}
 	return ret
+}
+
+func (n *FloatSubFromZero) FreeVariables(bound map[string]struct{}) []string {
+	if _, ok := bound[n.Inner]; !ok {
+		return []string{n.Inner}
+	}
+
+	return []string{}
 }
 
 func (n *FloatDiv) FreeVariables(bound map[string]struct{}) []string {
@@ -511,26 +561,33 @@ func (n *TupleGet) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
-func (n *Variable) FloatValues() []float32 { return []float32{} }
-func (n *Unit) FloatValues() []float32     { return []float32{} }
-func (n *Int) FloatValues() []float32      { return []float32{} }
-func (n *Bool) FloatValues() []float32     { return []float32{} }
-func (n *Float) FloatValues() []float32    { return []float32{n.Value} }
-func (n *Add) FloatValues() []float32      { return []float32{} }
-func (n *Sub) FloatValues() []float32      { return []float32{} }
-func (n *FloatAdd) FloatValues() []float32 { return []float32{} }
-func (n *FloatSub) FloatValues() []float32 { return []float32{} }
-func (n *FloatDiv) FloatValues() []float32 { return []float32{} }
-func (n *FloatMul) FloatValues() []float32 { return []float32{} }
+func (n *Variable) FloatValues() []float32         { return []float32{} }
+func (n *Unit) FloatValues() []float32             { return []float32{} }
+func (n *Int) FloatValues() []float32              { return []float32{} }
+func (n *Bool) FloatValues() []float32             { return []float32{} }
+func (n *Float) FloatValues() []float32            { return []float32{n.Value} }
+func (n *Add) FloatValues() []float32              { return []float32{} }
+func (n *AddImmediate) FloatValues() []float32     { return []float32{} }
+func (n *Sub) FloatValues() []float32              { return []float32{} }
+func (n *SubFromZero) FloatValues() []float32      { return []float32{} }
+func (n *FloatAdd) FloatValues() []float32         { return []float32{} }
+func (n *FloatSub) FloatValues() []float32         { return []float32{} }
+func (n *FloatSubFromZero) FloatValues() []float32 { return []float32{} }
+func (n *FloatDiv) FloatValues() []float32         { return []float32{} }
+func (n *FloatMul) FloatValues() []float32         { return []float32{} }
+
 func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
+
 func (n *IfLessThan) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
+
 func (n *ValueBinding) FloatValues() []float32 {
 	return append(n.Value.FloatValues(), n.Next.FloatValues()...)
 }
+
 func (n *Application) FloatValues() []float32 { return []float32{} }
 func (n *Tuple) FloatValues() []float32       { return []float32{} }
 func (n *TupleGet) FloatValues() []float32    { return []float32{} }
@@ -545,26 +602,33 @@ func (n *IntToFloat) FloatValues() []float32  { return []float32{} }
 func (n *FloatToInt) FloatValues() []float32  { return []float32{} }
 func (n *Sqrt) FloatValues() []float32        { return []float32{} }
 
-func (n *Variable) Clone() Node { return &Variable{n.Name} }
-func (n *Unit) Clone() Node     { return &Unit{} }
-func (n *Int) Clone() Node      { return &Int{n.Value} }
-func (n *Bool) Clone() Node     { return &Bool{n.Value} }
-func (n *Float) Clone() Node    { return &Float{n.Value} }
-func (n *Add) Clone() Node      { return &Add{n.Left, n.Right} }
-func (n *Sub) Clone() Node      { return &Sub{n.Left, n.Right} }
-func (n *FloatAdd) Clone() Node { return &FloatAdd{n.Left, n.Right} }
-func (n *FloatSub) Clone() Node { return &FloatSub{n.Left, n.Right} }
-func (n *FloatDiv) Clone() Node { return &FloatDiv{n.Left, n.Right} }
-func (n *FloatMul) Clone() Node { return &FloatMul{n.Left, n.Right} }
+func (n *Variable) Clone() Node         { return &Variable{n.Name} }
+func (n *Unit) Clone() Node             { return &Unit{} }
+func (n *Int) Clone() Node              { return &Int{n.Value} }
+func (n *Bool) Clone() Node             { return &Bool{n.Value} }
+func (n *Float) Clone() Node            { return &Float{n.Value} }
+func (n *Add) Clone() Node              { return &Add{n.Left, n.Right} }
+func (n *AddImmediate) Clone() Node     { return &AddImmediate{n.Left, n.Right} }
+func (n *Sub) Clone() Node              { return &Sub{n.Left, n.Right} }
+func (n *SubFromZero) Clone() Node      { return &SubFromZero{n.Inner} }
+func (n *FloatAdd) Clone() Node         { return &FloatAdd{n.Left, n.Right} }
+func (n *FloatSub) Clone() Node         { return &FloatSub{n.Left, n.Right} }
+func (n *FloatSubFromZero) Clone() Node { return &FloatSubFromZero{n.Inner} }
+func (n *FloatDiv) Clone() Node         { return &FloatDiv{n.Left, n.Right} }
+func (n *FloatMul) Clone() Node         { return &FloatMul{n.Left, n.Right} }
+
 func (n *IfEqual) Clone() Node {
 	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
 }
+
 func (n *IfLessThan) Clone() Node {
 	return &IfLessThan{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
 }
+
 func (n *ValueBinding) Clone() Node {
 	return &ValueBinding{n.Name, n.Value.Clone(), n.Next.Clone()}
 }
+
 func (n *Application) Clone() Node {
 	args := []string{}
 	for _, arg := range n.Args {
@@ -572,6 +636,7 @@ func (n *Application) Clone() Node {
 	}
 	return &Application{n.Function, args}
 }
+
 func (n *Tuple) Clone() Node {
 	elements := []string{}
 	for _, element := range n.Elements {
@@ -579,18 +644,23 @@ func (n *Tuple) Clone() Node {
 	}
 	return &Tuple{elements}
 }
+
 func (n *TupleGet) Clone() Node {
 	return &TupleGet{n.Tuple, n.Index}
 }
+
 func (n *ArrayCreate) Clone() Node {
 	return &ArrayCreate{n.Size, n.Value}
 }
+
 func (n *ArrayGet) Clone() Node {
 	return &ArrayGet{n.Array, n.Index}
 }
+
 func (n *ArrayPut) Clone() Node {
 	return &ArrayPut{n.Array, n.Index, n.Value}
 }
+
 func (n *ReadInt) Clone() Node    { return &ReadInt{} }
 func (n *ReadFloat) Clone() Node  { return &ReadFloat{} }
 func (n *PrintInt) Clone() Node   { return &PrintInt{n.Arg} }

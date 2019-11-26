@@ -41,12 +41,6 @@ func Generate(
 	root mir.Node,
 	types map[string]typing.Type,
 ) (Node, []*Function, map[string]typing.Type) {
-	nextTemporaryId := 0
-	temporary := func() string {
-		defer func() { nextTemporaryId++ }()
-		return fmt.Sprintf("_lifting_tmp_%d", nextTemporaryId)
-	}
-
 	functions := map[string]*Function{}
 
 	// Constructs Node from mir.Node.
@@ -132,17 +126,12 @@ func Generate(
 			return &Sqrt{node.(*mir.Sqrt).Arg}
 		case *mir.Neg:
 			n := node.(*mir.Neg)
-			zero := temporary()
 
 			if types[n.Arg] == typing.IntType {
-				types[zero] = typing.IntType
-				return &ValueBinding{zero, &Int{0},
-					&Sub{zero, n.Arg}}
+				return &SubFromZero{n.Arg}
 			}
 
-			types[zero] = typing.FloatType
-			return &ValueBinding{zero, &Float{0},
-				&FloatSub{zero, n.Arg}}
+			return &FloatSubFromZero{n.Arg}
 		}
 
 		log.Fatal("invalid mir node")
