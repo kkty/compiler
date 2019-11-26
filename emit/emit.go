@@ -437,6 +437,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 	var emit func(
 		destination Register,
+		tail bool,
 		node ir.Node,
 		registerMapping registerMapping,
 		storedVariables []string,
@@ -445,6 +446,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 	emit = func(
 		destination Register,
+		tail bool,
 		node ir.Node,
 		registerMapping registerMapping,
 		storedVariables []string,
@@ -476,8 +478,16 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 					destination, registers[0], intZeroRegister)
 			}
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.Unit:
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.Int:
 			n := node.(*ir.Int)
@@ -491,6 +501,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "addi %s, %s, %d\n",
 				destination, intZeroRegister, n.Value)
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.Bool:
@@ -511,6 +525,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 					destination, intZeroRegister.String(), 0)
 			}
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.Float:
 			n := node.(*ir.Float)
@@ -526,6 +544,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				intTemporaryRegisters[0], intZeroRegister, floatValueToLabel[n.Value])
 
 			fmt.Fprintf(w, "lwc1 %s, 0(%s)\n", destination, intTemporaryRegisters[0])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.Add:
@@ -547,6 +569,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "add %s, %s, %s\n", destination, registers[0], registers[1])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.AddImmediate:
 			n := node.(*ir.AddImmediate)
@@ -566,6 +592,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "addi %s, %s, %d\n", destination, registers[0], n.Right)
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.Sub:
@@ -587,6 +617,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, registers[0], registers[1])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.SubFromZero:
 			n := node.(*ir.SubFromZero)
@@ -606,6 +640,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, intZeroRegister, registers[0])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.FloatAdd:
@@ -627,6 +665,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "add.s %s, %s, %s\n", destination, registers[0], registers[1])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.FloatSub:
 			n := node.(*ir.FloatSub)
@@ -646,6 +688,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, registers[0], registers[1])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.FloatSubFromZero:
@@ -667,6 +713,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, floatZeroRegister, registers[0])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.FloatDiv:
 			n := node.(*ir.FloatDiv)
@@ -687,6 +737,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "div.s %s, %s, %s\n", destination, registers[0], registers[1])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.FloatMul:
 			n := node.(*ir.FloatMul)
@@ -706,6 +760,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "mul.s %s, %s, %s\n", destination, registers[0], registers[1])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.IfEqual:
@@ -738,13 +796,22 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			// There is no need to keep variables alive inside because
 			// all the registers that should be kept alive were stored to the stack.
-			registerMapping1, _ := emit(destination, n.True, registerMapping, storedVariables, []string{})
-			fmt.Fprintf(w, "j %s\n", continueLabel)
+			registerMapping1, _ := emit(
+				destination, tail, n.True, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "j %s\n", continueLabel)
+			}
+
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping2, _ := emit(destination, n.False, registerMapping, storedVariables, []string{})
-			fmt.Fprintf(w, "%s:\n", continueLabel)
-			fmt.Fprintf(w, "nop\n")
+			registerMapping2, _ := emit(
+				destination, tail, n.False, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "%s:\n", continueLabel)
+				fmt.Fprintf(w, "nop\n")
+			}
 
 			return registerMapping1.union(registerMapping2), storedVariables
 		case *ir.IfLessThan:
@@ -779,13 +846,22 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "j %s\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping1, _ := emit(destination, n.True, registerMapping, storedVariables, []string{})
-			fmt.Fprintf(w, "j %s\n", continueLabel)
+			registerMapping1, _ := emit(
+				destination, tail, n.True, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "j %s\n", continueLabel)
+			}
+
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "nop\n")
-			registerMapping2, _ := emit(destination, n.False, registerMapping, storedVariables, []string{})
-			fmt.Fprintf(w, "%s:\n", continueLabel)
-			fmt.Fprintf(w, "nop\n")
+			registerMapping2, _ := emit(
+				destination, tail, n.False, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "%s:\n", continueLabel)
+				fmt.Fprintf(w, "nop\n")
+			}
 
 			return registerMapping1.union(registerMapping2), storedVariables
 		case *ir.ValueBinding:
@@ -808,16 +884,11 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			registerMapping, storedVariables = emit(
-				register,
-				n.Value,
-				registerMapping,
-				storedVariables,
-				variablesToKeepExtended,
-			)
+				register, false, n.Value, registerMapping, storedVariables, variablesToKeepExtended)
 
 			registerMapping = registerMapping.add(n.Name, register)
 
-			return emit(destination, n.Next, registerMapping, storedVariables, variablesToKeep)
+			return emit(destination, tail, n.Next, registerMapping, storedVariables, variablesToKeep)
 		case *ir.Application:
 			n := node.(*ir.Application)
 
@@ -923,26 +994,37 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				}
 			}
 
-			fmt.Fprintf(w, "sw $ra, %d(%s)\n",
-				len(storedVariables)*4, stackPointer)
+			if tail {
+				for i := range argumentsToPassWithStack {
+					fmt.Fprintf(w, "lw %s, %d(%s)\n",
+						intTemporaryRegisters[0], (len(storedVariables)+1)*4+i*4, stackPointer)
+					fmt.Fprintf(w, "sw %s, %d(%s)\n",
+						intTemporaryRegisters[0], i*4, stackPointer)
+				}
 
-			fmt.Fprintf(w, "addi %s, %s, %d\n",
-				stackPointer, stackPointer, (len(storedVariables)+1)*4)
-
-			fmt.Fprintf(w, "jal %s\n", n.Function)
-
-			fmt.Fprintf(w, "addi %s, %s, %d\n",
-				stackPointer, stackPointer, -(len(storedVariables)+1)*4)
-
-			fmt.Fprintf(w, "lw $ra, %d(%s)\n",
-				len(storedVariables)*4, stackPointer)
-
-			if types[n.Function].(typing.FunctionType).Return == typing.FloatType {
-				fmt.Fprintf(w, "add.s %s, %s, %s\n",
-					destination, FloatRegister(0), floatZeroRegister)
+				fmt.Fprintf(w, "j %s\n", n.Function)
 			} else {
-				fmt.Fprintf(w, "add %s, %s, %s\n",
-					destination, IntRegister(0), intZeroRegister)
+				fmt.Fprintf(w, "sw $ra, %d(%s)\n",
+					len(storedVariables)*4, stackPointer)
+
+				fmt.Fprintf(w, "addi %s, %s, %d\n",
+					stackPointer, stackPointer, (len(storedVariables)+1)*4)
+
+				fmt.Fprintf(w, "jal %s\n", n.Function)
+
+				fmt.Fprintf(w, "addi %s, %s, %d\n",
+					stackPointer, stackPointer, -(len(storedVariables)+1)*4)
+
+				fmt.Fprintf(w, "lw $ra, %d(%s)\n",
+					len(storedVariables)*4, stackPointer)
+
+				if types[n.Function].(typing.FunctionType).Return == typing.FloatType {
+					fmt.Fprintf(w, "add.s %s, %s, %s\n",
+						destination, FloatRegister(0), floatZeroRegister)
+				} else {
+					fmt.Fprintf(w, "add %s, %s, %s\n",
+						destination, IntRegister(0), intZeroRegister)
+				}
 			}
 
 			return newRegisterMapping(), storedVariables
@@ -976,6 +1058,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "add %s, %s, %s\n", destination, heapPointer, intZeroRegister)
 			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, len(n.Elements)*4)
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.TupleGet:
 			n := node.(*ir.TupleGet)
@@ -1001,6 +1087,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			default:
 				fmt.Fprintf(w, "lw %s, %d(%s)\n",
 					destination, n.Index*4, registers[0])
+			}
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1060,6 +1150,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "nop\n")
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.ArrayGet:
 			n := node.(*ir.ArrayGet)
@@ -1094,6 +1188,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 					destination, intTemporaryRegisters[0])
 			}
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.ArrayPut:
 			n := node.(*ir.ArrayPut)
@@ -1121,6 +1219,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 					registers[2], intTemporaryRegisters[0])
 			}
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.ReadInt:
 			storedVariables = spillVariableOnRegister(
@@ -1132,6 +1234,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "read_i %s\n", destination.String())
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.ReadFloat:
 			storedVariables = spillVariableOnRegister(
@@ -1142,6 +1248,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "read_f %s\n", destination.String())
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.PrintInt:
@@ -1156,6 +1266,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "out_i %s\n", registers[0].String())
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.PrintChar:
 			n := node.(*ir.PrintChar)
@@ -1168,6 +1282,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "out_c %s\n", registers[0].String())
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		case *ir.IntToFloat:
@@ -1189,6 +1307,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "itof %s, %s\n", destination, registers[0])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.FloatToInt:
 			n := node.(*ir.FloatToInt)
@@ -1209,6 +1331,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "ftoi %s, %s\n", destination, registers[0])
 
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
 			return registerMapping, storedVariables
 		case *ir.Sqrt:
 			n := node.(*ir.Sqrt)
@@ -1228,6 +1354,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			fmt.Fprintf(w, "sqrt %s, %s\n", destination, registers[0])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
 
 			return registerMapping, storedVariables
 		}
@@ -1268,15 +1398,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			destination = IntRegister(0)
 		}
 
-		emit(
-			destination,
-			function.Body,
-			registerMapping,
-			storedVariables,
-			[]string{},
-		)
-
-		fmt.Fprintf(w, "jr $ra\n")
+		emit(destination, true, function.Body, registerMapping, storedVariables, []string{})
 	}
 
 	fmt.Fprintf(w, "start:\n")
@@ -1285,6 +1407,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 	emit(
 		IntRegister(0),
+		false,
 		body,
 		newRegisterMapping(),
 		[]string{},
