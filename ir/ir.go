@@ -598,3 +598,41 @@ func (n *PrintChar) Clone() Node  { return &PrintChar{n.Arg} }
 func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
 func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
+
+// HasSideEffects returns true when the node has side effects.
+func HasSideEffects(node Node) bool {
+	queue := []Node{node}
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		switch node.(type) {
+		case *IfEqual:
+			n := node.(*IfEqual)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThan:
+			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *ValueBinding:
+			n := node.(*ValueBinding)
+			queue = append(queue, n.Value, n.Next)
+		case *Application:
+			return true
+		case *ArrayCreate:
+			return true
+		case *ArrayPut:
+			return true
+		case *ReadInt:
+			return true
+		case *ReadFloat:
+			return true
+		case *PrintInt:
+			return true
+		case *PrintChar:
+			return true
+		}
+	}
+
+	return false
+}
