@@ -165,11 +165,12 @@ func Generate(
 		return fmt.Sprintf("_lifting_%d", nextVarId)
 	}
 
+	appended := map[string]struct{}{}
+
 	for {
 		for _, function := range functions {
 			freeVariables := function.FreeVariables()
 
-			// Adds arguments to the applications.
 			functionToApplications["main"] = applicationsInMain
 			for _, applications := range functionToApplications {
 				for _, application := range applications {
@@ -180,21 +181,16 @@ func Generate(
 			}
 			delete(functionToApplications, "main")
 
-			// Adds arguments to the function.
-			mapping := map[string]string{}
 			for _, freeVariable := range freeVariables {
-				v := newVar()
-				mapping[freeVariable] = v
-				types[v] = types[freeVariable]
-				function.Args = append(function.Args, v)
+				appended[freeVariable] = struct{}{}
+				function.Args = append(function.Args, freeVariable)
 				types[function.Name] = typing.FunctionType{
-					append(types[function.Name].(typing.FunctionType).Args, types[v]),
-					types[function.Name].(typing.FunctionType).Return,
-				}
+					append(types[function.Name].(typing.FunctionType).Args, types[freeVariable]),
+					types[function.Name].(typing.FunctionType).Return}
 			}
-
-			function.Body.UpdateNames(mapping)
 		}
+
+		// Ends if all the free variables are removed from every function.
 
 		ok := true
 		for _, function := range functions {
@@ -204,6 +200,19 @@ func Generate(
 		}
 
 		if ok {
+			// Updates functions so that they do not share the same names.
+			for _, function := range functions {
+				mapping := map[string]string{}
+				for i, arg := range function.Args {
+					if _, shouldReplace := appended[arg]; shouldReplace {
+						v := newVar()
+						mapping[arg] = v
+						types[v] = types[arg]
+						function.Args[i] = v
+					}
+				}
+				function.Body.UpdateNames(mapping)
+			}
 			break
 		}
 	}
