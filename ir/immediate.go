@@ -348,7 +348,7 @@ func Immediate(main Node, functions []*Function) Node {
 
 		functions = append(functions, &Function{"main", []string{}, main})
 		for _, f := range functions {
-			for _, application := range findApplications(f.Body) {
+			for _, application := range f.Body.Applications() {
 				if application.Function == function.Name {
 					newArgs := []string{}
 					for i, arg := range application.Args {

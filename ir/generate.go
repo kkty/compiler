@@ -8,39 +8,6 @@ import (
 	"github.com/kkty/mincaml-go/typing"
 )
 
-func findApplications(node Node) []*Application {
-	applications := []*Application{}
-
-	queue := []Node{node}
-
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-
-		switch node.(type) {
-		case *IfEqual:
-			n := node.(*IfEqual)
-			queue = append(queue, n.True, n.False)
-		case *IfEqualZero:
-			n := node.(*IfEqualZero)
-			queue = append(queue, n.True, n.False)
-		case *IfLessThan:
-			n := node.(*IfLessThan)
-			queue = append(queue, n.True, n.False)
-		case *IfLessThanZero:
-			n := node.(*IfLessThanZero)
-			queue = append(queue, n.True, n.False)
-		case *ValueBinding:
-			n := node.(*ValueBinding)
-			queue = append(queue, n.Value, n.Next)
-		case *Application:
-			applications = append(applications, node.(*Application))
-		}
-	}
-
-	return applications
-}
-
 // Generate separates function definitions and the main program.
 // Functions (and function applications) are modified so that they do not have free variables.
 func Generate(
@@ -149,10 +116,10 @@ func Generate(
 	functionToApplications := map[string][]*Application{}
 
 	for _, function := range functions {
-		functionToApplications[function.Name] = findApplications(function.Body)
+		functionToApplications[function.Name] = function.Body.Applications()
 	}
 
-	applicationsInMain := findApplications(constructed)
+	applicationsInMain := constructed.Applications()
 
 	nextVarId := 0
 	newVar := func() string {

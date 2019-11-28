@@ -60,6 +60,7 @@ type Node interface {
 	FloatValues() []float32
 	Clone() Node
 	HasSideEffects() bool
+	Applications() []*Application
 	irNode()
 }
 
@@ -790,3 +791,55 @@ func (n *PrintChar) HasSideEffects() bool   { return true }
 func (n *IntToFloat) HasSideEffects() bool  { return false }
 func (n *FloatToInt) HasSideEffects() bool  { return false }
 func (n *Sqrt) HasSideEffects() bool        { return false }
+
+func (n *Variable) Applications() []*Application         { return []*Application{} }
+func (n *Unit) Applications() []*Application             { return []*Application{} }
+func (n *Int) Applications() []*Application              { return []*Application{} }
+func (n *Bool) Applications() []*Application             { return []*Application{} }
+func (n *Float) Applications() []*Application            { return []*Application{} }
+func (n *Add) Applications() []*Application              { return []*Application{} }
+func (n *AddImmediate) Applications() []*Application     { return []*Application{} }
+func (n *Sub) Applications() []*Application              { return []*Application{} }
+func (n *SubFromZero) Applications() []*Application      { return []*Application{} }
+func (n *FloatAdd) Applications() []*Application         { return []*Application{} }
+func (n *FloatSub) Applications() []*Application         { return []*Application{} }
+func (n *FloatSubFromZero) Applications() []*Application { return []*Application{} }
+func (n *FloatDiv) Applications() []*Application         { return []*Application{} }
+func (n *FloatMul) Applications() []*Application         { return []*Application{} }
+
+func (n *IfEqual) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
+func (n *IfEqualZero) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
+func (n *IfLessThan) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
+func (n *IfLessThanZero) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
+func (n *ValueBinding) Applications() []*Application {
+	return append(n.Value.Applications(), n.Next.Applications()...)
+}
+
+func (n *Application) Applications() []*Application {
+	return []*Application{n}
+}
+
+func (n *Tuple) Applications() []*Application       { return []*Application{} }
+func (n *TupleGet) Applications() []*Application    { return []*Application{} }
+func (n *ArrayCreate) Applications() []*Application { return []*Application{} }
+func (n *ArrayGet) Applications() []*Application    { return []*Application{} }
+func (n *ArrayPut) Applications() []*Application    { return []*Application{} }
+func (n *ReadInt) Applications() []*Application     { return []*Application{} }
+func (n *ReadFloat) Applications() []*Application   { return []*Application{} }
+func (n *PrintInt) Applications() []*Application    { return []*Application{} }
+func (n *PrintChar) Applications() []*Application   { return []*Application{} }
+func (n *IntToFloat) Applications() []*Application  { return []*Application{} }
+func (n *FloatToInt) Applications() []*Application  { return []*Application{} }
+func (n *Sqrt) Applications() []*Application        { return []*Application{} }
