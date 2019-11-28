@@ -820,6 +820,58 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping1.union(registerMapping2), storedVariables
+		case *ir.IfEqualZero:
+			n := node.(*ir.IfEqualZero)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Inner},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariablesOnRegisters(
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			elseLabel := getLabel()
+			continueLabel := getLabel()
+
+			if types[n.Inner] == typing.FloatType {
+				fmt.Fprintf(w, "c.eq.s %s, %s\n", registers[0], floatZeroRegister)
+				fmt.Fprintf(w, "bc1t 1\n")
+			} else {
+				fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], intZeroRegister)
+			}
+
+			fmt.Fprintf(w, "j %s\n", elseLabel)
+
+			registerMapping1, storedVariables1 := emit(
+				destination, tail, n.True, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "j %s\n", continueLabel)
+			}
+
+			fmt.Fprintf(w, "%s:\n", elseLabel)
+			fmt.Fprintf(w, "nop\n")
+			registerMapping2, storedVariables2 := emit(
+				destination, tail, n.False, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "%s:\n", continueLabel)
+				fmt.Fprintf(w, "nop\n")
+			}
+
+			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
+				if storedVariables1[i] == storedVariables2[i] {
+					storedVariables = append(storedVariables, storedVariables1[i])
+				}
+			}
+
+			return registerMapping1.union(registerMapping2), storedVariables
 		case *ir.IfLessThan:
 			n := node.(*ir.IfLessThan)
 
@@ -846,6 +898,63 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "bc1t 1\n")
 			} else {
 				fmt.Fprintf(w, "slt %s, %s, %s\n", intTemporaryRegisters[0], registers[0], registers[1])
+				fmt.Fprintf(w, "addi %s, %s, -1\n", intTemporaryRegisters[0], intTemporaryRegisters[0])
+				fmt.Fprintf(w, "beq %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
+			}
+
+			fmt.Fprintf(w, "j %s\n", elseLabel)
+			fmt.Fprintf(w, "nop\n")
+			registerMapping1, storedVariables1 := emit(
+				destination, tail, n.True, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "j %s\n", continueLabel)
+			}
+
+			fmt.Fprintf(w, "%s:\n", elseLabel)
+			fmt.Fprintf(w, "nop\n")
+			registerMapping2, storedVariables2 := emit(
+				destination, tail, n.False, registerMapping, storedVariables, []string{})
+
+			if !tail {
+				fmt.Fprintf(w, "%s:\n", continueLabel)
+				fmt.Fprintf(w, "nop\n")
+			}
+
+			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
+				if storedVariables1[i] == storedVariables2[i] {
+					storedVariables = append(storedVariables, storedVariables1[i])
+				}
+			}
+
+			return registerMapping1.union(registerMapping2), storedVariables
+		case *ir.IfLessThanZero:
+			n := node.(*ir.IfLessThanZero)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Inner},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariablesOnRegisters(
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			elseLabel := getLabel()
+			continueLabel := getLabel()
+
+			if types[n.Inner] == typing.FloatType {
+				fmt.Fprintf(w, "c.eq.s %s, %s\n", registers[0], floatZeroRegister)
+				fmt.Fprintf(w, "bc1t 2\n")
+				fmt.Fprintf(w, "c.le.s %s, %s\n", registers[0], floatZeroRegister)
+				fmt.Fprintf(w, "bc1t 1\n")
+			} else {
+				fmt.Fprintf(w, "slt %s, %s, %s\n",
+					intTemporaryRegisters[0], registers[0], intZeroRegister)
 				fmt.Fprintf(w, "addi %s, %s, -1\n", intTemporaryRegisters[0], intTemporaryRegisters[0])
 				fmt.Fprintf(w, "beq %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
 			}

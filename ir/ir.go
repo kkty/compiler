@@ -31,8 +31,14 @@ func (f *Function) IsRecursive() bool {
 		case *IfEqual:
 			n := node.(*IfEqual)
 			queue = append(queue, n.True, n.False)
+		case *IfEqualZero:
+			n := node.(*IfEqualZero)
+			queue = append(queue, n.True, n.False)
 		case *IfLessThan:
 			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThanZero:
+			n := node.(*IfLessThanZero)
 			queue = append(queue, n.True, n.False)
 		case *ValueBinding:
 			n := node.(*ValueBinding)
@@ -82,8 +88,18 @@ type IfEqual struct {
 	True, False Node
 }
 
+type IfEqualZero struct {
+	Inner       string
+	True, False Node
+}
+
 type IfLessThan struct {
 	Left, Right string
+	True, False Node
+}
+
+type IfLessThanZero struct {
+	Inner       string
 	True, False Node
 }
 
@@ -130,7 +146,9 @@ func (n *FloatSubFromZero) irNode() {}
 func (n *FloatDiv) irNode()         {}
 func (n *FloatMul) irNode()         {}
 func (n *IfEqual) irNode()          {}
+func (n *IfEqualZero) irNode()      {}
 func (n *IfLessThan) irNode()       {}
+func (n *IfLessThanZero) irNode()   {}
 func (n *ValueBinding) irNode()     {}
 func (n *Application) irNode()      {}
 func (n *Tuple) irNode()            {}
@@ -212,9 +230,21 @@ func (n *IfEqual) UpdateNames(mapping map[string]string) {
 	n.False.UpdateNames(mapping)
 }
 
+func (n *IfEqualZero) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
+}
+
 func (n *IfLessThan) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
+}
+
+func (n *IfLessThanZero) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
@@ -420,6 +450,19 @@ func (n *IfEqual) FreeVariables(bound map[string]struct{}) []string {
 	return ret
 }
 
+func (n *IfEqualZero) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Inner]; !ok {
+		ret = append(ret, n.Inner)
+	}
+
+	ret = append(ret, n.True.FreeVariables(bound)...)
+	ret = append(ret, n.False.FreeVariables(bound)...)
+
+	return ret
+}
+
 func (n *IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 	ret := []string{}
 	if _, ok := bound[n.Left]; !ok {
@@ -428,6 +471,19 @@ func (n *IfLessThan) FreeVariables(bound map[string]struct{}) []string {
 
 	if _, ok := bound[n.Right]; !ok {
 		ret = append(ret, n.Right)
+	}
+
+	ret = append(ret, n.True.FreeVariables(bound)...)
+	ret = append(ret, n.False.FreeVariables(bound)...)
+
+	return ret
+}
+
+func (n *IfLessThanZero) FreeVariables(bound map[string]struct{}) []string {
+	ret := []string{}
+
+	if _, ok := bound[n.Inner]; !ok {
+		ret = append(ret, n.Inner)
 	}
 
 	ret = append(ret, n.True.FreeVariables(bound)...)
@@ -580,7 +636,15 @@ func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
+func (n *IfEqualZero) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+
 func (n *IfLessThan) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+
+func (n *IfLessThanZero) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
@@ -621,8 +685,16 @@ func (n *IfEqual) Clone() Node {
 	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
 }
 
+func (n *IfEqualZero) Clone() Node {
+	return &IfEqualZero{n.Inner, n.True.Clone(), n.False.Clone()}
+}
+
 func (n *IfLessThan) Clone() Node {
 	return &IfLessThan{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
+}
+
+func (n *IfLessThanZero) Clone() Node {
+	return &IfLessThanZero{n.Inner, n.True.Clone(), n.False.Clone()}
 }
 
 func (n *ValueBinding) Clone() Node {
@@ -681,8 +753,14 @@ func HasSideEffects(node Node) bool {
 		case *IfEqual:
 			n := node.(*IfEqual)
 			queue = append(queue, n.True, n.False)
+		case *IfEqualZero:
+			n := node.(*IfEqualZero)
+			queue = append(queue, n.True, n.False)
 		case *IfLessThan:
 			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThanZero:
+			n := node.(*IfLessThanZero)
 			queue = append(queue, n.True, n.False)
 		case *ValueBinding:
 			n := node.(*ValueBinding)

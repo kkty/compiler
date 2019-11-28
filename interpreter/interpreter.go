@@ -70,6 +70,22 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			} else {
 				return evaluate(n.False, values)
 			}
+		case *ir.IfEqualZero:
+			n := node.(*ir.IfEqualZero)
+
+			if value, ok := values[n.Inner].(int32); ok {
+				if value == 0 {
+					return evaluate(n.True, values)
+				} else {
+					return evaluate(n.False, values)
+				}
+			} else if value, ok := values[n.Inner].(float32); ok {
+				if value == 0 {
+					return evaluate(n.True, values)
+				} else {
+					return evaluate(n.False, values)
+				}
+			}
 		case *ir.IfLessThan:
 			n := node.(*ir.IfLessThan)
 
@@ -86,6 +102,22 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			}
 
 			return evaluate(n.False, values)
+		case *ir.IfLessThanZero:
+			n := node.(*ir.IfLessThanZero)
+
+			if value, ok := values[n.Inner].(int32); ok {
+				if value < 0 {
+					return evaluate(n.True, values)
+				} else {
+					return evaluate(n.False, values)
+				}
+			} else if value, ok := values[n.Inner].(float32); ok {
+				if value < 0 {
+					return evaluate(n.True, values)
+				} else {
+					return evaluate(n.False, values)
+				}
+			}
 		case *ir.ValueBinding:
 			n := node.(*ir.ValueBinding)
 			values[n.Name] = evaluate(n.Value, values)

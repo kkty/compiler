@@ -21,8 +21,14 @@ func findApplications(node Node) []*Application {
 		case *IfEqual:
 			n := node.(*IfEqual)
 			queue = append(queue, n.True, n.False)
+		case *IfEqualZero:
+			n := node.(*IfEqualZero)
+			queue = append(queue, n.True, n.False)
 		case *IfLessThan:
 			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThanZero:
+			n := node.(*IfLessThanZero)
 			queue = append(queue, n.True, n.False)
 		case *ValueBinding:
 			n := node.(*ValueBinding)

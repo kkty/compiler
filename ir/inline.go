@@ -30,8 +30,14 @@ func rename(node Node, types map[string]typing.Type) {
 		case *IfEqual:
 			n := node.(*IfEqual)
 			queue = append(queue, n.True, n.False)
+		case *IfEqualZero:
+			n := node.(*IfEqualZero)
+			queue = append(queue, n.True, n.False)
 		case *IfLessThan:
 			n := node.(*IfLessThan)
+			queue = append(queue, n.True, n.False)
+		case *IfLessThanZero:
+			n := node.(*IfLessThanZero)
 			queue = append(queue, n.True, n.False)
 		case *ValueBinding:
 			n := node.(*ValueBinding)
@@ -58,8 +64,18 @@ func replaceApplications(node Node, function *Function, types map[string]typing.
 		n.True = replaceApplications(n.True, function, types)
 		n.False = replaceApplications(n.False, function, types)
 		return n
+	case *IfEqualZero:
+		n := node.(*IfEqualZero)
+		n.True = replaceApplications(n.True, function, types)
+		n.False = replaceApplications(n.False, function, types)
+		return n
 	case *IfLessThan:
 		n := node.(*IfLessThan)
+		n.True = replaceApplications(n.True, function, types)
+		n.False = replaceApplications(n.False, function, types)
+		return n
+	case *IfLessThanZero:
+		n := node.(*IfLessThanZero)
 		n.True = replaceApplications(n.True, function, types)
 		n.False = replaceApplications(n.False, function, types)
 		return n

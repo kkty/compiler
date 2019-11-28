@@ -132,13 +132,144 @@ func Immediate(main Node, functions []*Function) Node {
 			return n, nil
 		case *IfEqual:
 			n := node.(*IfEqual)
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
+
+			copiedValues := map[string]interface{}{}
+			for k, v := range values {
+				copiedValues[k] = v
+			}
+
+			if left, ok := values[n.Left].(int32); ok {
+				if right, ok := values[n.Right].(int32); ok {
+					if left == right {
+						return updateAndEvaluate(n.True, copiedValues)
+					} else {
+						return updateAndEvaluate(n.False, copiedValues)
+					}
+				} else {
+					if left == 0 {
+						n := &IfEqualZero{n.Right, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			} else {
+				if right, ok := values[n.Right].(int32); ok {
+					if right == 0 {
+						n := &IfEqualZero{n.Left, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			}
+
+			if left, ok := values[n.Left].(float32); ok {
+				if right, ok := values[n.Right].(float32); ok {
+					if left == right {
+						return updateAndEvaluate(n.True, copiedValues)
+					} else {
+						return updateAndEvaluate(n.False, copiedValues)
+					}
+				} else {
+					if left == 0 {
+						n := &IfEqualZero{n.Right, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			} else {
+				if right, ok := values[n.Right].(float32); ok {
+					if right == 0 {
+						n := &IfEqualZero{n.Left, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, copiedValues)
+			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+
+			return n, nil
+		case *IfEqualZero:
+			n := node.(*IfEqualZero)
+
+			copiedValues := map[string]interface{}{}
+
+			for k, v := range values {
+				copiedValues[k] = v
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, copiedValues)
+			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+
 			return n, nil
 		case *IfLessThan:
 			n := node.(*IfLessThan)
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
+
+			copiedValues := map[string]interface{}{}
+
+			for k, v := range values {
+				copiedValues[k] = v
+			}
+
+			if left, ok := values[n.Left].(int32); ok {
+				if right, ok := values[n.Right].(int32); ok {
+					if left < right {
+						return updateAndEvaluate(n.True, copiedValues)
+					} else {
+						return updateAndEvaluate(n.False, copiedValues)
+					}
+				}
+			} else {
+				if right, ok := values[n.Right].(int32); ok {
+					if right == 0 {
+						n := &IfLessThanZero{n.Left, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			}
+
+			if left, ok := values[n.Left].(float32); ok {
+				if right, ok := values[n.Right].(float32); ok {
+					if left < right {
+						return updateAndEvaluate(n.True, copiedValues)
+					} else {
+						return updateAndEvaluate(n.False, copiedValues)
+					}
+				}
+			} else {
+				if right, ok := values[n.Right].(float32); ok {
+					if right == 0 {
+						n := &IfLessThanZero{n.Left, n.True, n.False}
+						n.True, _ = updateAndEvaluate(n.True, copiedValues)
+						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						return n, nil
+					}
+				}
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, copiedValues)
+			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+
+			return n, nil
+		case *IfLessThanZero:
+			n := node.(*IfLessThanZero)
+
+			copiedValues := map[string]interface{}{}
+
+			for k, v := range values {
+				copiedValues[k] = v
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, copiedValues)
+			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+
 			return n, nil
 		case *ValueBinding:
 			n := node.(*ValueBinding)
