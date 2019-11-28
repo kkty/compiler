@@ -59,6 +59,7 @@ type Node interface {
 	FreeVariables(bound map[string]struct{}) []string
 	FloatValues() []float32
 	Clone() Node
+	HasSideEffects() bool
 	irNode()
 }
 
@@ -741,46 +742,51 @@ func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
 func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
 
-// HasSideEffects returns true when the node has side effects.
-func HasSideEffects(node Node) bool {
-	queue := []Node{node}
+func (n *Variable) HasSideEffects() bool         { return false }
+func (n *Unit) HasSideEffects() bool             { return false }
+func (n *Int) HasSideEffects() bool              { return false }
+func (n *Bool) HasSideEffects() bool             { return false }
+func (n *Float) HasSideEffects() bool            { return false }
+func (n *Add) HasSideEffects() bool              { return false }
+func (n *AddImmediate) HasSideEffects() bool     { return false }
+func (n *Sub) HasSideEffects() bool              { return false }
+func (n *SubFromZero) HasSideEffects() bool      { return false }
+func (n *FloatAdd) HasSideEffects() bool         { return false }
+func (n *FloatSub) HasSideEffects() bool         { return false }
+func (n *FloatSubFromZero) HasSideEffects() bool { return false }
+func (n *FloatDiv) HasSideEffects() bool         { return false }
+func (n *FloatMul) HasSideEffects() bool         { return false }
 
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-
-		switch node.(type) {
-		case *IfEqual:
-			n := node.(*IfEqual)
-			queue = append(queue, n.True, n.False)
-		case *IfEqualZero:
-			n := node.(*IfEqualZero)
-			queue = append(queue, n.True, n.False)
-		case *IfLessThan:
-			n := node.(*IfLessThan)
-			queue = append(queue, n.True, n.False)
-		case *IfLessThanZero:
-			n := node.(*IfLessThanZero)
-			queue = append(queue, n.True, n.False)
-		case *ValueBinding:
-			n := node.(*ValueBinding)
-			queue = append(queue, n.Value, n.Next)
-		case *Application:
-			return true
-		case *ArrayCreate:
-			return true
-		case *ArrayPut:
-			return true
-		case *ReadInt:
-			return true
-		case *ReadFloat:
-			return true
-		case *PrintInt:
-			return true
-		case *PrintChar:
-			return true
-		}
-	}
-
-	return false
+func (n *IfEqual) HasSideEffects() bool {
+	return n.True.HasSideEffects() || n.False.HasSideEffects()
 }
+
+func (n *IfEqualZero) HasSideEffects() bool {
+	return n.True.HasSideEffects() || n.False.HasSideEffects()
+}
+
+func (n *IfLessThan) HasSideEffects() bool {
+	return n.True.HasSideEffects() || n.False.HasSideEffects()
+}
+
+func (n *IfLessThanZero) HasSideEffects() bool {
+	return n.True.HasSideEffects() || n.False.HasSideEffects()
+}
+
+func (n *ValueBinding) HasSideEffects() bool {
+	return n.Value.HasSideEffects() || n.Next.HasSideEffects()
+}
+
+func (n *Application) HasSideEffects() bool { return true }
+func (n *Tuple) HasSideEffects() bool       { return false }
+func (n *TupleGet) HasSideEffects() bool    { return false }
+func (n *ArrayCreate) HasSideEffects() bool { return false }
+func (n *ArrayGet) HasSideEffects() bool    { return false }
+func (n *ArrayPut) HasSideEffects() bool    { return true }
+func (n *ReadInt) HasSideEffects() bool     { return true }
+func (n *ReadFloat) HasSideEffects() bool   { return true }
+func (n *PrintInt) HasSideEffects() bool    { return true }
+func (n *PrintChar) HasSideEffects() bool   { return true }
+func (n *IntToFloat) HasSideEffects() bool  { return false }
+func (n *FloatToInt) HasSideEffects() bool  { return false }
+func (n *Sqrt) HasSideEffects() bool        { return false }

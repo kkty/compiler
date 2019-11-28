@@ -29,7 +29,7 @@ func Reorder(main Node, functions []*Function) Node {
 		case *ValueBinding:
 			n := node.(*ValueBinding)
 
-			if HasSideEffects(n.Value) {
+			if n.Value.HasSideEffects() {
 				n.Value = reorder(n.Value)
 				n.Next = reorder(n.Next)
 				return n
