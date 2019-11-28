@@ -1,9 +1,5 @@
 package ir
 
-import (
-	"github.com/thoas/go-funk"
-)
-
 func RemoveRedundantVariables(main Node, functions []*Function) Node {
 	var removeRedundantVariables func(node Node) Node
 	removeRedundantVariables = func(node Node) Node {
@@ -30,7 +26,7 @@ func RemoveRedundantVariables(main Node, functions []*Function) Node {
 			return n
 		case *ValueBinding:
 			n := node.(*ValueBinding)
-			if n.Value.HasSideEffects() || funk.ContainsString(n.Next.FreeVariables(map[string]struct{}{}), n.Name) {
+			if _, hasFreeVariable := n.Next.FreeVariables(map[string]struct{}{})[n.Name]; n.Value.HasSideEffects() || hasFreeVariable {
 				n.Value = removeRedundantVariables(n.Value)
 				n.Next = removeRedundantVariables(n.Next)
 				return n

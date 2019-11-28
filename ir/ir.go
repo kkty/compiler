@@ -1,14 +1,12 @@
 package ir
 
-import "github.com/thoas/go-funk"
-
 type Function struct {
 	Name string
 	Args []string
 	Body Node
 }
 
-func (f Function) FreeVariables() []string {
+func (f Function) FreeVariables() map[string]struct{} {
 	bound := map[string]struct{}{}
 
 	bound[f.Name] = struct{}{}
@@ -17,7 +15,7 @@ func (f Function) FreeVariables() []string {
 		bound[arg] = struct{}{}
 	}
 
-	return funk.UniqString(f.Body.FreeVariables(bound))
+	return f.Body.FreeVariables(bound)
 }
 
 func (f *Function) IsRecursive() bool {
@@ -34,7 +32,7 @@ func (f *Function) IsRecursive() bool {
 
 type Node interface {
 	UpdateNames(mapping map[string]string)
-	FreeVariables(bound map[string]struct{}) []string
+	FreeVariables(bound map[string]struct{}) map[string]struct{}
 	FloatValues() []float32
 	Clone() Node
 	HasSideEffects() bool
@@ -297,303 +295,304 @@ func copyStringSet(original map[string]struct{}) map[string]struct{} {
 	return s
 }
 
-func (n *Variable) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *Variable) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	if _, ok := bound[n.Name]; !ok {
-		ret = append(ret, n.Name)
+		return map[string]struct{}{n.Name: struct{}{}}
 	}
 
-	return ret
+	return map[string]struct{}{}
 }
 
-func (n *Unit) FreeVariables(bound map[string]struct{}) []string {
-	return []string{}
+func (n *Unit) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
 }
 
-func (n *Int) FreeVariables(bound map[string]struct{}) []string {
-	return []string{}
+func (n *Int) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
 }
 
-func (n *Bool) FreeVariables(bound map[string]struct{}) []string {
-	return []string{}
+func (n *Bool) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
 }
 
-func (n *Float) FreeVariables(bound map[string]struct{}) []string {
-	return []string{}
+func (n *Float) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
 }
 
-func (n *Add) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *Add) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
 	return ret
 }
 
-func (n *AddImmediate) FreeVariables(bound map[string]struct{}) []string {
+func (n *AddImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		return []string{n.Left}
+		ret[n.Left] = struct{}{}
 	}
-
-	return []string{}
+	return ret
 }
 
-func (n *Sub) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *Sub) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
 	return ret
 }
 
-func (n *SubFromZero) FreeVariables(bound map[string]struct{}) []string {
+func (n *SubFromZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Inner]; !ok {
-		return []string{n.Inner}
-	}
-
-	return []string{}
-}
-
-func (n *FloatAdd) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Inner] = struct{}{}
 	}
 	return ret
 }
 
-func (n *FloatSub) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *FloatAdd) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
 	return ret
 }
 
-func (n *FloatSubFromZero) FreeVariables(bound map[string]struct{}) []string {
+func (n *FloatSub) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Left]; !ok {
+		ret[n.Left] = struct{}{}
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret[n.Right] = struct{}{}
+	}
+	return ret
+}
+
+func (n *FloatSubFromZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Inner]; !ok {
-		return []string{n.Inner}
-	}
-
-	return []string{}
-}
-
-func (n *FloatDiv) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Inner] = struct{}{}
 	}
 	return ret
 }
 
-func (n *FloatMul) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *FloatDiv) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
 	return ret
 }
 
-func (n *IfEqual) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *FloatMul) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
-
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
-
-	ret = append(ret, n.True.FreeVariables(bound)...)
-	ret = append(ret, n.False.FreeVariables(bound)...)
-
 	return ret
 }
 
-func (n *IfEqualZero) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *IfEqual) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Left]; !ok {
+		ret[n.Left] = struct{}{}
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret[n.Right] = struct{}{}
+	}
+	for v := range n.True.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	return ret
+}
 
+func (n *IfEqualZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Inner]; !ok {
-		ret = append(ret, n.Inner)
+		ret[n.Inner] = struct{}{}
 	}
-
-	ret = append(ret, n.True.FreeVariables(bound)...)
-	ret = append(ret, n.False.FreeVariables(bound)...)
-
+	for v := range n.True.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
 	return ret
 }
 
-func (n *IfLessThan) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *IfLessThan) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
-		ret = append(ret, n.Left)
+		ret[n.Left] = struct{}{}
 	}
-
 	if _, ok := bound[n.Right]; !ok {
-		ret = append(ret, n.Right)
+		ret[n.Right] = struct{}{}
 	}
-
-	ret = append(ret, n.True.FreeVariables(bound)...)
-	ret = append(ret, n.False.FreeVariables(bound)...)
-
+	for v := range n.True.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
 	return ret
 }
 
-func (n *IfLessThanZero) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *IfLessThanZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Inner]; !ok {
-		ret = append(ret, n.Inner)
+		ret[n.Inner] = struct{}{}
 	}
-
-	ret = append(ret, n.True.FreeVariables(bound)...)
-	ret = append(ret, n.False.FreeVariables(bound)...)
-
+	for v := range n.True.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
 	return ret
 }
 
-func (n *ValueBinding) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-	ret = append(ret, n.Value.FreeVariables(bound)...)
+func (n *ValueBinding) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	for v := range n.Value.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
 	bound = copyStringSet(bound)
 	bound[n.Name] = struct{}{}
-	ret = append(ret, n.Next.FreeVariables(bound)...)
+	for v := range n.Next.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
 	return ret
 }
 
-func (n *Application) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *Application) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	for _, arg := range n.Args {
 		if _, ok := bound[arg]; !ok {
-			ret = append(ret, arg)
+			ret[arg] = struct{}{}
 		}
 	}
-
 	return ret
 }
 
-func (n *Tuple) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *Tuple) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	for _, element := range n.Elements {
 		if _, ok := bound[element]; !ok {
-			ret = append(ret, element)
+			ret[element] = struct{}{}
 		}
 	}
 	return ret
 }
 
-func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Size]; !ok {
-		ret = append(ret, n.Size)
+		ret[n.Size] = struct{}{}
 	}
 	if _, ok := bound[n.Value]; !ok {
-		ret = append(ret, n.Value)
+		ret[n.Value] = struct{}{}
 	}
 	return ret
 }
-func (n *ArrayGet) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+
+func (n *ArrayGet) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Array]; !ok {
-		ret = append(ret, n.Array)
+		ret[n.Array] = struct{}{}
 	}
 	if _, ok := bound[n.Index]; !ok {
-		ret = append(ret, n.Index)
+		ret[n.Index] = struct{}{}
 	}
 	return ret
 }
-func (n *ArrayPut) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+
+func (n *ArrayPut) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Array]; !ok {
-		ret = append(ret, n.Array)
+		ret[n.Array] = struct{}{}
 	}
 	if _, ok := bound[n.Index]; !ok {
-		ret = append(ret, n.Index)
+		ret[n.Index] = struct{}{}
 	}
 	if _, ok := bound[n.Value]; !ok {
-		ret = append(ret, n.Value)
+		ret[n.Value] = struct{}{}
 	}
 	return ret
 }
 
-func (n *ReadInt) FreeVariables(bound map[string]struct{}) []string   { return []string{} }
-func (n *ReadFloat) FreeVariables(bound map[string]struct{}) []string { return []string{} }
+func (n *ReadInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
+}
 
-func (n *PrintInt) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
+func (n *ReadFloat) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
+}
 
+func (n *PrintInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
-		ret = append(ret, n.Arg)
+		ret[n.Arg] = struct{}{}
 	}
-
 	return ret
 }
 
-func (n *PrintChar) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *PrintChar) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
-		ret = append(ret, n.Arg)
+		ret[n.Arg] = struct{}{}
 	}
-
 	return ret
 }
-func (n *IntToFloat) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
 
+func (n *IntToFloat) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
-		ret = append(ret, n.Arg)
+		ret[n.Arg] = struct{}{}
 	}
-
 	return ret
 }
-func (n *FloatToInt) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
 
+func (n *FloatToInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
-		ret = append(ret, n.Arg)
+		ret[n.Arg] = struct{}{}
 	}
-
 	return ret
 }
-func (n *Sqrt) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
 
+func (n *Sqrt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
-		ret = append(ret, n.Arg)
+		ret[n.Arg] = struct{}{}
 	}
-
 	return ret
 }
 
-func (n *TupleGet) FreeVariables(bound map[string]struct{}) []string {
-	ret := []string{}
-
+func (n *TupleGet) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
 	if _, ok := bound[n.Tuple]; !ok {
-		ret = append(ret, n.Tuple)
+		ret[n.Tuple] = struct{}{}
 	}
-
 	return ret
 }
 

@@ -290,7 +290,6 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 	floatValueToLabel := map[float32]string{}
 	fmt.Fprintf(w, ".data\n")
 	{
-
 		floatValues := body.FloatValues()
 		for _, function := range functions {
 			floatValues = append(floatValues, function.Body.FloatValues()...)
@@ -990,7 +989,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			variablesToKeepExtended := append(
 				variablesToKeep,
-				funk.UniqString(n.Next.FreeVariables(map[string]struct{}{}))...,
+				funk.Keys(n.Next.FreeVariables(map[string]struct{}{})).([]string)...,
 			)
 
 			// The register for the variable, the name of which is "n.Name".

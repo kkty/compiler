@@ -6,6 +6,7 @@ import (
 
 	"github.com/kkty/mincaml-go/mir"
 	"github.com/kkty/mincaml-go/typing"
+	"github.com/thoas/go-funk"
 )
 
 // Generate separates function definitions and the main program.
@@ -131,7 +132,7 @@ func Generate(
 
 	for {
 		for _, function := range functions {
-			freeVariables := function.FreeVariables()
+			freeVariables := funk.Keys(function.FreeVariables()).([]string)
 
 			functionToApplications["main"] = applicationsInMain
 			for _, applications := range functionToApplications {

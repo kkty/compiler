@@ -1,7 +1,5 @@
 package ir
 
-import "github.com/thoas/go-funk"
-
 func Reorder(main Node, functions []*Function) Node {
 	var reorder func(node Node) Node
 	reorder = func(node Node) Node {
@@ -43,12 +41,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if !funk.ContainsString(next.True.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if !funk.ContainsString(next.False.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -59,12 +57,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if !funk.ContainsString(next.True.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if !funk.ContainsString(next.False.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -75,12 +73,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if !funk.ContainsString(next.True.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if !funk.ContainsString(next.False.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -91,24 +89,24 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if !funk.ContainsString(next.True.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if !funk.ContainsString(next.False.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *ValueBinding:
 				next := n.Next.(*ValueBinding)
 
-				if !funk.ContainsString(next.Value.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.Value.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.Next = &ValueBinding{n.Name, reorder(n.Value), reorder(next.Next)}
 					return next
 				}
 
-				if !funk.ContainsString(next.Next.FreeVariables(map[string]struct{}{}), n.Name) {
+				if _, exists := next.Next.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
 					next.Value = &ValueBinding{n.Name, reorder(n.Value), reorder(next.Value)}
 					return next
 				}
