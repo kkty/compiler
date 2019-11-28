@@ -35,6 +35,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)
+		main = ir.Reorder(main, functions)
 	}
 	if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
