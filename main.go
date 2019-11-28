@@ -32,7 +32,10 @@ func main() {
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
 	main, functions = ir.Inline(main, functions, *inline, types)
-	main = ir.RemoveRedundantVariables(main, functions)
+	for i := 0; i < 10; i++ {
+		main = ir.RemoveRedundantVariables(main, functions)
+		main = ir.Immediate(main, functions)
+	}
 	if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
