@@ -148,8 +148,12 @@ func Immediate(main Node, functions []*Function) Node {
 				} else {
 					if left == 0 {
 						n := &IfEqualZero{n.Right, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
@@ -157,8 +161,12 @@ func Immediate(main Node, functions []*Function) Node {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
 						n := &IfEqualZero{n.Left, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
@@ -174,8 +182,12 @@ func Immediate(main Node, functions []*Function) Node {
 				} else {
 					if left == 0 {
 						n := &IfEqualZero{n.Right, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
@@ -183,15 +195,23 @@ func Immediate(main Node, functions []*Function) Node {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
 						n := &IfEqualZero{n.Left, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, copiedValues)
-			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+			var value1, value2 interface{}
+			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+			if value1 == value2 {
+				return n, value1
+			}
 
 			return n, nil
 		case *IfEqualZero:
@@ -228,8 +248,12 @@ func Immediate(main Node, functions []*Function) Node {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
 						n := &IfLessThanZero{n.Left, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
@@ -247,15 +271,23 @@ func Immediate(main Node, functions []*Function) Node {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
 						n := &IfLessThanZero{n.Left, n.True, n.False}
-						n.True, _ = updateAndEvaluate(n.True, copiedValues)
-						n.False, _ = updateAndEvaluate(n.False, copiedValues)
+						var value1, value2 interface{}
+						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+						if value1 == value2 {
+							return n, value1
+						}
 						return n, nil
 					}
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, copiedValues)
-			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+			var value1, value2 interface{}
+			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+			if value1 == value2 {
+				return n, value1
+			}
 
 			return n, nil
 		case *IfLessThanZero:
@@ -267,8 +299,12 @@ func Immediate(main Node, functions []*Function) Node {
 				copiedValues[k] = v
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, copiedValues)
-			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+			var value1, value2 interface{}
+			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
+			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
+			if value1 == value2 {
+				return n, value1
+			}
 
 			return n, nil
 		case *ValueBinding:
