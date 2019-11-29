@@ -1,6 +1,8 @@
 package ir
 
 func RemoveRedundantVariables(main Node, functions []*Function) Node {
+	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
+
 	var removeRedundantVariables func(node Node) Node
 	removeRedundantVariables = func(node Node) Node {
 		switch node.(type) {
@@ -26,7 +28,7 @@ func RemoveRedundantVariables(main Node, functions []*Function) Node {
 			return n
 		case *ValueBinding:
 			n := node.(*ValueBinding)
-			if _, hasFreeVariable := n.Next.FreeVariables(map[string]struct{}{})[n.Name]; n.Value.HasSideEffects() || hasFreeVariable {
+			if _, hasFreeVariable := n.Next.FreeVariables(map[string]struct{}{})[n.Name]; n.Value.HasSideEffects(functionsWithoutSideEffects) || hasFreeVariable {
 				n.Value = removeRedundantVariables(n.Value)
 				n.Next = removeRedundantVariables(n.Next)
 				return n

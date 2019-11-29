@@ -6,6 +6,27 @@ type Function struct {
 	Body Node
 }
 
+func FunctionsWithoutSideEffects(functions []*Function) map[string]struct{} {
+	functionsWithoutSideEffects := map[string]struct{}{}
+	n := 0
+	for {
+		for _, function := range functions {
+			functionsWithoutSideEffects[function.Name] = struct{}{}
+
+			if function.Body.HasSideEffects(functionsWithoutSideEffects) {
+				delete(functionsWithoutSideEffects, function.Name)
+			}
+		}
+
+		if len(functionsWithoutSideEffects) > n {
+			n = len(functionsWithoutSideEffects)
+		} else {
+			break
+		}
+	}
+	return functionsWithoutSideEffects
+}
+
 func (f Function) FreeVariables() map[string]struct{} {
 	bound := map[string]struct{}{}
 
@@ -35,7 +56,7 @@ type Node interface {
 	FreeVariables(bound map[string]struct{}) map[string]struct{}
 	FloatValues() []float32
 	Clone() Node
-	HasSideEffects() bool
+	HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool
 	Applications() []*Application
 	irNode()
 }
@@ -710,54 +731,70 @@ func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
 func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
 
-func (n *Variable) HasSideEffects() bool         { return false }
-func (n *Unit) HasSideEffects() bool             { return false }
-func (n *Int) HasSideEffects() bool              { return false }
-func (n *Bool) HasSideEffects() bool             { return false }
-func (n *Float) HasSideEffects() bool            { return false }
-func (n *Add) HasSideEffects() bool              { return false }
-func (n *AddImmediate) HasSideEffects() bool     { return false }
-func (n *Sub) HasSideEffects() bool              { return false }
-func (n *SubFromZero) HasSideEffects() bool      { return false }
-func (n *FloatAdd) HasSideEffects() bool         { return false }
-func (n *FloatSub) HasSideEffects() bool         { return false }
-func (n *FloatSubFromZero) HasSideEffects() bool { return false }
-func (n *FloatDiv) HasSideEffects() bool         { return false }
-func (n *FloatMul) HasSideEffects() bool         { return false }
+func (n *Variable) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *Unit) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool     { return false }
+func (n *Int) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
+func (n *Bool) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool     { return false }
+func (n *Float) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
+func (n *Add) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
+func (n *AddImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *Sub) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *SubFromZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *FloatAdd) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *FloatSub) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *FloatSubFromZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
 
-func (n *IfEqual) HasSideEffects() bool {
-	return n.True.HasSideEffects() || n.False.HasSideEffects()
+func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfEqualZero) HasSideEffects() bool {
-	return n.True.HasSideEffects() || n.False.HasSideEffects()
+func (n *IfEqualZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfLessThan) HasSideEffects() bool {
-	return n.True.HasSideEffects() || n.False.HasSideEffects()
+func (n *IfLessThan) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfLessThanZero) HasSideEffects() bool {
-	return n.True.HasSideEffects() || n.False.HasSideEffects()
+func (n *IfLessThanZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *ValueBinding) HasSideEffects() bool {
-	return n.Value.HasSideEffects() || n.Next.HasSideEffects()
+func (n *ValueBinding) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.Value.HasSideEffects(functionsWithoutSideEffects) || n.Next.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *Application) HasSideEffects() bool { return true }
-func (n *Tuple) HasSideEffects() bool       { return false }
-func (n *TupleGet) HasSideEffects() bool    { return false }
-func (n *ArrayCreate) HasSideEffects() bool { return false }
-func (n *ArrayGet) HasSideEffects() bool    { return false }
-func (n *ArrayPut) HasSideEffects() bool    { return true }
-func (n *ReadInt) HasSideEffects() bool     { return true }
-func (n *ReadFloat) HasSideEffects() bool   { return true }
-func (n *PrintInt) HasSideEffects() bool    { return true }
-func (n *PrintChar) HasSideEffects() bool   { return true }
-func (n *IntToFloat) HasSideEffects() bool  { return false }
-func (n *FloatToInt) HasSideEffects() bool  { return false }
-func (n *Sqrt) HasSideEffects() bool        { return false }
+func (n *Application) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	_, exists := functionsWithoutSideEffects[n.Function]
+	return !exists
+}
+
+func (n *Tuple) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
+func (n *TupleGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *ArrayCreate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *ArrayGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return false }
+func (n *ArrayPut) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
+func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool   { return true }
+func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+func (n *PrintInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
+func (n *PrintChar) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *FloatToInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+func (n *Sqrt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
 
 func (n *Variable) Applications() []*Application         { return []*Application{} }
 func (n *Unit) Applications() []*Application             { return []*Application{} }

@@ -1,6 +1,8 @@
 package ir
 
 func Reorder(main Node, functions []*Function) Node {
+	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
+
 	var reorder func(node Node) Node
 	reorder = func(node Node) Node {
 		switch node.(type) {
@@ -27,7 +29,7 @@ func Reorder(main Node, functions []*Function) Node {
 		case *ValueBinding:
 			n := node.(*ValueBinding)
 
-			if n.Value.HasSideEffects() {
+			if n.Value.HasSideEffects(functionsWithoutSideEffects) {
 				n.Value = reorder(n.Value)
 				n.Next = reorder(n.Next)
 				return n
