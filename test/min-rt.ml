@@ -82,8 +82,6 @@ let rec fiszero x = x = 0.0 in
 let rec pow x y = if y = 1 then x else x *. (pow x (y - 1)) in
 let rec fabs x = if x > 0.0 then x else x *. -1.0 in
 let rec fneg x = x *. -1.0 in
-let dummy_f = create_array 1 0.0 in
-let dummy_i = create_array 1 0 in
 let rec fhalf x = x /. 2.0 in
 let rec fsqr x = x *. x in
 let rec int_of_float x = float_to_int x in
