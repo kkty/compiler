@@ -137,14 +137,14 @@ func (m registerMapping) findVariableByRegister(register Register) (string, bool
 // If the second return value is true, the content of the register should be saved to the stack before use.
 func (m registerMapping) getIntRegister(variablesToKeep map[string]struct{}) (IntRegister, bool) {
 	// Finds a register which is not allocated to any registers.
-	for _, intRegister := range intRegisters {
+	for i := len(intRegisters) - 1; i >= 0; i-- {
+		intRegister := intRegisters[i]
+
 		used := false
 
 		for _, registerAndVariable := range m {
-			if register, ok := registerAndVariable.register.(IntRegister); ok {
-				if register == intRegister {
-					used = true
-				}
+			if intRegister == registerAndVariable.register {
+				used = true
 			}
 		}
 
@@ -153,38 +153,28 @@ func (m registerMapping) getIntRegister(variablesToKeep map[string]struct{}) (In
 		}
 	}
 
-	variablesOnIntRegisters := []string{}
-
 	for _, registerAndVariable := range m {
 		if register, ok := registerAndVariable.register.(IntRegister); ok {
 			if _, exists := variablesToKeep[registerAndVariable.variable]; !exists {
 				return register, false
 			}
-
-			variablesOnIntRegisters = append(
-				variablesOnIntRegisters,
-				registerAndVariable.variable,
-			)
 		}
 	}
 
-	register, _ := m.findRegisterByVariable(
-		variablesOnIntRegisters[rand.Intn(len(variablesOnIntRegisters))])
-
-	return register.(IntRegister), true
+	return intRegisters[rand.Intn(len(intRegisters))], true
 }
 
 // Fetches one float register for use.
 // Similar to getIntRegister.
 func (m registerMapping) getFloatRegister(variablesToKeep map[string]struct{}) (FloatRegister, bool) {
-	for _, floatRegister := range floatRegisters {
+	for i := len(floatRegisters) - 1; i >= 0; i-- {
+		floatRegister := floatRegisters[i]
+
 		used := false
 
 		for _, registerAndVariable := range m {
-			if register, ok := registerAndVariable.register.(FloatRegister); ok {
-				if register == floatRegister {
-					used = true
-				}
+			if floatRegister == registerAndVariable.register {
+				used = true
 			}
 		}
 
@@ -193,25 +183,15 @@ func (m registerMapping) getFloatRegister(variablesToKeep map[string]struct{}) (
 		}
 	}
 
-	variablesOnFloatRegisters := []string{}
-
 	for _, registerAndVariable := range m {
 		if register, ok := registerAndVariable.register.(FloatRegister); ok {
 			if _, exists := variablesToKeep[registerAndVariable.variable]; !exists {
 				return register, false
 			}
-
-			variablesOnFloatRegisters = append(
-				variablesOnFloatRegisters,
-				registerAndVariable.variable,
-			)
 		}
 	}
 
-	register, _ := m.findRegisterByVariable(
-		variablesOnFloatRegisters[rand.Intn(len(variablesOnFloatRegisters))])
-
-	return register.(FloatRegister), true
+	return floatRegisters[rand.Intn(len(floatRegisters))], true
 }
 
 // Allocates a register to a variable.
@@ -326,8 +306,14 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						}
 					}
 
+					idx := funk.IndexOfString(storedVariables, variable)
+
+					if idx == -1 {
+						log.Fatalf("variable not found on stack: %s", variable)
+					}
+
 					fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
-						register, funk.IndexOfString(storedVariables, variable)*4, stackPointer)
+						register, idx*4, stackPointer)
 				} else {
 					var spill bool
 					register, spill = registerMapping.getIntRegister(variablesToKeep)
@@ -342,8 +328,14 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						}
 					}
 
+					idx := funk.IndexOfString(storedVariables, variable)
+
+					if idx == -1 {
+						log.Fatalf("variable not found on stack: %s", variable)
+					}
+
 					fmt.Fprintf(w, "lw %s, %d(%s)\n",
-						register.String(), funk.IndexOfString(storedVariables, variable)*4, stackPointer)
+						register.String(), idx*4, stackPointer)
 				}
 
 				for v := range added {
@@ -470,6 +462,13 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			return registerMapping, storedVariables
 		case *ir.Unit:
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
 			if tail {
 				fmt.Fprintf(w, "jr $ra\n")
 			}
@@ -974,6 +973,51 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 		case *ir.ValueBinding:
 			n := node.(*ir.ValueBinding)
 
+			register := func(name string, node ir.Node) Register {
+				stack := []ir.Node{node}
+				for len(stack) > 0 {
+					node := stack[len(stack)-1]
+					stack = stack[:len(stack)-1]
+
+					switch node.(type) {
+					case *ir.ValueBinding:
+						n := node.(*ir.ValueBinding)
+						stack = append(stack, n.Next, n.Value)
+					case *ir.Application:
+						n := node.(*ir.Application)
+						nextIntRegister := IntRegister(0)
+						nextFloatRegister := FloatRegister(0)
+						for i, arg := range n.Args {
+							if i >= argumentsToPassWithRegisters {
+								if arg == name {
+									return nil
+								}
+
+								continue
+							}
+
+							if types[arg] == typing.FloatType {
+								if arg == name {
+									return nextFloatRegister
+								}
+
+								nextFloatRegister++
+							} else {
+								if arg == name {
+									return nextIntRegister
+								}
+
+								nextIntRegister++
+							}
+						}
+					}
+				}
+
+				return nil
+			}(n.Name, n.Next)
+
+			register = nil
+
 			added := map[string]struct{}{}
 
 			for v := range n.Next.FreeVariables(map[string]struct{}{}) {
@@ -983,15 +1027,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				}
 			}
 
-			// The register for the variable, the name of which is "n.Name".
-			// Whether to spill the variable on this register (if any)
+			// Whether to spill the variable on the register (if any)
 			// will be determined elsewhere (e.g. the case for ir.Add).
-			var register Register
 
-			if types[n.Name] == typing.FloatType {
-				register, _ = registerMapping.getFloatRegister(variablesToKeep)
-			} else {
-				register, _ = registerMapping.getIntRegister(variablesToKeep)
+			if register == nil {
+				if types[n.Name] == typing.FloatType {
+					register, _ = registerMapping.getFloatRegister(variablesToKeep)
+				} else {
+					register, _ = registerMapping.getIntRegister(variablesToKeep)
+				}
 			}
 
 			registerMapping, storedVariables = emit(
@@ -1051,8 +1095,14 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 							fmt.Fprintf(w, "add.s %s, %s, %s\n",
 								correctRegister, currentRegister, floatZeroRegister)
 						} else {
+							idx := funk.IndexOfString(storedVariables, arg)
+
+							if idx == -1 {
+								log.Fatalf("variable not found on stack: %s", arg)
+							}
+
 							fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
-								correctRegister, funk.IndexOfString(storedVariables, arg)*4, stackPointer)
+								correctRegister, idx*4, stackPointer)
 						}
 
 						registerMapping = registerMapping.add(arg, correctRegister)
@@ -1075,8 +1125,14 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 							fmt.Fprintf(w, "add %s, %s, %s\n",
 								correctRegister, currentRegister, intZeroRegister)
 						} else {
+							idx := funk.IndexOfString(storedVariables, arg)
+
+							if idx == -1 {
+								log.Fatalf("variable not found on stack: %s", arg)
+							}
+
 							fmt.Fprintf(w, "lw %s, %d(%s)\n",
-								correctRegister, funk.IndexOfString(storedVariables, arg)*4, stackPointer)
+								correctRegister, idx*4, stackPointer)
 						}
 
 						registerMapping = registerMapping.add(arg, correctRegister)
@@ -1096,12 +1152,18 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 							intTemporaryRegisters[0], intZeroRegister, register)
 					}
 				} else {
+					idx := funk.IndexOfString(storedVariables, arg)
+
+					if idx == -1 {
+						log.Fatalf("variable not found on stack: %s", arg)
+					}
+
 					if types[arg] == typing.FloatType {
 						fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
-							floatTemporaryRegister, funk.IndexOfString(storedVariables, arg)*4, stackPointer)
+							floatTemporaryRegister, idx*4, stackPointer)
 					} else {
 						fmt.Fprintf(w, "lw %s, %d(%s)\n",
-							intTemporaryRegisters[0], funk.IndexOfString(storedVariables, arg)*4, stackPointer)
+							intTemporaryRegisters[0], idx*4, stackPointer)
 					}
 				}
 
