@@ -285,16 +285,6 @@ func (n *TupleGet) UpdateNames(mapping map[string]string) {
 	n.Tuple = replaceIfFound(n.Tuple, mapping)
 }
 
-func copyStringSet(original map[string]struct{}) map[string]struct{} {
-	s := map[string]struct{}{}
-
-	for k := range original {
-		s[k] = struct{}{}
-	}
-
-	return s
-}
-
 func (n *Variable) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	if _, ok := bound[n.Name]; !ok {
 		return map[string]struct{}{n.Name: struct{}{}}
@@ -476,11 +466,11 @@ func (n *ValueBinding) FreeVariables(bound map[string]struct{}) map[string]struc
 	for v := range n.Value.FreeVariables(bound) {
 		ret[v] = struct{}{}
 	}
-	bound = copyStringSet(bound)
 	bound[n.Name] = struct{}{}
 	for v := range n.Next.FreeVariables(bound) {
 		ret[v] = struct{}{}
 	}
+	delete(bound, n.Name)
 	return ret
 }
 
