@@ -55,5 +55,10 @@ func TestCompile(t *testing.T) {
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
 	main, _ = ir.Inline(main, functions, 5, types)
+	for i := 0; i < 10; i++ {
+		main = ir.RemoveRedundantVariables(main, functions)
+		main = ir.Immediate(main, functions)
+		main = ir.Reorder(main, functions)
+	}
 	main = ir.RemoveRedundantVariables(main, functions)
 }
