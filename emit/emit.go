@@ -1353,6 +1353,52 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping, storedVariables
+		case *ir.ArrayCreateImmediate:
+			n := node.(*ir.ArrayCreateImmediate)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Value},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			if types[n.Value] == typing.FloatType {
+				fmt.Fprintf(w, "add.s %s, %s, %s\n",
+					floatTemporaryRegister, registers[0], floatZeroRegister)
+			} else {
+				fmt.Fprintf(w, "add %s, %s, %s\n",
+					intTemporaryRegisters[0], registers[0], intZeroRegister)
+			}
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			fmt.Fprintf(w, "add %s, %s, %s\n",
+				destination, heapPointer, intZeroRegister)
+
+			for i := 0; i < int(n.Size); i++ {
+				switch registers[0].(type) {
+				case FloatRegister:
+					fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+						floatTemporaryRegister, i*4, heapPointer)
+				default:
+					fmt.Fprintf(w, "sw %s, %d(%s)\n",
+						intTemporaryRegisters[0], i*4, heapPointer)
+				}
+			}
+
+			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, n.Size*4)
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
 		case *ir.ArrayGet:
 			n := node.(*ir.ArrayGet)
 
@@ -1370,10 +1416,8 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n",
-				intTemporaryRegisters[0], registers[1], registers[1])
-			fmt.Fprintf(w, "add %s, %s, %s\n",
-				intTemporaryRegisters[0], intTemporaryRegisters[0], intTemporaryRegisters[0])
+			fmt.Fprintf(w, "sll %s, %s, %d\n",
+				intTemporaryRegisters[0], registers[1], 2)
 			fmt.Fprintf(w, "add %s, %s, %s\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0], registers[0])
 
@@ -1391,6 +1435,37 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping, storedVariables
+		case *ir.ArrayGetImmediate:
+			n := node.(*ir.ArrayGetImmediate)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Array},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			switch destination.(type) {
+			case FloatRegister:
+				fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+					destination, n.Index*4, registers[0])
+			default:
+				fmt.Fprintf(w, "lw %s, %d(%s)\n",
+					destination, n.Index*4, registers[0])
+			}
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
 		case *ir.ArrayPut:
 			n := node.(*ir.ArrayPut)
 
@@ -1401,10 +1476,8 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n",
-				intTemporaryRegisters[0], registers[1], registers[1])
-			fmt.Fprintf(w, "add %s, %s, %s\n",
-				intTemporaryRegisters[0], intTemporaryRegisters[0], intTemporaryRegisters[0])
+			fmt.Fprintf(w, "sll %s, %s, %d\n",
+				intTemporaryRegisters[0], registers[1], 2)
 			fmt.Fprintf(w, "add %s, %s, %s\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0], registers[0])
 
@@ -1415,6 +1488,30 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			default:
 				fmt.Fprintf(w, "sw %s, 0(%s)\n",
 					registers[2], intTemporaryRegisters[0])
+			}
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
+		case *ir.ArrayPutImmediate:
+			n := node.(*ir.ArrayPutImmediate)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Array, n.Value},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			switch registers[1].(type) {
+			case FloatRegister:
+				fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+					registers[1], n.Index*4, registers[0])
+			default:
+				fmt.Fprintf(w, "sw %s, %d(%s)\n",
+					registers[1], n.Index*4, registers[0])
 			}
 
 			if tail {

@@ -148,17 +148,35 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 				array = append(array, value)
 			}
 			return array
+		case *ir.ArrayCreateImmediate:
+			n := node.(*ir.ArrayCreateImmediate)
+			value := values[n.Value]
+			array := []interface{}{}
+			for i := 0; i < int(n.Size); i++ {
+				array = append(array, value)
+			}
+			return array
 		case *ir.ArrayGet:
 			n := node.(*ir.ArrayGet)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			return array[index]
+		case *ir.ArrayGetImmediate:
+			n := node.(*ir.ArrayGetImmediate)
+			array := values[n.Array].([]interface{})
+			return array[n.Index]
 		case *ir.ArrayPut:
 			n := node.(*ir.ArrayPut)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			value := values[n.Value]
 			array[index] = value
+			return nil
+		case *ir.ArrayPutImmediate:
+			n := node.(*ir.ArrayPutImmediate)
+			array := values[n.Array].([]interface{})
+			value := values[n.Value]
+			array[n.Index] = value
 			return nil
 		case *ir.ReadInt:
 			var value int32

@@ -332,6 +332,30 @@ func Immediate(main Node, functions []*Function) Node {
 				functionToArgValues[n.Function], argValues)
 
 			return n, nil
+		case *ArrayCreate:
+			n := node.(*ArrayCreate)
+
+			if size, ok := values[n.Size].(int32); ok {
+				return &ArrayCreateImmediate{size, n.Value}, nil
+			}
+
+			return n, nil
+		case *ArrayGet:
+			n := node.(*ArrayGet)
+
+			if index, ok := values[n.Index].(int32); ok {
+				return &ArrayGetImmediate{n.Array, index}, nil
+			}
+
+			return n, nil
+		case *ArrayPut:
+			n := node.(*ArrayPut)
+
+			if index, ok := values[n.Index].(int32); ok {
+				return &ArrayPutImmediate{n.Array, index, n.Value}, nil
+			}
+
+			return n, nil
 		case *Sqrt:
 			n := node.(*Sqrt)
 

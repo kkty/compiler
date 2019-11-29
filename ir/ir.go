@@ -120,8 +120,27 @@ type TupleGet struct {
 }
 
 type ArrayCreate struct{ Size, Value string }
+
+type ArrayCreateImmediate struct {
+	Size  int32
+	Value string
+}
+
 type ArrayGet struct{ Array, Index string }
+
+type ArrayGetImmediate struct {
+	Array string
+	Index int32
+}
+
 type ArrayPut struct{ Array, Index, Value string }
+
+type ArrayPutImmediate struct {
+	Array string
+	Index int32
+	Value string
+}
+
 type ReadInt struct{}
 type ReadFloat struct{}
 type PrintInt struct{ Arg string }
@@ -130,38 +149,41 @@ type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 
-func (n *Variable) irNode()         {}
-func (n *Unit) irNode()             {}
-func (n *Int) irNode()              {}
-func (n *Bool) irNode()             {}
-func (n *Float) irNode()            {}
-func (n *Add) irNode()              {}
-func (n *AddImmediate) irNode()     {}
-func (n *Sub) irNode()              {}
-func (n *SubFromZero) irNode()      {}
-func (n *FloatAdd) irNode()         {}
-func (n *FloatSub) irNode()         {}
-func (n *FloatSubFromZero) irNode() {}
-func (n *FloatDiv) irNode()         {}
-func (n *FloatMul) irNode()         {}
-func (n *IfEqual) irNode()          {}
-func (n *IfEqualZero) irNode()      {}
-func (n *IfLessThan) irNode()       {}
-func (n *IfLessThanZero) irNode()   {}
-func (n *ValueBinding) irNode()     {}
-func (n *Application) irNode()      {}
-func (n *Tuple) irNode()            {}
-func (n *ArrayCreate) irNode()      {}
-func (n *ArrayGet) irNode()         {}
-func (n *ArrayPut) irNode()         {}
-func (n *ReadInt) irNode()          {}
-func (n *ReadFloat) irNode()        {}
-func (n *PrintInt) irNode()         {}
-func (n *PrintChar) irNode()        {}
-func (n *IntToFloat) irNode()       {}
-func (n *FloatToInt) irNode()       {}
-func (n *Sqrt) irNode()             {}
-func (n *TupleGet) irNode()         {}
+func (n *Variable) irNode()             {}
+func (n *Unit) irNode()                 {}
+func (n *Int) irNode()                  {}
+func (n *Bool) irNode()                 {}
+func (n *Float) irNode()                {}
+func (n *Add) irNode()                  {}
+func (n *AddImmediate) irNode()         {}
+func (n *Sub) irNode()                  {}
+func (n *SubFromZero) irNode()          {}
+func (n *FloatAdd) irNode()             {}
+func (n *FloatSub) irNode()             {}
+func (n *FloatSubFromZero) irNode()     {}
+func (n *FloatDiv) irNode()             {}
+func (n *FloatMul) irNode()             {}
+func (n *IfEqual) irNode()              {}
+func (n *IfEqualZero) irNode()          {}
+func (n *IfLessThan) irNode()           {}
+func (n *IfLessThanZero) irNode()       {}
+func (n *ValueBinding) irNode()         {}
+func (n *Application) irNode()          {}
+func (n *Tuple) irNode()                {}
+func (n *ArrayCreate) irNode()          {}
+func (n *ArrayCreateImmediate) irNode() {}
+func (n *ArrayGet) irNode()             {}
+func (n *ArrayGetImmediate) irNode()    {}
+func (n *ArrayPut) irNode()             {}
+func (n *ArrayPutImmediate) irNode()    {}
+func (n *ReadInt) irNode()              {}
+func (n *ReadFloat) irNode()            {}
+func (n *PrintInt) irNode()             {}
+func (n *PrintChar) irNode()            {}
+func (n *IntToFloat) irNode()           {}
+func (n *FloatToInt) irNode()           {}
+func (n *Sqrt) irNode()                 {}
+func (n *TupleGet) irNode()             {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -271,14 +293,27 @@ func (n *ArrayCreate) UpdateNames(mapping map[string]string) {
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
+func (n *ArrayCreateImmediate) UpdateNames(mapping map[string]string) {
+	n.Value = replaceIfFound(n.Value, mapping)
+}
+
 func (n *ArrayGet) UpdateNames(mapping map[string]string) {
 	n.Array = replaceIfFound(n.Array, mapping)
 	n.Index = replaceIfFound(n.Index, mapping)
 }
 
+func (n *ArrayGetImmediate) UpdateNames(mapping map[string]string) {
+	n.Array = replaceIfFound(n.Array, mapping)
+}
+
 func (n *ArrayPut) UpdateNames(mapping map[string]string) {
 	n.Array = replaceIfFound(n.Array, mapping)
 	n.Index = replaceIfFound(n.Index, mapping)
+	n.Value = replaceIfFound(n.Value, mapping)
+}
+
+func (n *ArrayPutImmediate) UpdateNames(mapping map[string]string) {
+	n.Array = replaceIfFound(n.Array, mapping)
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
@@ -526,6 +561,14 @@ func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) map[string]struct
 	return ret
 }
 
+func (n *ArrayCreateImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Value]; !ok {
+		ret[n.Value] = struct{}{}
+	}
+	return ret
+}
+
 func (n *ArrayGet) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Array]; !ok {
@@ -537,6 +580,14 @@ func (n *ArrayGet) FreeVariables(bound map[string]struct{}) map[string]struct{} 
 	return ret
 }
 
+func (n *ArrayGetImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Array]; !ok {
+		ret[n.Array] = struct{}{}
+	}
+	return ret
+}
+
 func (n *ArrayPut) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Array]; !ok {
@@ -544,6 +595,17 @@ func (n *ArrayPut) FreeVariables(bound map[string]struct{}) map[string]struct{} 
 	}
 	if _, ok := bound[n.Index]; !ok {
 		ret[n.Index] = struct{}{}
+	}
+	if _, ok := bound[n.Value]; !ok {
+		ret[n.Value] = struct{}{}
+	}
+	return ret
+}
+
+func (n *ArrayPutImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Array]; !ok {
+		ret[n.Array] = struct{}{}
 	}
 	if _, ok := bound[n.Value]; !ok {
 		ret[n.Value] = struct{}{}
@@ -642,19 +704,22 @@ func (n *ValueBinding) FloatValues() []float32 {
 	return append(n.Value.FloatValues(), n.Next.FloatValues()...)
 }
 
-func (n *Application) FloatValues() []float32 { return []float32{} }
-func (n *Tuple) FloatValues() []float32       { return []float32{} }
-func (n *TupleGet) FloatValues() []float32    { return []float32{} }
-func (n *ArrayCreate) FloatValues() []float32 { return []float32{} }
-func (n *ArrayGet) FloatValues() []float32    { return []float32{} }
-func (n *ArrayPut) FloatValues() []float32    { return []float32{} }
-func (n *ReadInt) FloatValues() []float32     { return []float32{} }
-func (n *ReadFloat) FloatValues() []float32   { return []float32{} }
-func (n *PrintInt) FloatValues() []float32    { return []float32{} }
-func (n *PrintChar) FloatValues() []float32   { return []float32{} }
-func (n *IntToFloat) FloatValues() []float32  { return []float32{} }
-func (n *FloatToInt) FloatValues() []float32  { return []float32{} }
-func (n *Sqrt) FloatValues() []float32        { return []float32{} }
+func (n *Application) FloatValues() []float32          { return []float32{} }
+func (n *Tuple) FloatValues() []float32                { return []float32{} }
+func (n *TupleGet) FloatValues() []float32             { return []float32{} }
+func (n *ArrayCreate) FloatValues() []float32          { return []float32{} }
+func (n *ArrayCreateImmediate) FloatValues() []float32 { return []float32{} }
+func (n *ArrayGet) FloatValues() []float32             { return []float32{} }
+func (n *ArrayGetImmediate) FloatValues() []float32    { return []float32{} }
+func (n *ArrayPut) FloatValues() []float32             { return []float32{} }
+func (n *ArrayPutImmediate) FloatValues() []float32    { return []float32{} }
+func (n *ReadInt) FloatValues() []float32              { return []float32{} }
+func (n *ReadFloat) FloatValues() []float32            { return []float32{} }
+func (n *PrintInt) FloatValues() []float32             { return []float32{} }
+func (n *PrintChar) FloatValues() []float32            { return []float32{} }
+func (n *IntToFloat) FloatValues() []float32           { return []float32{} }
+func (n *FloatToInt) FloatValues() []float32           { return []float32{} }
+func (n *Sqrt) FloatValues() []float32                 { return []float32{} }
 
 func (n *Variable) Clone() Node         { return &Variable{n.Name} }
 func (n *Unit) Clone() Node             { return &Unit{} }
@@ -715,12 +780,24 @@ func (n *ArrayCreate) Clone() Node {
 	return &ArrayCreate{n.Size, n.Value}
 }
 
+func (n *ArrayCreateImmediate) Clone() Node {
+	return &ArrayCreateImmediate{n.Size, n.Value}
+}
+
 func (n *ArrayGet) Clone() Node {
 	return &ArrayGet{n.Array, n.Index}
 }
 
+func (n *ArrayGetImmediate) Clone() Node {
+	return &ArrayGetImmediate{n.Array, n.Index}
+}
+
 func (n *ArrayPut) Clone() Node {
 	return &ArrayPut{n.Array, n.Index, n.Value}
+}
+
+func (n *ArrayPutImmediate) Clone() Node {
+	return &ArrayPutImmediate{n.Array, n.Index, n.Value}
 }
 
 func (n *ReadInt) Clone() Node    { return &ReadInt{} }
@@ -779,11 +856,27 @@ func (n *Application) HasSideEffects(functionsWithoutSideEffects map[string]stru
 
 func (n *Tuple) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
 func (n *TupleGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+
 func (n *ArrayCreate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return false
 }
-func (n *ArrayGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return false }
-func (n *ArrayPut) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
+
+func (n *ArrayCreateImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+
+func (n *ArrayGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+
+func (n *ArrayGetImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return false
+}
+
+func (n *ArrayPut) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+
+func (n *ArrayPutImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return true
+}
+
 func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool   { return true }
 func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
 func (n *PrintInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
@@ -835,15 +928,18 @@ func (n *Application) Applications() []*Application {
 	return []*Application{n}
 }
 
-func (n *Tuple) Applications() []*Application       { return []*Application{} }
-func (n *TupleGet) Applications() []*Application    { return []*Application{} }
-func (n *ArrayCreate) Applications() []*Application { return []*Application{} }
-func (n *ArrayGet) Applications() []*Application    { return []*Application{} }
-func (n *ArrayPut) Applications() []*Application    { return []*Application{} }
-func (n *ReadInt) Applications() []*Application     { return []*Application{} }
-func (n *ReadFloat) Applications() []*Application   { return []*Application{} }
-func (n *PrintInt) Applications() []*Application    { return []*Application{} }
-func (n *PrintChar) Applications() []*Application   { return []*Application{} }
-func (n *IntToFloat) Applications() []*Application  { return []*Application{} }
-func (n *FloatToInt) Applications() []*Application  { return []*Application{} }
-func (n *Sqrt) Applications() []*Application        { return []*Application{} }
+func (n *Tuple) Applications() []*Application                { return []*Application{} }
+func (n *TupleGet) Applications() []*Application             { return []*Application{} }
+func (n *ArrayCreate) Applications() []*Application          { return []*Application{} }
+func (n *ArrayCreateImmediate) Applications() []*Application { return []*Application{} }
+func (n *ArrayGet) Applications() []*Application             { return []*Application{} }
+func (n *ArrayGetImmediate) Applications() []*Application    { return []*Application{} }
+func (n *ArrayPut) Applications() []*Application             { return []*Application{} }
+func (n *ArrayPutImmediate) Applications() []*Application    { return []*Application{} }
+func (n *ReadInt) Applications() []*Application              { return []*Application{} }
+func (n *ReadFloat) Applications() []*Application            { return []*Application{} }
+func (n *PrintInt) Applications() []*Application             { return []*Application{} }
+func (n *PrintChar) Applications() []*Application            { return []*Application{} }
+func (n *IntToFloat) Applications() []*Application           { return []*Application{} }
+func (n *FloatToInt) Applications() []*Application           { return []*Application{} }
+func (n *Sqrt) Applications() []*Application                 { return []*Application{} }
