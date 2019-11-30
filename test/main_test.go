@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/kkty/mincaml-go/ast"
+	"github.com/kkty/mincaml-go/emit"
 	"github.com/kkty/mincaml-go/interpreter"
 	"github.com/kkty/mincaml-go/ir"
 	"github.com/kkty/mincaml-go/mir"
@@ -60,5 +61,5 @@ func TestCompile(t *testing.T) {
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)
 	}
-	main = ir.RemoveRedundantVariables(main, functions)
+	emit.Emit(functions, main, types, &bytes.Buffer{})
 }
