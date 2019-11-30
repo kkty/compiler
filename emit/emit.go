@@ -1296,7 +1296,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			n := node.(*ir.ArrayCreate)
 
 			registers, registerMapping, storedVariables := loadVariablesToRegisters(
-				[]string{n.Size, n.Value},
+				[]string{n.Length, n.Value},
 				registerMapping,
 				storedVariables,
 				variablesToKeep,
@@ -1381,7 +1381,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "add %s, %s, %s\n",
 				destination, heapPointer, intZeroRegister)
 
-			for i := 0; i < int(n.Size); i++ {
+			for i := 0; i < int(n.Length); i++ {
 				switch registers[0].(type) {
 				case FloatRegister:
 					fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
@@ -1392,7 +1392,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				}
 			}
 
-			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, n.Size*4)
+			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, n.Length*4)
 
 			if tail {
 				fmt.Fprintf(w, "jr $ra\n")

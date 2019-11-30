@@ -141,10 +141,10 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			return tuple
 		case *ir.ArrayCreate:
 			n := node.(*ir.ArrayCreate)
-			size := values[n.Size].(int32)
+			length := values[n.Length].(int32)
 			value := values[n.Value]
 			array := []interface{}{}
-			for i := 0; i < int(size); i++ {
+			for i := 0; i < int(length); i++ {
 				array = append(array, value)
 			}
 			return array
@@ -152,7 +152,7 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			n := node.(*ir.ArrayCreateImmediate)
 			value := values[n.Value]
 			array := []interface{}{}
-			for i := 0; i < int(n.Size); i++ {
+			for i := 0; i < int(n.Length); i++ {
 				array = append(array, value)
 			}
 			return array

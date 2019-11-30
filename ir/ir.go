@@ -58,6 +58,7 @@ type Node interface {
 	Clone() Node
 	HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool
 	Applications() []*Application
+	Size() int
 	irNode()
 }
 
@@ -119,11 +120,11 @@ type TupleGet struct {
 	Index int32
 }
 
-type ArrayCreate struct{ Size, Value string }
+type ArrayCreate struct{ Length, Value string }
 
 type ArrayCreateImmediate struct {
-	Size  int32
-	Value string
+	Length int32
+	Value  string
 }
 
 type ArrayGet struct{ Array, Index string }
@@ -289,7 +290,7 @@ func (n *Tuple) UpdateNames(mapping map[string]string) {
 }
 
 func (n *ArrayCreate) UpdateNames(mapping map[string]string) {
-	n.Size = replaceIfFound(n.Size, mapping)
+	n.Length = replaceIfFound(n.Length, mapping)
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
@@ -552,8 +553,8 @@ func (n *Tuple) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 
 func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
-	if _, ok := bound[n.Size]; !ok {
-		ret[n.Size] = struct{}{}
+	if _, ok := bound[n.Length]; !ok {
+		ret[n.Length] = struct{}{}
 	}
 	if _, ok := bound[n.Value]; !ok {
 		ret[n.Value] = struct{}{}
@@ -777,11 +778,11 @@ func (n *TupleGet) Clone() Node {
 }
 
 func (n *ArrayCreate) Clone() Node {
-	return &ArrayCreate{n.Size, n.Value}
+	return &ArrayCreate{n.Length, n.Value}
 }
 
 func (n *ArrayCreateImmediate) Clone() Node {
-	return &ArrayCreateImmediate{n.Size, n.Value}
+	return &ArrayCreateImmediate{n.Length, n.Value}
 }
 
 func (n *ArrayGet) Clone() Node {
@@ -943,3 +944,39 @@ func (n *PrintChar) Applications() []*Application            { return []*Applica
 func (n *IntToFloat) Applications() []*Application           { return []*Application{} }
 func (n *FloatToInt) Applications() []*Application           { return []*Application{} }
 func (n *Sqrt) Applications() []*Application                 { return []*Application{} }
+
+func (n *Variable) Size() int             { return 1 }
+func (n *Unit) Size() int                 { return 1 }
+func (n *Int) Size() int                  { return 1 }
+func (n *Bool) Size() int                 { return 1 }
+func (n *Float) Size() int                { return 1 }
+func (n *Add) Size() int                  { return 1 }
+func (n *AddImmediate) Size() int         { return 1 }
+func (n *Sub) Size() int                  { return 1 }
+func (n *SubFromZero) Size() int          { return 1 }
+func (n *FloatAdd) Size() int             { return 1 }
+func (n *FloatSub) Size() int             { return 1 }
+func (n *FloatSubFromZero) Size() int     { return 1 }
+func (n *FloatDiv) Size() int             { return 1 }
+func (n *FloatMul) Size() int             { return 1 }
+func (n *IfEqual) Size() int              { return n.True.Size() + n.False.Size() }
+func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size() }
+func (n *IfLessThan) Size() int           { return n.True.Size() + n.False.Size() }
+func (n *IfLessThanZero) Size() int       { return n.True.Size() + n.False.Size() }
+func (n *ValueBinding) Size() int         { return n.Value.Size() + n.Next.Size() }
+func (n *Application) Size() int          { return 1 }
+func (n *Tuple) Size() int                { return 1 }
+func (n *TupleGet) Size() int             { return 1 }
+func (n *ArrayCreate) Size() int          { return 1 }
+func (n *ArrayCreateImmediate) Size() int { return 1 }
+func (n *ArrayGet) Size() int             { return 1 }
+func (n *ArrayGetImmediate) Size() int    { return 1 }
+func (n *ArrayPut) Size() int             { return 1 }
+func (n *ArrayPutImmediate) Size() int    { return 1 }
+func (n *ReadInt) Size() int              { return 1 }
+func (n *ReadFloat) Size() int            { return 1 }
+func (n *PrintInt) Size() int             { return 1 }
+func (n *PrintChar) Size() int            { return 1 }
+func (n *IntToFloat) Size() int           { return 1 }
+func (n *FloatToInt) Size() int           { return 1 }
+func (n *Sqrt) Size() int                 { return 1 }

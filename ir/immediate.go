@@ -335,8 +335,8 @@ func Immediate(main Node, functions []*Function) Node {
 		case *ArrayCreate:
 			n := node.(*ArrayCreate)
 
-			if size, ok := values[n.Size].(int32); ok {
-				return &ArrayCreateImmediate{size, n.Value}, nil
+			if length, ok := values[n.Length].(int32); ok {
+				return &ArrayCreateImmediate{length, n.Value}, nil
 			}
 
 			return n, nil
