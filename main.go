@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ import (
 
 func main() {
 	interpret := flag.Bool("i", false, "interprets program instead of generating assembly")
+	debug := flag.Bool("debug", false, "enables debugging output")
 	inline := flag.Int("inline", 0, "number of inline expansions")
 	flag.Parse()
 
@@ -31,8 +33,11 @@ func main() {
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
-	main, functions = ir.Inline(main, functions, *inline, types)
+	main, functions = ir.Inline(main, functions, *inline, types, *debug)
 	for i := 0; i < 10; i++ {
+		if *debug {
+			fmt.Fprintf(os.Stderr, "optimizing (i=%d)\n", i)
+		}
 		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)

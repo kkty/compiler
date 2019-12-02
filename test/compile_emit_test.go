@@ -24,7 +24,7 @@ func TestCompileAndEmit(t *testing.T) {
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
-	main, _ = ir.Inline(main, functions, 5, types)
+	main, _ = ir.Inline(main, functions, 5, types, false)
 	for i := 0; i < 10; i++ {
 		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)

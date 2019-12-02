@@ -103,7 +103,7 @@ func replaceApplications(node Node, function *Function, types map[string]typing.
 }
 
 // Inline does inline expansions for n times.
-func Inline(main Node, functions []*Function, n int, types map[string]typing.Type) (Node, []*Function) {
+func Inline(main Node, functions []*Function, n int, types map[string]typing.Type, debug bool) (Node, []*Function) {
 	cnt := map[string]int{}
 	for i := 0; i < n; i++ {
 		sort.Slice(functions, func(i, j int) bool {
@@ -112,7 +112,10 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 
 		function := functions[0]
 
-		fmt.Fprintln(os.Stderr, function.Name)
+		if debug {
+			fmt.Fprintf(os.Stderr, "inlining %s\n", function.Name)
+		}
+
 		main = replaceApplications(main, function, types)
 		for _, f := range functions {
 			if f.Name != function.Name {
