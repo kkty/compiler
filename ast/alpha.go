@@ -22,52 +22,6 @@ func AlphaTransform(node Node) {
 		case *Variable:
 			n := node.(*Variable)
 			n.Name = mapping[n.Name]
-		case *Add:
-			n := node.(*Add)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *Sub:
-			n := node.(*Sub)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *FloatAdd:
-			n := node.(*FloatAdd)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *FloatSub:
-			n := node.(*FloatSub)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *FloatDiv:
-			n := node.(*FloatDiv)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *FloatMul:
-			n := node.(*FloatMul)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *Equal:
-			n := node.(*Equal)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *LessThan:
-			n := node.(*LessThan)
-			transform(n.Left, mapping)
-			transform(n.Right, mapping)
-		case *Neg:
-			n := node.(*Neg)
-			transform(n.Inner, mapping)
-		case *FloatNeg:
-			n := node.(*FloatNeg)
-			transform(n.Inner, mapping)
-		case *Not:
-			n := node.(*Not)
-			transform(n.Inner, mapping)
-		case *If:
-			n := node.(*If)
-			transform(n.Condition, mapping)
-			transform(n.True, mapping)
-			transform(n.False, mapping)
 		case *ValueBinding:
 			n := node.(*ValueBinding)
 
@@ -121,12 +75,6 @@ func AlphaTransform(node Node) {
 			}
 
 			n.Function = mapping[n.Function]
-		case *Tuple:
-			n := node.(*Tuple)
-
-			for i := range n.Elements {
-				transform(n.Elements[i], mapping)
-			}
 		case *TupleBinding:
 			n := node.(*TupleBinding)
 
@@ -149,36 +97,12 @@ func AlphaTransform(node Node) {
 			}
 
 			n.Names = newNames
-		case *ArrayCreate:
-			n := node.(*ArrayCreate)
-			transform(n.Size, mapping)
-			transform(n.Value, mapping)
-		case *ArrayGet:
-			n := node.(*ArrayGet)
-			transform(n.Array, mapping)
-			transform(n.Index, mapping)
-		case *ArrayPut:
-			n := node.(*ArrayPut)
-			transform(n.Array, mapping)
-			transform(n.Index, mapping)
-			transform(n.Value, mapping)
-		case *PrintInt:
-			n := node.(*PrintInt)
-			transform(n.Inner, mapping)
-		case *PrintChar:
-			n := node.(*PrintChar)
-			transform(n.Inner, mapping)
-		case *IntToFloat:
-			n := node.(*IntToFloat)
-			transform(n.Inner, mapping)
-		case *FloatToInt:
-			n := node.(*FloatToInt)
-			transform(n.Inner, mapping)
-		case *Sqrt:
-			n := node.(*Sqrt)
-			transform(n.Inner, mapping)
+		default:
+			for _, n := range node.Children() {
+				transform(n, mapping)
+			}
 		}
 	}
 
-	transform(node, map[string]string{})
+	transform(node, stringmap.New())
 }
