@@ -2,6 +2,8 @@ package ast
 
 import (
 	"fmt"
+
+	"github.com/kkty/mincaml-go/stringmap"
 )
 
 // AlphaTransform renames all the names in a program so that they are different
@@ -14,18 +16,8 @@ func AlphaTransform(node Node) {
 		return fmt.Sprintf("%s_%d", name, nextId)
 	}
 
-	copyMapping := func(original map[string]string) map[string]string {
-		m := map[string]string{}
-
-		for k, v := range original {
-			m[k] = v
-		}
-
-		return m
-	}
-
-	var transform func(node Node, mapping map[string]string)
-	transform = func(node Node, mapping map[string]string) {
+	var transform func(node Node, mapping stringmap.Map)
+	transform = func(node Node, mapping stringmap.Map) {
 		switch node.(type) {
 		case *Variable:
 			n := node.(*Variable)
@@ -78,28 +70,49 @@ func AlphaTransform(node Node) {
 			transform(n.False, mapping)
 		case *ValueBinding:
 			n := node.(*ValueBinding)
-			newMapping := copyMapping(mapping)
-			newName := getNewName(n.Name)
-			newMapping[n.Name] = newName
-			n.Name = newName
+
 			transform(n.Body, mapping)
-			transform(n.Next, newMapping)
+
+			newName := getNewName(n.Name)
+
+			{
+				restore := mapping.Join(stringmap.Map{n.Name: newName})
+				transform(n.Next, mapping)
+				restore(mapping)
+			}
+
+			n.Name = newName
 		case *FunctionBinding:
 			n := node.(*FunctionBinding)
-			newMapping := copyMapping(mapping)
-			newMappingForFunction := copyMapping(mapping)
+
 			newName := getNewName(n.Name)
-			newMapping[n.Name] = newName
-			newMappingForFunction[n.Name] = newName
 			newArgNames := []string{}
 			for _, argName := range n.Args {
-				newArgName := getNewName(argName)
-				newMappingForFunction[argName] = newArgName
-				newArgNames = append(newArgNames, newArgName)
+				newArgNames = append(newArgNames, getNewName(argName))
 			}
+
+			// Updates n.Body.
+			{
+				newMapping := stringmap.New()
+				newMapping[n.Name] = newName
+				for i, arg := range n.Args {
+					newMapping[arg] = newArgNames[i]
+				}
+				restore := mapping.Join(newMapping)
+				transform(n.Body, mapping)
+				restore(mapping)
+			}
+
+			// Updates n.Next.
+			{
+				newMapping := stringmap.New()
+				newMapping[n.Name] = newName
+				restore := mapping.Join(newMapping)
+				transform(n.Next, mapping)
+				restore(mapping)
+			}
+
 			n.Name, n.Args = newName, newArgNames
-			transform(n.Body, newMappingForFunction)
-			transform(n.Next, newMapping)
 		case *Application:
 			n := node.(*Application)
 
@@ -116,16 +129,26 @@ func AlphaTransform(node Node) {
 			}
 		case *TupleBinding:
 			n := node.(*TupleBinding)
-			newMapping := copyMapping(mapping)
-			newNames := []string{}
-			for _, name := range n.Names {
-				newName := getNewName(name)
-				newNames = append(newNames, newName)
-				newMapping[name] = newName
-			}
-			n.Names = newNames
+
 			transform(n.Tuple, mapping)
-			transform(n.Next, newMapping)
+
+			newNames := []string{}
+
+			for _, name := range n.Names {
+				newNames = append(newNames, getNewName(name))
+			}
+
+			{
+				newMapping := stringmap.New()
+				for i, name := range n.Names {
+					newMapping[name] = newNames[i]
+				}
+				restore := mapping.Join(newMapping)
+				transform(n.Next, mapping)
+				restore(mapping)
+			}
+
+			n.Names = newNames
 		case *ArrayCreate:
 			n := node.(*ArrayCreate)
 			transform(n.Size, mapping)
