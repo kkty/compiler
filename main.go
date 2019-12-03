@@ -20,6 +20,7 @@ func main() {
 	interpret := flag.Bool("i", false, "interprets program instead of generating assembly")
 	debug := flag.Bool("debug", false, "enables debugging output")
 	inline := flag.Int("inline", 0, "number of inline expansions")
+	iter := flag.Int("iter", 0, "number of iterations for optimization")
 	flag.Parse()
 
 	b, err := ioutil.ReadFile(flag.Arg(0))
@@ -27,14 +28,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	program := string(b)
-	astNode := parser.Parse(program)
+
+	astNode := parser.Parse(string(b))
 	ast.AlphaTransform(astNode)
 	mirNode := mir.Generate(astNode)
 	types := typing.GetTypes(mirNode)
 	main, functions, _ := ir.Generate(mirNode, types)
 	main, functions = ir.Inline(main, functions, *inline, types, *debug)
-	for i := 0; i < 10; i++ {
+
+	for i := 0; i < *iter; i++ {
 		if *debug {
 			fmt.Fprintf(os.Stderr, "optimizing (i=%d)\n", i)
 		}
@@ -42,6 +44,7 @@ func main() {
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)
 	}
+
 	if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
