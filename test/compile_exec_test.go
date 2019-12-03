@@ -38,6 +38,12 @@ func TestCompileAndExec(t *testing.T) {
 			main, functions, _ := ir.Generate(mirNode, types)
 			main, functions = ir.Inline(main, functions, 5, types, false)
 			main = ir.RemoveRedundantVariables(main, functions)
+
+			for _, function := range functions {
+				assert.Equal(t, 0, len(function.FreeVariables()))
+			}
+			assert.Equal(t, 0, len(main.FreeVariables(map[string]struct{}{})))
+
 			buf := bytes.Buffer{}
 			interpreter.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
 			assert.Equal(t, c.expected, buf.String())

@@ -11,6 +11,7 @@ import (
 	"github.com/kkty/mincaml-go/mir"
 	"github.com/kkty/mincaml-go/parser"
 	"github.com/kkty/mincaml-go/typing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCompileAndEmit(t *testing.T) {
@@ -30,5 +31,11 @@ func TestCompileAndEmit(t *testing.T) {
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)
 	}
+
+	for _, function := range functions {
+		assert.Equal(t, 0, len(function.FreeVariables()))
+	}
+	assert.Equal(t, 0, len(main.FreeVariables(map[string]struct{}{})))
+
 	emit.Emit(functions, main, types, &bytes.Buffer{})
 }
