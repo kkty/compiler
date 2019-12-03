@@ -106,6 +106,10 @@ func replaceApplications(node Node, function *Function, types map[string]typing.
 func Inline(main Node, functions []*Function, n int, types map[string]typing.Type, debug bool) (Node, []*Function) {
 	cnt := map[string]int{}
 	for i := 0; i < n; i++ {
+		if len(functions) == 0 {
+			break
+		}
+
 		sort.Slice(functions, func(i, j int) bool {
 			return len(functions[i].Args)+cnt[functions[i].Name]*10 < len(functions[j].Args)+cnt[functions[j].Name]*10
 		})
