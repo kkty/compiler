@@ -22,6 +22,7 @@ func TestCompileAndEmit(t *testing.T) {
 		"./mandelbrot.ml",
 		"./matmul.ml",
 		"./min-rt.ml",
+		"./array.ml",
 	} {
 		t.Run(file, func(t *testing.T) {
 			b, err := ioutil.ReadFile(file)
