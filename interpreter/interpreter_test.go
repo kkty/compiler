@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kkty/mincaml-go/ir"
+	"github.com/kkty/compiler/ir"
 	"github.com/stretchr/testify/assert"
 )
 

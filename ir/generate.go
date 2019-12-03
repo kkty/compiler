@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kkty/mincaml-go/mir"
-	"github.com/kkty/mincaml-go/typing"
+	"github.com/kkty/compiler/mir"
+	"github.com/kkty/compiler/typing"
 	"github.com/thoas/go-funk"
 )
 

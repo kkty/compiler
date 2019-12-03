@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kkty/mincaml-go/ast"
+	"github.com/kkty/compiler/ast"
 )
 
 type lexer struct {

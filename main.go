@@ -7,13 +7,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/kkty/mincaml-go/ast"
-	"github.com/kkty/mincaml-go/emit"
-	"github.com/kkty/mincaml-go/interpreter"
-	"github.com/kkty/mincaml-go/ir"
-	"github.com/kkty/mincaml-go/mir"
-	"github.com/kkty/mincaml-go/parser"
-	"github.com/kkty/mincaml-go/typing"
+	"github.com/kkty/compiler/ast"
+	"github.com/kkty/compiler/emit"
+	"github.com/kkty/compiler/interpreter"
+	"github.com/kkty/compiler/ir"
+	"github.com/kkty/compiler/mir"
+	"github.com/kkty/compiler/parser"
+	"github.com/kkty/compiler/typing"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"math"
 
-	"github.com/kkty/mincaml-go/ir"
+	"github.com/kkty/compiler/ir"
 )
 
 // Execute interprets and executes the program.

@@ -5,7 +5,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/kkty/mincaml-go/typing"
+	"github.com/kkty/compiler/typing"
 )
 
 var nextTemporaryId = 0

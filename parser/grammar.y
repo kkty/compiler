@@ -1,7 +1,7 @@
 %{
 package parser
 
-import "github.com/kkty/mincaml-go/ast"
+import "github.com/kkty/compiler/ast"
 %}
 
 %union{

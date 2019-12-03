@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kkty/mincaml-go/ast"
+	"github.com/kkty/compiler/ast"
 )
 
 var nextTemporaryId = 0

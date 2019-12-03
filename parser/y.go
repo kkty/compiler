@@ -7,7 +7,7 @@ import __yyfmt__ "fmt"
 
 //line grammar.y:2
 
-import "github.com/kkty/mincaml-go/ast"
+import "github.com/kkty/compiler/ast"
 
 //line grammar.y:7
 type yySymType struct {

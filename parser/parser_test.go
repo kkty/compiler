@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/kkty/mincaml-go/ast"
+	"github.com/kkty/compiler/ast"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 
-	"github.com/kkty/mincaml-go/stringmap"
+	"github.com/kkty/compiler/stringmap"
 )
 
 // AlphaTransform renames all the names in a program so that they are different

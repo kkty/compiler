@@ -1,4 +1,4 @@
-module github.com/kkty/mincaml-go
+module github.com/kkty/compiler
 
 go 1.13
 

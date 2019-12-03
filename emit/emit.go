@@ -6,8 +6,8 @@ import (
 	"log"
 	"math/rand"
 
-	"github.com/kkty/mincaml-go/ir"
-	"github.com/kkty/mincaml-go/typing"
+	"github.com/kkty/compiler/ir"
+	"github.com/kkty/compiler/typing"
 	"github.com/thoas/go-funk"
 )
 
