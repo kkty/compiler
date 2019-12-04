@@ -133,6 +133,18 @@ func GetTypes(root mir.Node) map[string]Type {
 			constraints = append(constraints, constraint{nameToType[n.Left], FloatType})
 			constraints = append(constraints, constraint{nameToType[n.Right], FloatType})
 			return FloatType
+		case *mir.Not:
+			n := node.(*mir.Not)
+			constraints = append(constraints, constraint{nameToType[n.Arg], BoolType})
+			return BoolType
+		case *mir.Equal:
+			n := node.(*mir.Equal)
+			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
+			return BoolType
+		case *mir.LessThan:
+			n := node.(*mir.LessThan)
+			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})
+			return BoolType
 		case *mir.IfEqual:
 			n := node.(*mir.IfEqual)
 			constraints = append(constraints, constraint{nameToType[n.Left], nameToType[n.Right]})

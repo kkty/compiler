@@ -130,6 +130,57 @@ func Immediate(main Node, functions []*Function) Node {
 			}
 
 			return n, nil
+		case *Not:
+			n := node.(*Not)
+
+			if inner, ok := values[n.Inner].(bool); ok {
+				return &Bool{!inner}, !inner
+			}
+
+			return n, nil
+		case *Equal:
+			n := node.(*Equal)
+
+			if left, ok := values[n.Left].(int32); ok {
+				if right, ok := values[n.Right].(int32); ok {
+					v := left == right
+					return &Bool{v}, v
+				}
+			}
+
+			if left, ok := values[n.Left].(bool); ok {
+				if right, ok := values[n.Right].(bool); ok {
+					v := left == right
+					return &Bool{v}, v
+				}
+			}
+
+			if left, ok := values[n.Left].(float32); ok {
+				if right, ok := values[n.Right].(float32); ok {
+					v := left == right
+					return &Bool{v}, v
+				}
+			}
+
+			return n, nil
+		case *LessThan:
+			n := node.(*LessThan)
+
+			if left, ok := values[n.Left].(int32); ok {
+				if right, ok := values[n.Right].(int32); ok {
+					v := left < right
+					return &Bool{v}, v
+				}
+			}
+
+			if left, ok := values[n.Left].(float32); ok {
+				if right, ok := values[n.Right].(float32); ok {
+					v := left < right
+					return &Bool{v}, v
+				}
+			}
+
+			return n, nil
 		case *IfEqual:
 			n := node.(*IfEqual)
 

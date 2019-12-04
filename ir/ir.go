@@ -83,6 +83,10 @@ type FloatSubFromZero struct{ Inner string }
 type FloatDiv struct{ Left, Right string }
 type FloatMul struct{ Left, Right string }
 
+type Not struct{ Inner string }
+type Equal struct{ Left, Right string }
+type LessThan struct{ Left, Right string }
+
 type IfEqual struct {
 	Left, Right string
 	True, False Node
@@ -164,6 +168,9 @@ func (n *FloatSub) irNode()             {}
 func (n *FloatSubFromZero) irNode()     {}
 func (n *FloatDiv) irNode()             {}
 func (n *FloatMul) irNode()             {}
+func (n *Not) irNode()                  {}
+func (n *Equal) irNode()                {}
+func (n *LessThan) irNode()             {}
 func (n *IfEqual) irNode()              {}
 func (n *IfEqualZero) irNode()          {}
 func (n *IfLessThan) irNode()           {}
@@ -241,6 +248,20 @@ func (n *FloatDiv) UpdateNames(mapping map[string]string) {
 }
 
 func (n *FloatMul) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+}
+
+func (n *Not) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
+func (n *Equal) UpdateNames(mapping map[string]string) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+}
+
+func (n *LessThan) UpdateNames(mapping map[string]string) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
@@ -446,6 +467,36 @@ func (n *FloatDiv) FreeVariables(bound map[string]struct{}) map[string]struct{} 
 }
 
 func (n *FloatMul) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Left]; !ok {
+		ret[n.Left] = struct{}{}
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret[n.Right] = struct{}{}
+	}
+	return ret
+}
+
+func (n *Not) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Inner]; !ok {
+		ret[n.Inner] = struct{}{}
+	}
+	return ret
+}
+
+func (n *Equal) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Left]; !ok {
+		ret[n.Left] = struct{}{}
+	}
+	if _, ok := bound[n.Right]; !ok {
+		ret[n.Right] = struct{}{}
+	}
+	return ret
+}
+
+func (n *LessThan) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
 		ret[n.Left] = struct{}{}
@@ -684,6 +735,9 @@ func (n *FloatSub) FloatValues() []float32         { return []float32{} }
 func (n *FloatSubFromZero) FloatValues() []float32 { return []float32{} }
 func (n *FloatDiv) FloatValues() []float32         { return []float32{} }
 func (n *FloatMul) FloatValues() []float32         { return []float32{} }
+func (n *Not) FloatValues() []float32              { return []float32{} }
+func (n *Equal) FloatValues() []float32            { return []float32{} }
+func (n *LessThan) FloatValues() []float32         { return []float32{} }
 
 func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
@@ -736,6 +790,9 @@ func (n *FloatSub) Clone() Node         { return &FloatSub{n.Left, n.Right} }
 func (n *FloatSubFromZero) Clone() Node { return &FloatSubFromZero{n.Inner} }
 func (n *FloatDiv) Clone() Node         { return &FloatDiv{n.Left, n.Right} }
 func (n *FloatMul) Clone() Node         { return &FloatMul{n.Left, n.Right} }
+func (n *Not) Clone() Node              { return &Not{n.Inner} }
+func (n *Equal) Clone() Node            { return &Equal{n.Left, n.Right} }
+func (n *LessThan) Clone() Node         { return &LessThan{n.Left, n.Right} }
 
 func (n *IfEqual) Clone() Node {
 	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
@@ -829,6 +886,9 @@ func (n *FloatSubFromZero) HasSideEffects(functionsWithoutSideEffects map[string
 }
 func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
 func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *Not) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
+func (n *Equal) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
+func (n *LessThan) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
 
 func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
@@ -904,6 +964,9 @@ func (n *FloatSub) Applications() []*Application         { return []*Application
 func (n *FloatSubFromZero) Applications() []*Application { return []*Application{} }
 func (n *FloatDiv) Applications() []*Application         { return []*Application{} }
 func (n *FloatMul) Applications() []*Application         { return []*Application{} }
+func (n *Not) Applications() []*Application              { return []*Application{} }
+func (n *Equal) Applications() []*Application            { return []*Application{} }
+func (n *LessThan) Applications() []*Application         { return []*Application{} }
 
 func (n *IfEqual) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
@@ -959,6 +1022,9 @@ func (n *FloatSub) Size() int             { return 1 }
 func (n *FloatSubFromZero) Size() int     { return 1 }
 func (n *FloatDiv) Size() int             { return 1 }
 func (n *FloatMul) Size() int             { return 1 }
+func (n *Not) Size() int                  { return 1 }
+func (n *Equal) Size() int                { return 1 }
+func (n *LessThan) Size() int             { return 1 }
 func (n *IfEqual) Size() int              { return n.True.Size() + n.False.Size() }
 func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfLessThan) Size() int           { return n.True.Size() + n.False.Size() }

@@ -749,6 +749,98 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping, storedVariables
+		case *ir.Not:
+			n := node.(*ir.Not)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Inner},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			fmt.Fprintf(w, "addi %s, %s, 1\n",
+				intTemporaryRegisters[0], intZeroRegister)
+			fmt.Fprintf(w, "sub %s, %s, %s\n",
+				destination, intTemporaryRegisters[0], registers[0])
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
+		case *ir.Equal:
+			n := node.(*ir.Equal)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Left, n.Right},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			if types[n.Left] == typing.FloatType {
+				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "c.eq.s %s, %s\n", registers[0], registers[1])
+				fmt.Fprintf(w, "bc1t 1\n")
+				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+			} else {
+				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+			}
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
+		case *ir.LessThan:
+			n := node.(*ir.LessThan)
+
+			registers, registerMapping, storedVariables := loadVariablesToRegisters(
+				[]string{n.Left, n.Right},
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			storedVariables = spillVariableOnRegister(
+				destination,
+				registerMapping,
+				storedVariables,
+				variablesToKeep,
+			)
+
+			if types[n.Left] == typing.FloatType {
+				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "c.le.s %s, %s\n", registers[1], registers[0])
+				fmt.Fprintf(w, "bc1t 1\n")
+				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, intZeroRegister)
+			} else {
+				fmt.Fprintf(w, "slt %s, %s, %s\n",
+					destination, registers[0], registers[1])
+			}
+
+			if tail {
+				fmt.Fprintf(w, "jr $ra\n")
+			}
+
+			return registerMapping, storedVariables
 		case *ir.IfEqual:
 			n := node.(*ir.IfEqual)
 

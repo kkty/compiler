@@ -50,6 +50,15 @@ func Generate(
 		case *mir.FloatMul:
 			n := node.(*mir.FloatMul)
 			return &FloatMul{n.Left, n.Right}
+		case *mir.Not:
+			n := node.(*mir.Not)
+			return &Not{n.Arg}
+		case *mir.Equal:
+			n := node.(*mir.Equal)
+			return &Equal{n.Left, n.Right}
+		case *mir.LessThan:
+			n := node.(*mir.LessThan)
+			return &LessThan{n.Left, n.Right}
 		case *mir.IfEqual:
 			n := node.(*mir.IfEqual)
 			return &IfEqual{n.Left, n.Right, construct(n.True), construct(n.False)}

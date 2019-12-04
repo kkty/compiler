@@ -17,6 +17,10 @@ type FloatSub struct{ Left, Right string }
 type FloatDiv struct{ Left, Right string }
 type FloatMul struct{ Left, Right string }
 
+type Not struct{ Arg string }
+type Equal struct{ Left, Right string }
+type LessThan struct{ Left, Right string }
+
 type IfEqual struct {
 	Left, Right string
 	True, False Node
@@ -75,6 +79,9 @@ func (n *FloatAdd) mirNode()        {}
 func (n *FloatSub) mirNode()        {}
 func (n *FloatDiv) mirNode()        {}
 func (n *FloatMul) mirNode()        {}
+func (n *Not) mirNode()             {}
+func (n *Equal) mirNode()           {}
+func (n *LessThan) mirNode()        {}
 func (n *IfEqual) mirNode()         {}
 func (n *IfLessThan) mirNode()      {}
 func (n *ValueBinding) mirNode()    {}

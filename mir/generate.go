@@ -82,14 +82,14 @@ func Generate(node ast.Node) Node {
 
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
 			func(names []string) Node {
-				return &IfEqual{names[0], names[1], &Bool{true}, &Bool{false}}
+				return &Equal{names[0], names[1]}
 			})
 	case *ast.LessThan:
 		n := node.(*ast.LessThan)
 
 		return insertTemporaries([]ast.Node{n.Left, n.Right},
 			func(names []string) Node {
-				return &IfLessThan{names[0], names[1], &Bool{true}, &Bool{false}}
+				return &LessThan{names[0], names[1]}
 			})
 	case *ast.Neg:
 		n := node.(*ast.Neg)
@@ -108,9 +108,7 @@ func Generate(node ast.Node) Node {
 
 		return insertTemporaries([]ast.Node{n.Inner},
 			func(names []string) Node {
-				t := temporary()
-				return &ValueBinding{t, &Bool{true},
-					&IfEqual{t, names[0], &Bool{false}, &Bool{true}}}
+				return &Not{names[0]}
 			})
 	case *ast.If:
 		n := node.(*ast.If)

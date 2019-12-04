@@ -63,6 +63,22 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 		case *ir.FloatMul:
 			n := node.(*ir.FloatMul)
 			return values[n.Left].(float32) * values[n.Right].(float32)
+		case *ir.Not:
+			n := node.(*ir.Not)
+			return !values[n.Inner].(bool)
+		case *ir.Equal:
+			n := node.(*ir.Equal)
+			if n.Left == n.Right {
+				return true
+			} else {
+				return false
+			}
+		case *ir.LessThan:
+			n := node.(*ir.LessThan)
+			if left, ok := values[n.Left].(int32); ok {
+				return left < values[n.Right].(int32)
+			}
+			return values[n.Left].(float32) < values[n.Right].(float32)
 		case *ir.IfEqual:
 			n := node.(*ir.IfEqual)
 			if values[n.Left] == values[n.Right] {
