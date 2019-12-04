@@ -2418,6 +2418,6 @@ let rec rt size_x size_y =
 )
 in
 
-let _ = rt 16 16
+let _ = rt 128 128
 
 in ()
