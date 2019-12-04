@@ -102,6 +102,14 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 					return evaluate(n.False, values)
 				}
 			}
+		case *ir.IfEqualTrue:
+			n := node.(*ir.IfEqualTrue)
+
+			if values[n.Inner].(bool) {
+				return evaluate(n.True, values)
+			} else {
+				return evaluate(n.False, values)
+			}
 		case *ir.IfLessThan:
 			n := node.(*ir.IfLessThan)
 

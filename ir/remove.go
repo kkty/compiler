@@ -16,6 +16,11 @@ func RemoveRedundantVariables(main Node, functions []*Function) Node {
 			n.True = removeRedundantVariables(n.True)
 			n.False = removeRedundantVariables(n.False)
 			return n
+		case *IfEqualTrue:
+			n := node.(*IfEqualTrue)
+			n.True = removeRedundantVariables(n.True)
+			n.False = removeRedundantVariables(n.False)
+			return n
 		case *IfLessThan:
 			n := node.(*IfLessThan)
 			n.True = removeRedundantVariables(n.True)

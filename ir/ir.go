@@ -97,6 +97,11 @@ type IfEqualZero struct {
 	True, False Node
 }
 
+type IfEqualTrue struct {
+	Inner       string
+	True, False Node
+}
+
 type IfLessThan struct {
 	Left, Right string
 	True, False Node
@@ -173,6 +178,7 @@ func (n *Equal) irNode()                {}
 func (n *LessThan) irNode()             {}
 func (n *IfEqual) irNode()              {}
 func (n *IfEqualZero) irNode()          {}
+func (n *IfEqualTrue) irNode()          {}
 func (n *IfLessThan) irNode()           {}
 func (n *IfLessThanZero) irNode()       {}
 func (n *ValueBinding) irNode()         {}
@@ -274,6 +280,12 @@ func (n *IfEqual) UpdateNames(mapping map[string]string) {
 }
 
 func (n *IfEqualZero) UpdateNames(mapping map[string]string) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
+}
+
+func (n *IfEqualTrue) UpdateNames(mapping map[string]string) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
@@ -538,6 +550,20 @@ func (n *IfEqualZero) FreeVariables(bound map[string]struct{}) map[string]struct
 	return ret
 }
 
+func (n *IfEqualTrue) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	ret := map[string]struct{}{}
+	if _, ok := bound[n.Inner]; !ok {
+		ret[n.Inner] = struct{}{}
+	}
+	for v := range n.True.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret[v] = struct{}{}
+	}
+	return ret
+}
+
 func (n *IfLessThan) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Left]; !ok {
@@ -747,6 +773,10 @@ func (n *IfEqualZero) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
+func (n *IfEqualTrue) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+
 func (n *IfLessThan) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
@@ -800,6 +830,10 @@ func (n *IfEqual) Clone() Node {
 
 func (n *IfEqualZero) Clone() Node {
 	return &IfEqualZero{n.Inner, n.True.Clone(), n.False.Clone()}
+}
+
+func (n *IfEqualTrue) Clone() Node {
+	return &IfEqualTrue{n.Inner, n.True.Clone(), n.False.Clone()}
 }
 
 func (n *IfLessThan) Clone() Node {
@@ -898,6 +932,10 @@ func (n *IfEqualZero) HasSideEffects(functionsWithoutSideEffects map[string]stru
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
+func (n *IfEqualTrue) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
+}
+
 func (n *IfLessThan) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
@@ -976,6 +1014,10 @@ func (n *IfEqualZero) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
 }
 
+func (n *IfEqualTrue) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
 func (n *IfLessThan) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
 }
@@ -1027,6 +1069,7 @@ func (n *Equal) Size() int                { return 1 }
 func (n *LessThan) Size() int             { return 1 }
 func (n *IfEqual) Size() int              { return n.True.Size() + n.False.Size() }
 func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size() }
+func (n *IfEqualTrue) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfLessThan) Size() int           { return n.True.Size() + n.False.Size() }
 func (n *IfLessThanZero) Size() int       { return n.True.Size() + n.False.Size() }
 func (n *ValueBinding) Size() int         { return n.Value.Size() + n.Next.Size() }

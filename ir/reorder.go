@@ -16,6 +16,11 @@ func Reorder(main Node, functions []*Function) Node {
 			n.True = reorder(n.True)
 			n.False = reorder(n.False)
 			return n
+		case *IfEqualTrue:
+			n := node.(*IfEqualTrue)
+			n.True = reorder(n.True)
+			n.False = reorder(n.False)
+			return n
 		case *IfLessThan:
 			n := node.(*IfLessThan)
 			n.True = reorder(n.True)
@@ -54,6 +59,22 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 			case *IfEqualZero:
 				next := n.Next.(*IfEqualZero)
+
+				if next.Inner == n.Name {
+					return n
+				}
+
+				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					return next
+				}
+
+				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					return next
+				}
+			case *IfEqualTrue:
+				next := n.Next.(*IfEqualTrue)
 
 				if next.Inner == n.Name {
 					return n

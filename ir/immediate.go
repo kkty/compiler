@@ -2,18 +2,22 @@ package ir
 
 import (
 	"math"
-
-	"github.com/thoas/go-funk"
 )
 
 func Immediate(main Node, functions []*Function) Node {
-	functionToArgValues := map[string][][]interface{}{}
-
 	// Updates a node to use immediate values, and evaluates the value of each node at the
 	// time. nil is used for unknown values.
 
 	var updateAndEvaluate func(node Node, values map[string]interface{}) (Node, interface{})
 	updateAndEvaluate = func(node Node, values map[string]interface{}) (Node, interface{}) {
+		copyValues := func() map[string]interface{} {
+			copied := map[string]interface{}{}
+			for k, v := range values {
+				copied[k] = v
+			}
+			return copied
+		}
+
 		switch node.(type) {
 		case *Variable:
 			n := node.(*Variable)
@@ -184,41 +188,22 @@ func Immediate(main Node, functions []*Function) Node {
 		case *IfEqual:
 			n := node.(*IfEqual)
 
-			copiedValues := map[string]interface{}{}
-			for k, v := range values {
-				copiedValues[k] = v
-			}
-
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left == right {
-						return updateAndEvaluate(n.True, copiedValues)
+						return updateAndEvaluate(n.True, values)
 					} else {
-						return updateAndEvaluate(n.False, copiedValues)
+						return updateAndEvaluate(n.False, values)
 					}
 				} else {
 					if left == 0 {
-						n := &IfEqualZero{n.Right, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfEqualZero{n.Right, n.True, n.False}, nil
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
-						n := &IfEqualZero{n.Left, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfEqualZero{n.Left, n.True, n.False}, nil
 					}
 				}
 			}
@@ -226,86 +211,104 @@ func Immediate(main Node, functions []*Function) Node {
 			if left, ok := values[n.Left].(float32); ok {
 				if right, ok := values[n.Right].(float32); ok {
 					if left == right {
-						return updateAndEvaluate(n.True, copiedValues)
+						return updateAndEvaluate(n.True, values)
 					} else {
-						return updateAndEvaluate(n.False, copiedValues)
+						return updateAndEvaluate(n.False, values)
 					}
 				} else {
 					if left == 0 {
-						n := &IfEqualZero{n.Right, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfEqualZero{n.Right, n.True, n.False}, nil
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
-						n := &IfEqualZero{n.Left, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfEqualZero{n.Left, n.True, n.False}, nil
 					}
 				}
 			}
 
-			var value1, value2 interface{}
-			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-			if value1 == value2 {
-				return n, value1
+			if left, ok := values[n.Left].(bool); ok {
+				if right, ok := values[n.Right].(bool); ok {
+					if left == right {
+						return updateAndEvaluate(n.True, values)
+					} else {
+						return updateAndEvaluate(n.False, values)
+					}
+				} else {
+					if left {
+						return &IfEqualTrue{n.Right, n.True, n.False}, nil
+					} else {
+						return &IfEqualTrue{n.Right, n.False, n.True}, nil
+					}
+				}
+			} else {
+				if right, ok := values[n.Right].(bool); ok {
+					if right {
+						return &IfEqualTrue{n.Left, n.True, n.False}, nil
+					} else {
+						return &IfEqualTrue{n.Left, n.False, n.True}, nil
+					}
+				}
 			}
+
+			n.True, _ = updateAndEvaluate(n.True, values)
+			n.False, _ = updateAndEvaluate(n.False, values)
 
 			return n, nil
 		case *IfEqualZero:
 			n := node.(*IfEqualZero)
 
-			copiedValues := map[string]interface{}{}
-
-			for k, v := range values {
-				copiedValues[k] = v
+			if inner, ok := values[n.Inner].(int32); ok {
+				if inner == 0 {
+					return updateAndEvaluate(n.True, values)
+				} else {
+					return updateAndEvaluate(n.False, values)
+				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, copiedValues)
-			n.False, _ = updateAndEvaluate(n.False, copiedValues)
+			if inner, ok := values[n.Inner].(float32); ok {
+				if inner == 0 {
+					return updateAndEvaluate(n.True, values)
+				} else {
+					return updateAndEvaluate(n.False, values)
+				}
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, values)
+			n.False, _ = updateAndEvaluate(n.False, values)
+
+			return n, nil
+		case *IfEqualTrue:
+			n := node.(*IfEqualTrue)
+
+			if inner, ok := values[n.Inner].(bool); ok {
+				if inner {
+					return updateAndEvaluate(n.True, values)
+				} else {
+					return updateAndEvaluate(n.False, values)
+				}
+			}
+
+			n.True, _ = updateAndEvaluate(n.True, values)
+			n.False, _ = updateAndEvaluate(n.False, values)
 
 			return n, nil
 		case *IfLessThan:
 			n := node.(*IfLessThan)
 
-			copiedValues := map[string]interface{}{}
-
-			for k, v := range values {
-				copiedValues[k] = v
-			}
-
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left < right {
-						return updateAndEvaluate(n.True, copiedValues)
+						return updateAndEvaluate(n.True, values)
 					} else {
-						return updateAndEvaluate(n.False, copiedValues)
+						return updateAndEvaluate(n.False, values)
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
-						n := &IfLessThanZero{n.Left, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfLessThanZero{n.Left, n.True, n.False}, nil
 					}
 				}
 			}
@@ -313,58 +316,34 @@ func Immediate(main Node, functions []*Function) Node {
 			if left, ok := values[n.Left].(float32); ok {
 				if right, ok := values[n.Right].(float32); ok {
 					if left < right {
-						return updateAndEvaluate(n.True, copiedValues)
+						return updateAndEvaluate(n.True, values)
 					} else {
-						return updateAndEvaluate(n.False, copiedValues)
+						return updateAndEvaluate(n.False, values)
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
-						n := &IfLessThanZero{n.Left, n.True, n.False}
-						var value1, value2 interface{}
-						n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-						n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-						if value1 == value2 {
-							return n, value1
-						}
-						return n, nil
+						return &IfLessThanZero{n.Left, n.True, n.False}, nil
 					}
 				}
 			}
 
-			var value1, value2 interface{}
-			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-			if value1 == value2 {
-				return n, value1
-			}
+			n.True, _ = updateAndEvaluate(n.True, values)
+			n.False, _ = updateAndEvaluate(n.False, values)
 
 			return n, nil
 		case *IfLessThanZero:
 			n := node.(*IfLessThanZero)
 
-			copiedValues := map[string]interface{}{}
-
-			for k, v := range values {
-				copiedValues[k] = v
-			}
-
-			var value1, value2 interface{}
-			n.True, value1 = updateAndEvaluate(n.True, copiedValues)
-			n.False, value2 = updateAndEvaluate(n.False, copiedValues)
-			if value1 == value2 {
-				return n, value1
-			}
+			n.True, _ = updateAndEvaluate(n.True, values)
+			n.False, _ = updateAndEvaluate(n.False, values)
 
 			return n, nil
 		case *ValueBinding:
 			n := node.(*ValueBinding)
 
-			valuesExtended := map[string]interface{}{}
-			for k, v := range values {
-				valuesExtended[k] = v
-			}
+			valuesExtended := copyValues()
 			n.Value, valuesExtended[n.Name] = updateAndEvaluate(n.Value, values)
 
 			var value interface{}
@@ -378,9 +357,6 @@ func Immediate(main Node, functions []*Function) Node {
 			for _, arg := range n.Args {
 				argValues = append(argValues, values[arg])
 			}
-
-			functionToArgValues[n.Function] = append(
-				functionToArgValues[n.Function], argValues)
 
 			return n, nil
 		case *ArrayCreate:
@@ -424,64 +400,6 @@ func Immediate(main Node, functions []*Function) Node {
 	main, _ = updateAndEvaluate(main, map[string]interface{}{})
 	for _, function := range functions {
 		function.Body, _ = updateAndEvaluate(function.Body, map[string]interface{}{})
-	}
-
-	// Remove arguments whose values are always the same.
-
-	functionToArgValuesCopied := map[string][][]interface{}{}
-	for k, v := range functionToArgValues {
-		functionToArgValuesCopied[k] = v
-	}
-
-	for _, function := range functions {
-		argsToRemove := []int{}
-
-		for i, arg := range function.Args {
-			possibleValues := funk.Uniq(
-				funk.Map(functionToArgValuesCopied[function.Name],
-					func(s []interface{}) interface{} { return s[i] })).([]interface{})
-
-			if len(possibleValues) == 1 {
-				switch possibleValues[0].(type) {
-				case int32:
-					function.Body = &ValueBinding{arg, &Int{possibleValues[0].(int32)}, function.Body}
-					argsToRemove = append(argsToRemove, i)
-				case float32:
-					function.Body = &ValueBinding{arg, &Float{possibleValues[0].(float32)}, function.Body}
-					argsToRemove = append(argsToRemove, i)
-				}
-			}
-		}
-
-		if len(argsToRemove) == 0 {
-			continue
-		}
-
-		functions = append(functions, &Function{"main", []string{}, main})
-		for _, f := range functions {
-			for _, application := range f.Body.Applications() {
-				if application.Function == function.Name {
-					newArgs := []string{}
-					for i, arg := range application.Args {
-						if !funk.ContainsInt(argsToRemove, i) {
-							newArgs = append(newArgs, arg)
-						}
-					}
-
-					application.Args = newArgs
-				}
-			}
-		}
-		functions = functions[:len(functions)-1]
-
-		newArgs := []string{}
-		for i, arg := range function.Args {
-			if !funk.ContainsInt(argsToRemove, i) {
-				newArgs = append(newArgs, arg)
-			}
-		}
-
-		function.Args = newArgs
 	}
 
 	return main
