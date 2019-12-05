@@ -1,5 +1,7 @@
 package ir
 
+import "math"
+
 type Function struct {
 	Name string
 	Args []string
@@ -59,6 +61,7 @@ type Node interface {
 	HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool
 	Applications() []*Application
 	Size() int
+	Evaluate(map[string]interface{}, []*Function) interface{}
 	irNode()
 }
 
@@ -1089,3 +1092,370 @@ func (n *PrintChar) Size() int            { return 1 }
 func (n *IntToFloat) Size() int           { return 1 }
 func (n *FloatToInt) Size() int           { return 1 }
 func (n *Sqrt) Size() int                 { return 1 }
+
+func (n *Variable) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return values[n.Name]
+}
+
+func (n *Unit) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *Int) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return n.Value
+}
+
+func (n *Float) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return n.Value
+}
+
+func (n *Bool) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return n.Value
+}
+
+func (n *Add) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			return left + right
+		}
+	}
+
+	return nil
+}
+
+func (n *AddImmediate) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		return left + n.Right
+	}
+
+	return nil
+}
+
+func (n *Sub) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			return left - right
+		}
+	}
+
+	return nil
+}
+
+func (n *SubFromZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		return -inner
+	}
+
+	return nil
+}
+
+func (n *FloatAdd) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left + right
+		}
+	}
+
+	return nil
+}
+
+func (n *FloatSub) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left - right
+		}
+	}
+
+	return nil
+}
+
+func (n *FloatSubFromZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(float32); ok {
+		return -inner
+	}
+
+	return nil
+}
+
+func (n *FloatDiv) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left / right
+		}
+	}
+
+	return nil
+}
+
+func (n *FloatMul) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left * right
+		}
+	}
+
+	return nil
+}
+
+func (n *Not) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(bool); ok {
+		return !inner
+	}
+
+	return nil
+}
+
+func (n *Equal) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			return left == right
+		}
+	}
+
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left == right
+		}
+	}
+
+	if left, ok := values[n.Left].(bool); ok {
+		if right, ok := values[n.Right].(bool); ok {
+			return left == right
+		}
+	}
+
+	return nil
+}
+
+func (n *LessThan) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			return left < right
+		}
+	}
+
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			return left < right
+		}
+	}
+
+	return nil
+}
+
+func (n *IfEqual) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			if left == right {
+				return n.True.Evaluate(values, functions)
+			} else {
+				return n.False.Evaluate(values, functions)
+			}
+		}
+	}
+
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			if left == right {
+				return n.True.Evaluate(values, functions)
+			} else {
+				return n.False.Evaluate(values, functions)
+			}
+		}
+	}
+
+	if left, ok := values[n.Left].(bool); ok {
+		if right, ok := values[n.Right].(bool); ok {
+			if left == right {
+				return n.True.Evaluate(values, functions)
+			} else {
+				return n.False.Evaluate(values, functions)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (n *IfEqualZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		if inner == 0 {
+			return n.True.Evaluate(values, functions)
+		} else {
+			return n.False.Evaluate(values, functions)
+		}
+	}
+
+	if inner, ok := values[n.Inner].(float32); ok {
+		if inner == 0 {
+			return n.True.Evaluate(values, functions)
+		} else {
+			return n.False.Evaluate(values, functions)
+		}
+	}
+
+	return nil
+}
+
+func (n *IfEqualTrue) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(bool); ok {
+		if inner {
+			return n.True.Evaluate(values, functions)
+		} else {
+			return n.False.Evaluate(values, functions)
+		}
+	}
+
+	return nil
+}
+
+func (n *IfLessThan) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if left, ok := values[n.Left].(int32); ok {
+		if right, ok := values[n.Right].(int32); ok {
+			if left < right {
+				return n.True.Evaluate(values, functions)
+			} else {
+				return n.False.Evaluate(values, functions)
+			}
+		}
+	}
+
+	if left, ok := values[n.Left].(float32); ok {
+		if right, ok := values[n.Right].(float32); ok {
+			if left < right {
+				return n.True.Evaluate(values, functions)
+			} else {
+				return n.False.Evaluate(values, functions)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (n *IfLessThanZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		if inner < 0 {
+			return n.True.Evaluate(values, functions)
+		} else {
+			return n.False.Evaluate(values, functions)
+		}
+	}
+
+	if inner, ok := values[n.Inner].(float32); ok {
+		if inner < 0 {
+			return n.True.Evaluate(values, functions)
+		} else {
+			return n.False.Evaluate(values, functions)
+		}
+	}
+
+	return nil
+}
+
+func (n *ValueBinding) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	valuesExtended := map[string]interface{}{}
+	for k, v := range values {
+		valuesExtended[k] = v
+	}
+
+	valuesExtended[n.Name] = n.Value.Evaluate(values, functions)
+
+	return n.Next.Evaluate(valuesExtended, functions)
+}
+
+func (n *Application) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	argValues := []interface{}{}
+	for _, arg := range n.Args {
+		v := values[arg]
+		if v == nil {
+			return nil
+		}
+
+		argValues = append(argValues, v)
+	}
+
+	for _, function := range functions {
+		if function.Name == n.Function {
+			values := map[string]interface{}{}
+			for i, arg := range function.Args {
+				values[arg] = argValues[i]
+			}
+			return function.Body.Evaluate(values, functions)
+		}
+	}
+
+	return nil
+}
+
+func (n *Tuple) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	tuple := []interface{}{}
+	for _, element := range n.Elements {
+		tuple = append(tuple, values[element])
+	}
+	return tuple
+}
+
+func (n *TupleGet) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if tuple, ok := values[n.Tuple].([]interface{}); ok {
+		return tuple[n.Index]
+	}
+
+	return nil
+}
+
+func (n *ArrayCreate) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ArrayCreateImmediate) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ArrayGet) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ArrayGetImmediate) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ArrayPut) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ArrayPutImmediate) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ReadInt) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ReadFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *PrintInt) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *PrintChar) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *IntToFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *FloatToInt) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *Sqrt) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if arg, ok := values[n.Arg].(float32); ok {
+		return float32(math.Sqrt(float64(arg)))
+	}
+
+	return nil
+}
