@@ -1,209 +1,48 @@
 package ir
 
-import (
-	"math"
-)
-
 func Immediate(main Node, functions []*Function) Node {
 	// Updates a node to use immediate values, and evaluates the value of each node at the
 	// time. nil is used for unknown values.
 
-	var updateAndEvaluate func(node Node, values map[string]interface{}) (Node, interface{})
-	updateAndEvaluate = func(node Node, values map[string]interface{}) (Node, interface{}) {
-		copyValues := func() map[string]interface{} {
-			copied := map[string]interface{}{}
-			for k, v := range values {
-				copied[k] = v
+	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
+
+	var update func(node Node, values map[string]interface{}) Node
+	update = func(node Node, values map[string]interface{}) Node {
+		if !node.HasSideEffects(functionsWithoutSideEffects) {
+			value := node.Evaluate(values, functions)
+			if v, ok := value.(int32); ok {
+				return &Int{v}
 			}
-			return copied
+
+			if v, ok := value.(float32); ok {
+				return &Float{v}
+			}
+
+			if v, ok := value.(bool); ok {
+				return &Bool{v}
+			}
 		}
 
 		switch node.(type) {
-		case *Variable:
-			n := node.(*Variable)
-
-			if v, ok := values[n.Name].(int32); ok {
-				return &Int{v}, v
-			}
-
-			if v, ok := values[n.Name].(float32); ok {
-				return &Float{v}, v
-			}
-
-			return n, nil
-		case *Int:
-			n := node.(*Int)
-			return n, n.Value
-		case *Bool:
-			n := node.(*Bool)
-			return n, n.Value
-		case *Float:
-			n := node.(*Float)
-			return n, n.Value
-		case *Add:
-			n := node.(*Add)
-
-			if left, ok := values[n.Left].(int32); ok {
-				if right, ok := values[n.Right].(int32); ok {
-					return &Int{left + right}, left + right
-				}
-
-				return &AddImmediate{n.Right, left}, nil
-			}
-
-			if right, ok := values[n.Right].(int32); ok {
-				return &AddImmediate{n.Left, right}, nil
-			}
-
-			return n, nil
-		case *AddImmediate:
-			n := node.(*AddImmediate)
-
-			if left, ok := values[n.Left].(int32); ok {
-				return &Int{left + n.Right}, left + n.Right
-			}
-
-			return n, nil
-		case *Sub:
-			n := node.(*Sub)
-
-			if left, ok := values[n.Left].(int32); ok {
-				if right, ok := values[n.Right].(int32); ok {
-					return &Int{left - right}, left - right
-				}
-
-				if left == 0 {
-					return &SubFromZero{n.Right}, nil
-				}
-			}
-
-			if right, ok := values[n.Right].(int32); ok {
-				return &AddImmediate{n.Left, -right}, nil
-			}
-
-			return n, nil
-		case *SubFromZero:
-			n := node.(*SubFromZero)
-
-			if inner, ok := values[n.Inner].(int32); ok {
-				return &Int{-inner}, -inner
-			}
-
-			return n, nil
-		case *FloatAdd:
-			n := node.(*FloatAdd)
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					return &Float{left + right}, left + right
-				}
-			}
-
-			return n, nil
-		case *FloatSub:
-			n := node.(*FloatSub)
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					return &Float{left - right}, left - right
-				}
-
-				if left == 0 {
-					return &FloatSubFromZero{n.Right}, nil
-				}
-			}
-
-			return n, nil
-		case *FloatDiv:
-			n := node.(*FloatDiv)
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					return &Float{left / right}, left / right
-				}
-			}
-
-			return n, nil
-		case *FloatMul:
-			n := node.(*FloatMul)
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					return &Float{left * right}, left * right
-				}
-			}
-
-			return n, nil
-		case *Not:
-			n := node.(*Not)
-
-			if inner, ok := values[n.Inner].(bool); ok {
-				return &Bool{!inner}, !inner
-			}
-
-			return n, nil
-		case *Equal:
-			n := node.(*Equal)
-
-			if left, ok := values[n.Left].(int32); ok {
-				if right, ok := values[n.Right].(int32); ok {
-					v := left == right
-					return &Bool{v}, v
-				}
-			}
-
-			if left, ok := values[n.Left].(bool); ok {
-				if right, ok := values[n.Right].(bool); ok {
-					v := left == right
-					return &Bool{v}, v
-				}
-			}
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					v := left == right
-					return &Bool{v}, v
-				}
-			}
-
-			return n, nil
-		case *LessThan:
-			n := node.(*LessThan)
-
-			if left, ok := values[n.Left].(int32); ok {
-				if right, ok := values[n.Right].(int32); ok {
-					v := left < right
-					return &Bool{v}, v
-				}
-			}
-
-			if left, ok := values[n.Left].(float32); ok {
-				if right, ok := values[n.Right].(float32); ok {
-					v := left < right
-					return &Bool{v}, v
-				}
-			}
-
-			return n, nil
 		case *IfEqual:
 			n := node.(*IfEqual)
 
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left == right {
-						return updateAndEvaluate(n.True, values)
+						return n.True
 					} else {
-						return updateAndEvaluate(n.False, values)
+						return n.False
 					}
 				} else {
 					if left == 0 {
-						return &IfEqualZero{n.Right, n.True, n.False}, nil
+						return &IfEqualZero{n.Right, n.True, n.False}
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
-						return &IfEqualZero{n.Left, n.True, n.False}, nil
+						return &IfEqualZero{n.Left, n.True, n.False}
 					}
 				}
 			}
@@ -211,19 +50,19 @@ func Immediate(main Node, functions []*Function) Node {
 			if left, ok := values[n.Left].(float32); ok {
 				if right, ok := values[n.Right].(float32); ok {
 					if left == right {
-						return updateAndEvaluate(n.True, values)
+						return n.True
 					} else {
-						return updateAndEvaluate(n.False, values)
+						return n.False
 					}
 				} else {
 					if left == 0 {
-						return &IfEqualZero{n.Right, n.True, n.False}, nil
+						return &IfEqualZero{n.Right, n.True, n.False}
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
-						return &IfEqualZero{n.Left, n.True, n.False}, nil
+						return &IfEqualZero{n.Left, n.True, n.False}
 					}
 				}
 			}
@@ -231,84 +70,78 @@ func Immediate(main Node, functions []*Function) Node {
 			if left, ok := values[n.Left].(bool); ok {
 				if right, ok := values[n.Right].(bool); ok {
 					if left == right {
-						return updateAndEvaluate(n.True, values)
+						return n.True
 					} else {
-						return updateAndEvaluate(n.False, values)
+						return n.False
 					}
 				} else {
 					if left {
-						return &IfEqualTrue{n.Right, n.True, n.False}, nil
+						return &IfEqualTrue{n.Right, n.True, n.False}
 					} else {
-						return &IfEqualTrue{n.Right, n.False, n.True}, nil
+						return &IfEqualTrue{n.Right, n.False, n.True}
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(bool); ok {
 					if right {
-						return &IfEqualTrue{n.Left, n.True, n.False}, nil
+						return &IfEqualTrue{n.Left, n.True, n.False}
 					} else {
-						return &IfEqualTrue{n.Left, n.False, n.True}, nil
+						return &IfEqualTrue{n.Left, n.False, n.True}
 					}
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
-
-			return n, nil
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
 		case *IfEqualZero:
 			n := node.(*IfEqualZero)
 
 			if inner, ok := values[n.Inner].(int32); ok {
 				if inner == 0 {
-					return updateAndEvaluate(n.True, values)
+					return n.True
 				} else {
-					return updateAndEvaluate(n.False, values)
+					return n.False
 				}
 			}
 
 			if inner, ok := values[n.Inner].(float32); ok {
 				if inner == 0 {
-					return updateAndEvaluate(n.True, values)
+					return n.True
 				} else {
-					return updateAndEvaluate(n.False, values)
+					return n.False
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
-
-			return n, nil
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
 		case *IfEqualTrue:
 			n := node.(*IfEqualTrue)
 
 			if inner, ok := values[n.Inner].(bool); ok {
 				if inner {
-					return updateAndEvaluate(n.True, values)
+					return n.True
 				} else {
-					return updateAndEvaluate(n.False, values)
+					return n.False
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
-
-			return n, nil
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
 		case *IfLessThan:
 			n := node.(*IfLessThan)
 
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left < right {
-						return updateAndEvaluate(n.True, values)
+						return n.True
 					} else {
-						return updateAndEvaluate(n.False, values)
+						return n.False
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
-						return &IfLessThanZero{n.Left, n.True, n.False}, nil
+						return &IfLessThanZero{n.Left, n.True, n.False}
 					}
 				}
 			}
@@ -316,90 +149,60 @@ func Immediate(main Node, functions []*Function) Node {
 			if left, ok := values[n.Left].(float32); ok {
 				if right, ok := values[n.Right].(float32); ok {
 					if left < right {
-						return updateAndEvaluate(n.True, values)
+						return n.True
 					} else {
-						return updateAndEvaluate(n.False, values)
+						return n.False
 					}
 				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
-						return &IfLessThanZero{n.Left, n.True, n.False}, nil
+						return &IfLessThanZero{n.Left, n.True, n.False}
 					}
 				}
 			}
 
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
-
-			return n, nil
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
 		case *IfLessThanZero:
 			n := node.(*IfLessThanZero)
-
-			n.True, _ = updateAndEvaluate(n.True, values)
-			n.False, _ = updateAndEvaluate(n.False, values)
-
-			return n, nil
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
 		case *ValueBinding:
 			n := node.(*ValueBinding)
-
-			valuesExtended := copyValues()
-			n.Value, valuesExtended[n.Name] = updateAndEvaluate(n.Value, values)
-
-			var value interface{}
-			n.Next, value = updateAndEvaluate(n.Next, valuesExtended)
-
-			return n, value
-		case *Application:
-			n := node.(*Application)
-
-			argValues := []interface{}{}
-			for _, arg := range n.Args {
-				argValues = append(argValues, values[arg])
+			n.Value = update(n.Value, values)
+			valuesExtended := map[string]interface{}{}
+			for k, v := range values {
+				valuesExtended[k] = v
 			}
-
-			return n, nil
+			valuesExtended[n.Name] = n.Value.Evaluate(values, functions)
+			n.Next = update(n.Next, valuesExtended)
 		case *ArrayCreate:
 			n := node.(*ArrayCreate)
 
 			if length, ok := values[n.Length].(int32); ok {
-				return &ArrayCreateImmediate{length, n.Value}, nil
+				return &ArrayCreateImmediate{length, n.Value}
 			}
-
-			return n, nil
 		case *ArrayGet:
 			n := node.(*ArrayGet)
 
 			if index, ok := values[n.Index].(int32); ok {
-				return &ArrayGetImmediate{n.Array, index}, nil
+				return &ArrayGetImmediate{n.Array, index}
 			}
-
-			return n, nil
 		case *ArrayPut:
 			n := node.(*ArrayPut)
 
 			if index, ok := values[n.Index].(int32); ok {
-				return &ArrayPutImmediate{n.Array, index, n.Value}, nil
+				return &ArrayPutImmediate{n.Array, index, n.Value}
 			}
-
-			return n, nil
-		case *Sqrt:
-			n := node.(*Sqrt)
-
-			if arg, ok := values[n.Arg].(float32); ok {
-				v := float32(math.Sqrt(float64(arg)))
-				return &Float{v}, v
-			}
-
-			return n, nil
-		default:
-			return node, nil
 		}
+
+		return node
 	}
 
-	main, _ = updateAndEvaluate(main, map[string]interface{}{})
+	main = update(main, map[string]interface{}{})
 	for _, function := range functions {
-		function.Body, _ = updateAndEvaluate(function.Body, map[string]interface{}{})
+		function.Body = update(function.Body, map[string]interface{}{})
 	}
 
 	return main
