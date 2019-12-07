@@ -58,6 +58,7 @@ type ArrayPut struct {
 
 type ReadInt struct{}
 type ReadFloat struct{}
+type ReadByte struct{}
 type PrintInt struct{ Inner Node }
 type PrintChar struct{ Inner Node }
 type IntToFloat struct{ Inner Node }
@@ -91,6 +92,7 @@ func (n *ArrayGet) astNode()        {}
 func (n *ArrayPut) astNode()        {}
 func (n *ReadInt) astNode()         {}
 func (n *ReadFloat) astNode()       {}
+func (n *ReadByte) astNode()        {}
 func (n *PrintInt) astNode()        {}
 func (n *PrintChar) astNode()       {}
 func (n *IntToFloat) astNode()      {}
@@ -124,6 +126,7 @@ func (n *ArrayGet) Children() []Node        { return []Node{n.Array, n.Index} }
 func (n *ArrayPut) Children() []Node        { return []Node{n.Array, n.Index, n.Value} }
 func (n *ReadInt) Children() []Node         { return []Node{} }
 func (n *ReadFloat) Children() []Node       { return []Node{} }
+func (n *ReadByte) Children() []Node        { return []Node{} }
 func (n *PrintInt) Children() []Node        { return []Node{n.Inner} }
 func (n *PrintChar) Children() []Node       { return []Node{n.Inner} }
 func (n *IntToFloat) Children() []Node      { return []Node{n.Inner} }
