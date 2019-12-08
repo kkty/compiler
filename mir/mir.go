@@ -61,6 +61,7 @@ type ArrayPut struct{ Array, Index, Value string }
 
 type ReadInt struct{}
 type ReadFloat struct{}
+type ReadByte struct{}
 type PrintInt struct{ Arg string }
 type PrintChar struct{ Arg string }
 type IntToFloat struct{ Arg string }
@@ -94,6 +95,7 @@ func (n *ArrayGet) mirNode()        {}
 func (n *ArrayPut) mirNode()        {}
 func (n *ReadInt) mirNode()         {}
 func (n *ReadFloat) mirNode()       {}
+func (n *ReadByte) mirNode()        {}
 func (n *PrintInt) mirNode()        {}
 func (n *PrintChar) mirNode()       {}
 func (n *IntToFloat) mirNode()      {}

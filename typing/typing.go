@@ -232,6 +232,8 @@ func GetTypes(root mir.Node) map[string]Type {
 			return IntType
 		case *mir.ReadFloat:
 			return FloatType
+		case *mir.ReadByte:
+			return IntType
 		case *mir.PrintInt:
 			n := node.(*mir.PrintInt)
 			constraints = append(constraints, constraint{IntType, nameToType[n.Arg]})
