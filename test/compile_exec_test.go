@@ -23,7 +23,7 @@ func TestCompileAndExec(t *testing.T) {
 		{"./ack.ml", "", "253"},
 		{"./matmul.ml", "", "5864139154"},
 		{"./fib.ml", "", "89"},
-		{"./gcd.ml", "", "2700"},
+		{"./gcd.ml", "", "24"},
 	} {
 		t.Run(c.file, func(t *testing.T) {
 			b, err := ioutil.ReadFile(c.file)

@@ -84,6 +84,69 @@ let rec fabs x = if x > 0.0 then x else x *. -1.0 in
 let rec fneg x = x *. -1.0 in
 let rec fhalf x = x /. 2.0 in
 let rec fsqr x = x *. x in
+let rec skip _ =
+  let i = read_byte () in
+  if i = 45 then
+    (read_byte () - 48, true)
+  else if i >= 48 then
+    if i <= 57 then
+      (i - 48, false)
+    else skip ()
+  else skip () in
+let rec read_int _ =
+  let rec f i =
+    let (i, neg) = i in
+    let j = read_byte () in
+    if j >= 48 then (
+      if j <= 57 then
+        f ((mul i 10 + j - 48), neg)
+      else (if neg then 0 - i else i)
+    ) else (if neg then 0 - i else i) in
+  f (skip ()) in
+let rec read_float _ =
+  let rec f i =
+    let (i, neg) = i in
+    let j = read_byte () in
+    if j = 46 then
+      let k = read_int () in
+      let l = int_to_float i +. (int_to_float k) /. 10.0 in
+      (if neg then 0.0 -. l else l)
+    else if j >= 48 then
+      (if j <= 57 then f ((mul i 10 + j - 48), neg) else (if neg then 0.0 -. int_to_float i else int_to_float i))
+    else (if neg then 0.0 -. int_to_float i else int_to_float i) in
+  f (skip ()) in
+let rec div x y =
+  let rec f x y z =
+    if mul y z > x then z - 1
+    else f x y (z + 1)
+   in f x y 1 in
+let rec print_int x =
+  let y = x >= 100 in
+  let x =
+    if x >= 200 then (print_char 50; x - 200)
+    else if x >= 100 then (print_char 49; x - 100)
+    else x in
+  let x =
+    if x >= 90 then (print_char 57; x - 90)
+    else if x >= 80 then (print_char 56; x - 80)
+    else if x >= 70 then (print_char 55; x - 70)
+    else if x >= 60 then (print_char 54; x - 60)
+    else if x >= 50 then (print_char 53; x - 50)
+    else if x >= 40 then (print_char 52; x - 40)
+    else if x >= 30 then (print_char 51; x - 30)
+    else if x >= 20 then (print_char 50; x - 20)
+    else if x >= 10 then (print_char 49; x - 10)
+    else ((if y then print_char 48 else ()); x) in
+  if x = 9 then print_char 57
+  else if x = 8 then print_char 56
+  else if x = 7 then print_char 55
+  else if x = 6 then print_char 54
+  else if x = 5 then print_char 53
+  else if x = 4 then print_char 52
+  else if x = 3 then print_char 51
+  else if x = 2 then print_char 50
+  else if x = 1 then print_char 49
+  else print_char 48 in
 let rec int_of_float x = float_to_int x in
 let rec float_of_int x = int_to_float x in
 let rec floor x =
@@ -108,11 +171,6 @@ let rec atan x =
   if x < 0.4375 then x -. (pow x 3) /. 3.0 +. (pow x 5) /. 5.0 -. (pow x 7) /. 7.0 +. (pow x 9) /. 9.0 -. (pow x 11) /. 11.0 +. (pow x 13) /. 13.0 else
   if x < 2.4375 then pi *. 0.25 +. atan ((x -. 1.0) /. (x +. 1.0)) else
   pi *. 0.5 -. atan 1.0 /. x in
-let rec div x y =
-  let rec f x y z =
-    if mul y z > x then z - 1
-    else f x y (z + 1)
-   in f x y 1 in
 (****************************************************************)
 (*                                                              *)
 (* Ray Tracing Program for (Mini) Objective Caml                *)
