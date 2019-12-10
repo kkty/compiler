@@ -156,6 +156,7 @@ type ArrayPutImmediate struct {
 
 type ReadInt struct{}
 type ReadFloat struct{}
+type ReadByte struct{}
 type PrintInt struct{ Arg string }
 type PrintChar struct{ Arg string }
 type IntToFloat struct{ Arg string }
@@ -195,6 +196,7 @@ func (n *ArrayPut) irNode()             {}
 func (n *ArrayPutImmediate) irNode()    {}
 func (n *ReadInt) irNode()              {}
 func (n *ReadFloat) irNode()            {}
+func (n *ReadByte) irNode()             {}
 func (n *PrintInt) irNode()             {}
 func (n *PrintChar) irNode()            {}
 func (n *IntToFloat) irNode()           {}
@@ -356,6 +358,7 @@ func (n *ArrayPutImmediate) UpdateNames(mapping map[string]string) {
 
 func (n *ReadInt) UpdateNames(mapping map[string]string)   {}
 func (n *ReadFloat) UpdateNames(mapping map[string]string) {}
+func (n *ReadByte) UpdateNames(mapping map[string]string)  {}
 
 func (n *PrintInt) UpdateNames(mapping map[string]string) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
@@ -702,6 +705,10 @@ func (n *ReadFloat) FreeVariables(bound map[string]struct{}) map[string]struct{}
 	return map[string]struct{}{}
 }
 
+func (n *ReadByte) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+	return map[string]struct{}{}
+}
+
 func (n *PrintInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
@@ -803,6 +810,7 @@ func (n *ArrayPut) FloatValues() []float32             { return []float32{} }
 func (n *ArrayPutImmediate) FloatValues() []float32    { return []float32{} }
 func (n *ReadInt) FloatValues() []float32              { return []float32{} }
 func (n *ReadFloat) FloatValues() []float32            { return []float32{} }
+func (n *ReadByte) FloatValues() []float32             { return []float32{} }
 func (n *PrintInt) FloatValues() []float32             { return []float32{} }
 func (n *PrintChar) FloatValues() []float32            { return []float32{} }
 func (n *IntToFloat) FloatValues() []float32           { return []float32{} }
@@ -897,6 +905,7 @@ func (n *ArrayPutImmediate) Clone() Node {
 
 func (n *ReadInt) Clone() Node    { return &ReadInt{} }
 func (n *ReadFloat) Clone() Node  { return &ReadFloat{} }
+func (n *ReadByte) Clone() Node   { return &ReadByte{} }
 func (n *PrintInt) Clone() Node   { return &PrintInt{n.Arg} }
 func (n *PrintChar) Clone() Node  { return &PrintChar{n.Arg} }
 func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
@@ -981,6 +990,7 @@ func (n *ArrayPutImmediate) HasSideEffects(functionsWithoutSideEffects map[strin
 
 func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool   { return true }
 func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+func (n *ReadByte) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
 func (n *PrintInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
 func (n *PrintChar) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
 func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
@@ -1047,6 +1057,7 @@ func (n *ArrayPut) Applications() []*Application             { return []*Applica
 func (n *ArrayPutImmediate) Applications() []*Application    { return []*Application{} }
 func (n *ReadInt) Applications() []*Application              { return []*Application{} }
 func (n *ReadFloat) Applications() []*Application            { return []*Application{} }
+func (n *ReadByte) Applications() []*Application             { return []*Application{} }
 func (n *PrintInt) Applications() []*Application             { return []*Application{} }
 func (n *PrintChar) Applications() []*Application            { return []*Application{} }
 func (n *IntToFloat) Applications() []*Application           { return []*Application{} }
@@ -1087,6 +1098,7 @@ func (n *ArrayPut) Size() int             { return 1 }
 func (n *ArrayPutImmediate) Size() int    { return 1 }
 func (n *ReadInt) Size() int              { return 1 }
 func (n *ReadFloat) Size() int            { return 1 }
+func (n *ReadByte) Size() int             { return 1 }
 func (n *PrintInt) Size() int             { return 1 }
 func (n *PrintChar) Size() int            { return 1 }
 func (n *IntToFloat) Size() int           { return 1 }
@@ -1433,6 +1445,10 @@ func (n *ReadInt) Evaluate(values map[string]interface{}, functions []*Function)
 }
 
 func (n *ReadFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	return nil
+}
+
+func (n *ReadByte) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	return nil
 }
 

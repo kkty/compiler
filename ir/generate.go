@@ -97,6 +97,8 @@ func Generate(
 			return &ReadInt{}
 		case *mir.ReadFloat:
 			return &ReadFloat{}
+		case *mir.ReadByte:
+			return &ReadByte{}
 		case *mir.PrintInt:
 			return &PrintInt{node.(*mir.PrintInt).Arg}
 		case *mir.PrintChar:
