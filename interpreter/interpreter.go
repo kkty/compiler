@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"math"
+	"os"
 
 	"github.com/kkty/compiler/ir"
 )
@@ -210,6 +211,10 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			var value float32
 			fmt.Fscan(r, &value)
 			return value
+		case *ir.ReadByte:
+			var b []byte = make([]byte, 1)
+			os.Stdin.Read(b)
+			return int32(b[0])
 		case *ir.PrintInt:
 			n := node.(*ir.PrintInt)
 			fmt.Fprintf(w, "%d", values[n.Arg].(int32))
