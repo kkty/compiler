@@ -63,7 +63,7 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type ReadByte struct{}
 type PrintInt struct{ Arg string }
-type PrintChar struct{ Arg string }
+type WriteByte struct{ Arg string }
 type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
@@ -97,7 +97,7 @@ func (n *ReadInt) mirNode()         {}
 func (n *ReadFloat) mirNode()       {}
 func (n *ReadByte) mirNode()        {}
 func (n *PrintInt) mirNode()        {}
-func (n *PrintChar) mirNode()       {}
+func (n *WriteByte) mirNode()       {}
 func (n *IntToFloat) mirNode()      {}
 func (n *FloatToInt) mirNode()      {}
 func (n *Sqrt) mirNode()            {}

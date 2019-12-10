@@ -219,9 +219,9 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			n := node.(*ir.PrintInt)
 			fmt.Fprintf(w, "%d", values[n.Arg].(int32))
 			return nil
-		case *ir.PrintChar:
-			n := node.(*ir.PrintChar)
-			fmt.Fprintf(w, "%c", rune(values[n.Arg].(int32)))
+		case *ir.WriteByte:
+			n := node.(*ir.WriteByte)
+			w.Write([]byte{byte(values[n.Arg].(int32) % 256)})
 			return nil
 		case *ir.IntToFloat:
 			n := node.(*ir.IntToFloat)

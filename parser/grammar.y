@@ -166,7 +166,7 @@ exp: simple_exp
   { $$ = &ast.PrintInt{$2} }
 | PRINT_CHAR simple_exp
   %prec prec_app
-  { $$ = &ast.PrintChar{$2} }
+  { $$ = &ast.WriteByte{$2} }
 | INT_TO_FLOAT simple_exp
   %prec prec_app
   { $$ = &ast.IntToFloat{$2} }

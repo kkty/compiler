@@ -195,10 +195,10 @@ func Generate(node ast.Node) Node {
 		n := node.(*ast.PrintInt)
 		return insertTemporaries([]ast.Node{n.Inner},
 			func(names []string) Node { return &PrintInt{names[0]} })
-	case *ast.PrintChar:
-		n := node.(*ast.PrintChar)
+	case *ast.WriteByte:
+		n := node.(*ast.WriteByte)
 		return insertTemporaries([]ast.Node{n.Inner},
-			func(names []string) Node { return &PrintChar{names[0]} })
+			func(names []string) Node { return &WriteByte{names[0]} })
 	case *ast.IntToFloat:
 		n := node.(*ast.IntToFloat)
 		return insertTemporaries([]ast.Node{n.Inner},

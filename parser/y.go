@@ -822,7 +822,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:169
 		{
-			yyVAL.node = &ast.PrintChar{yyDollar[2].node}
+			yyVAL.node = &ast.WriteByte{yyDollar[2].node}
 		}
 	case 39:
 		yyDollar = yyS[yypt-2 : yypt+1]

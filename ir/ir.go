@@ -158,7 +158,7 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type ReadByte struct{}
 type PrintInt struct{ Arg string }
-type PrintChar struct{ Arg string }
+type WriteByte struct{ Arg string }
 type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
@@ -198,7 +198,7 @@ func (n *ReadInt) irNode()              {}
 func (n *ReadFloat) irNode()            {}
 func (n *ReadByte) irNode()             {}
 func (n *PrintInt) irNode()             {}
-func (n *PrintChar) irNode()            {}
+func (n *WriteByte) irNode()            {}
 func (n *IntToFloat) irNode()           {}
 func (n *FloatToInt) irNode()           {}
 func (n *Sqrt) irNode()                 {}
@@ -364,7 +364,7 @@ func (n *PrintInt) UpdateNames(mapping map[string]string) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
 
-func (n *PrintChar) UpdateNames(mapping map[string]string) {
+func (n *WriteByte) UpdateNames(mapping map[string]string) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
 func (n *IntToFloat) UpdateNames(mapping map[string]string) {
@@ -717,7 +717,7 @@ func (n *PrintInt) FreeVariables(bound map[string]struct{}) map[string]struct{} 
 	return ret
 }
 
-func (n *PrintChar) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+func (n *WriteByte) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
 		ret[n.Arg] = struct{}{}
@@ -812,7 +812,7 @@ func (n *ReadInt) FloatValues() []float32              { return []float32{} }
 func (n *ReadFloat) FloatValues() []float32            { return []float32{} }
 func (n *ReadByte) FloatValues() []float32             { return []float32{} }
 func (n *PrintInt) FloatValues() []float32             { return []float32{} }
-func (n *PrintChar) FloatValues() []float32            { return []float32{} }
+func (n *WriteByte) FloatValues() []float32            { return []float32{} }
 func (n *IntToFloat) FloatValues() []float32           { return []float32{} }
 func (n *FloatToInt) FloatValues() []float32           { return []float32{} }
 func (n *Sqrt) FloatValues() []float32                 { return []float32{} }
@@ -907,7 +907,7 @@ func (n *ReadInt) Clone() Node    { return &ReadInt{} }
 func (n *ReadFloat) Clone() Node  { return &ReadFloat{} }
 func (n *ReadByte) Clone() Node   { return &ReadByte{} }
 func (n *PrintInt) Clone() Node   { return &PrintInt{n.Arg} }
-func (n *PrintChar) Clone() Node  { return &PrintChar{n.Arg} }
+func (n *WriteByte) Clone() Node  { return &WriteByte{n.Arg} }
 func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
 func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
@@ -992,7 +992,7 @@ func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}
 func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
 func (n *ReadByte) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
 func (n *PrintInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
-func (n *PrintChar) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+func (n *WriteByte) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
 func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return false
 }
@@ -1059,7 +1059,7 @@ func (n *ReadInt) Applications() []*Application              { return []*Applica
 func (n *ReadFloat) Applications() []*Application            { return []*Application{} }
 func (n *ReadByte) Applications() []*Application             { return []*Application{} }
 func (n *PrintInt) Applications() []*Application             { return []*Application{} }
-func (n *PrintChar) Applications() []*Application            { return []*Application{} }
+func (n *WriteByte) Applications() []*Application            { return []*Application{} }
 func (n *IntToFloat) Applications() []*Application           { return []*Application{} }
 func (n *FloatToInt) Applications() []*Application           { return []*Application{} }
 func (n *Sqrt) Applications() []*Application                 { return []*Application{} }
@@ -1100,7 +1100,7 @@ func (n *ReadInt) Size() int              { return 1 }
 func (n *ReadFloat) Size() int            { return 1 }
 func (n *ReadByte) Size() int             { return 1 }
 func (n *PrintInt) Size() int             { return 1 }
-func (n *PrintChar) Size() int            { return 1 }
+func (n *WriteByte) Size() int            { return 1 }
 func (n *IntToFloat) Size() int           { return 1 }
 func (n *FloatToInt) Size() int           { return 1 }
 func (n *Sqrt) Size() int                 { return 1 }
@@ -1456,7 +1456,7 @@ func (n *PrintInt) Evaluate(values map[string]interface{}, functions []*Function
 	return nil
 }
 
-func (n *PrintChar) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+func (n *WriteByte) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	return nil
 }
 

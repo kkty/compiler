@@ -60,7 +60,7 @@ type ReadInt struct{}
 type ReadFloat struct{}
 type ReadByte struct{}
 type PrintInt struct{ Inner Node }
-type PrintChar struct{ Inner Node }
+type WriteByte struct{ Inner Node }
 type IntToFloat struct{ Inner Node }
 type FloatToInt struct{ Inner Node }
 type Sqrt struct{ Inner Node }
@@ -94,7 +94,7 @@ func (n *ReadInt) astNode()         {}
 func (n *ReadFloat) astNode()       {}
 func (n *ReadByte) astNode()        {}
 func (n *PrintInt) astNode()        {}
-func (n *PrintChar) astNode()       {}
+func (n *WriteByte) astNode()       {}
 func (n *IntToFloat) astNode()      {}
 func (n *FloatToInt) astNode()      {}
 func (n *Sqrt) astNode()            {}
@@ -128,7 +128,7 @@ func (n *ReadInt) Children() []Node         { return []Node{} }
 func (n *ReadFloat) Children() []Node       { return []Node{} }
 func (n *ReadByte) Children() []Node        { return []Node{} }
 func (n *PrintInt) Children() []Node        { return []Node{n.Inner} }
-func (n *PrintChar) Children() []Node       { return []Node{n.Inner} }
+func (n *WriteByte) Children() []Node       { return []Node{n.Inner} }
 func (n *IntToFloat) Children() []Node      { return []Node{n.Inner} }
 func (n *FloatToInt) Children() []Node      { return []Node{n.Inner} }
 func (n *Sqrt) Children() []Node            { return []Node{n.Inner} }

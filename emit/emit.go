@@ -1762,8 +1762,8 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping, storedVariables
-		case *ir.PrintChar:
-			n := node.(*ir.PrintChar)
+		case *ir.WriteByte:
+			n := node.(*ir.WriteByte)
 
 			registers, registerMapping, storedVariables := loadVariablesToRegisters(
 				[]string{n.Arg},

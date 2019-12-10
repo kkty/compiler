@@ -101,8 +101,8 @@ func Generate(
 			return &ReadByte{}
 		case *mir.PrintInt:
 			return &PrintInt{node.(*mir.PrintInt).Arg}
-		case *mir.PrintChar:
-			return &PrintChar{node.(*mir.PrintChar).Arg}
+		case *mir.WriteByte:
+			return &WriteByte{node.(*mir.WriteByte).Arg}
 		case *mir.IntToFloat:
 			return &IntToFloat{node.(*mir.IntToFloat).Arg}
 		case *mir.FloatToInt:
