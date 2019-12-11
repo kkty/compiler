@@ -256,21 +256,20 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 	fmt.Fprintf(w, ".text\n")
 	fmt.Fprintf(w, "start:\n")
-	fmt.Fprintf(w, "nop\n")
 
 	// 100000
-	fmt.Fprintf(w, "lui %s, %s, 1\n", stackPointer, intZeroRegister)
-	fmt.Fprintf(w, "ori %s, %s, 34464\n", stackPointer, stackPointer)
+	fmt.Fprintf(w, "LUI %s, %s, 1\n", stackPointer, intZeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 34464\n", stackPointer, stackPointer)
 
 	// 110000
-	fmt.Fprintf(w, "lui %s, %s, 1\n", heapPointer, intZeroRegister)
-	fmt.Fprintf(w, "ori %s, %s, 44464\n", heapPointer, heapPointer)
+	fmt.Fprintf(w, "LUI %s, %s, 1\n", heapPointer, intZeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 44464\n", heapPointer, heapPointer)
 
 	// 590000
-	fmt.Fprintf(w, "lui %s, %s, 9\n", filePointer, intZeroRegister)
-	fmt.Fprintf(w, "ori %s, %s, 176\n", filePointer, filePointer)
+	fmt.Fprintf(w, "LUI %s, %s, 9\n", filePointer, intZeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 176\n", filePointer, filePointer)
 
-	fmt.Fprintf(w, "j main\n")
+	fmt.Fprintf(w, "J main\n")
 
 	// Loads variables to registers (if necessary) and returns the registers
 	// allocated to the variables.
@@ -306,7 +305,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						v, _ := registerMapping.findVariableByRegister(register)
 
 						if !funk.ContainsString(storedVariables, v) {
-							fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+							fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 								register, len(storedVariables)*4, stackPointer)
 							storedVariables = append(storedVariables, v)
 						}
@@ -318,7 +317,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						log.Fatalf("variable not found on stack: %s", variable)
 					}
 
-					fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+					fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
 						register, idx*4, stackPointer)
 				} else {
 					var spill bool
@@ -328,7 +327,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						// Stores the variable currently on the register to the stack.
 						v, _ := registerMapping.findVariableByRegister(register)
 						if !funk.ContainsString(storedVariables, v) {
-							fmt.Fprintf(w, "sw %s, %d(%s)\n",
+							fmt.Fprintf(w, "SW %s, %d(%s)\n",
 								register, len(storedVariables)*4, stackPointer)
 							storedVariables = append(storedVariables, v)
 						}
@@ -340,7 +339,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 						log.Fatalf("variable not found on stack: %s", variable)
 					}
 
-					fmt.Fprintf(w, "lw %s, %d(%s)\n",
+					fmt.Fprintf(w, "LW %s, %d(%s)\n",
 						register.String(), idx*4, stackPointer)
 				}
 
@@ -381,10 +380,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 		}
 
 		if types[v] == typing.FloatType {
-			fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+			fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 				register, len(storedVariables)*4, stackPointer)
 		} else {
-			fmt.Fprintf(w, "sw %s, %d(%s)\n",
+			fmt.Fprintf(w, "SW %s, %d(%s)\n",
 				register, len(storedVariables)*4, stackPointer)
 		}
 
@@ -405,10 +404,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			if _, exists := variablesToKeep[variable]; exists {
 				if !funk.ContainsString(storedVariables, variable) {
 					if types[variable] == typing.FloatType {
-						fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+						fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 							register, len(storedVariables)*4, stackPointer)
 					} else {
-						fmt.Fprintf(w, "sw %s, %d(%s)\n",
+						fmt.Fprintf(w, "SW %s, %d(%s)\n",
 							register, len(storedVariables)*4, stackPointer)
 					}
 					storedVariables = append(storedVariables, variable)
@@ -455,15 +454,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if types[n.Name] == typing.FloatType {
-				fmt.Fprintf(w, "add.s %s, %s, %s\n",
+				fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 					destination, registers[0], floatZeroRegister)
 			} else {
-				fmt.Fprintf(w, "add %s, %s, %s\n",
+				fmt.Fprintf(w, "ADD %s, %s, %s\n",
 					destination, registers[0], intZeroRegister)
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -476,7 +475,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -490,11 +489,11 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "addi %s, %s, %d\n",
+			fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 				destination, intZeroRegister, n.Value)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -509,15 +508,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if n.Value {
-				fmt.Fprintf(w, "addi %s, %s, %d\n",
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 					destination, intZeroRegister.String(), 1)
 			} else {
-				fmt.Fprintf(w, "addi %s, %s, %d\n",
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 					destination, intZeroRegister.String(), 0)
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -532,17 +531,17 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			u := math.Float32bits(n.Value)
-			fmt.Fprintf(w, "ori %s, %s, %d\n",
+			fmt.Fprintf(w, "ORI %s, %s, %d\n",
 				intTemporaryRegisters[0], intZeroRegister, u%(1<<16))
-			fmt.Fprintf(w, "lui %s, %s, %d\n",
+			fmt.Fprintf(w, "LUI %s, %s, %d\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0], u>>16)
-			fmt.Fprintf(w, "sw %s, 0(%s)\n",
+			fmt.Fprintf(w, "SW %s, 0(%s)\n",
 				intTemporaryRegisters[0], heapPointer)
-			fmt.Fprintf(w, "lwc1 %s, 0(%s)\n",
+			fmt.Fprintf(w, "LWC1 %s, 0(%s)\n",
 				destination, heapPointer)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -563,10 +562,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -587,10 +586,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "addi %s, %s, %d\n", destination, registers[0], n.Right)
+			fmt.Fprintf(w, "ADDI %s, %s, %d\n", destination, registers[0], n.Right)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -611,10 +610,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "SUB %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -635,10 +634,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sub %s, %s, %s\n", destination, intZeroRegister, registers[0])
+			fmt.Fprintf(w, "SUB %s, %s, %s\n", destination, intZeroRegister, registers[0])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -659,10 +658,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add.s %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "ADDS %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -683,10 +682,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "SUBS %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -707,10 +706,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sub.s %s, %s, %s\n", destination, floatZeroRegister, registers[0])
+			fmt.Fprintf(w, "SUBS %s, %s, %s\n", destination, floatZeroRegister, registers[0])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -731,10 +730,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "div.s %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "DIVS %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -755,10 +754,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "mul.s %s, %s, %s\n", destination, registers[0], registers[1])
+			fmt.Fprintf(w, "MULS %s, %s, %s\n", destination, registers[0], registers[1])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -779,13 +778,13 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "addi %s, %s, 1\n",
+			fmt.Fprintf(w, "ADDI %s, %s, 1\n",
 				intTemporaryRegisters[0], intZeroRegister)
-			fmt.Fprintf(w, "sub %s, %s, %s\n",
+			fmt.Fprintf(w, "SUB %s, %s, %s\n",
 				destination, intTemporaryRegisters[0], registers[0])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -807,17 +806,17 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if types[n.Left] == typing.FloatType {
-				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, intZeroRegister)
-				fmt.Fprintf(w, "beqs %s, %s, 1\n ", registers[0], registers[1])
-				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "ADDI %s, %s, 1\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
 			} else {
-				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, intZeroRegister)
-				fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], registers[1])
-				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "ADDI %s, %s, 1\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -839,17 +838,17 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if types[n.Left] == typing.FloatType {
-				fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
-				fmt.Fprintf(w, "bls %s, %s, 1\n", registers[0], registers[1])
-				fmt.Fprintf(w, "addi %s, %s, -1\n", destination, destination)
-				fmt.Fprintf(w, "addi %s, %s, 1\n", destination, destination)
+				fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
+				fmt.Fprintf(w, "BLS %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "ADDI %s, %s, -1\n", destination, destination)
+				fmt.Fprintf(w, "ADDI %s, %s, 1\n", destination, destination)
 			} else {
-				fmt.Fprintf(w, "slt %s, %s, %s\n",
+				fmt.Fprintf(w, "SLT %s, %s, %s\n",
 					destination, registers[0], registers[1])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -873,12 +872,12 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Left] == typing.FloatType {
-				fmt.Fprintf(w, "beqs %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
 			} else {
-				fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], registers[1])
 			}
 
-			fmt.Fprintf(w, "j %s\n", elseLabel)
+			fmt.Fprintf(w, "J %s\n", elseLabel)
 
 			// There is no need to keep variables alive inside because
 			// all the registers that should be kept alive were stored to the stack.
@@ -886,17 +885,17 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				destination, tail, n.True, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
-				fmt.Fprintf(w, "nop\n")
+				fmt.Fprintf(w, "NOP\n")
 			}
 
 			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
@@ -926,28 +925,28 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Inner] == typing.FloatType {
-				fmt.Fprintf(w, "beqs %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
 			} else {
-				fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], intZeroRegister)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], intZeroRegister)
 			}
 
-			fmt.Fprintf(w, "j %s\n", elseLabel)
+			fmt.Fprintf(w, "J %s\n", elseLabel)
 
 			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
-				fmt.Fprintf(w, "nop\n")
+				fmt.Fprintf(w, "NOP\n")
 			}
 
 			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
@@ -976,26 +975,26 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			elseLabel := getLabel()
 			continueLabel := getLabel()
 
-			fmt.Fprintf(w, "addi %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
-			fmt.Fprintf(w, "beq %s, %s, 1\n", registers[0], intTemporaryRegisters[0])
+			fmt.Fprintf(w, "ADDI %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
+			fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], intTemporaryRegisters[0])
 
-			fmt.Fprintf(w, "j %s\n", elseLabel)
+			fmt.Fprintf(w, "J %s\n", elseLabel)
 
 			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
-				fmt.Fprintf(w, "nop\n")
+				fmt.Fprintf(w, "NOP\n")
 			}
 
 			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
@@ -1025,32 +1024,32 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Left] == typing.FloatType {
-				fmt.Fprintf(w, "bls %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "BLS %s, %s, 1\n", registers[0], registers[1])
 			} else {
-				fmt.Fprintf(w, "slt %s, %s, %s\n",
+				fmt.Fprintf(w, "SLT %s, %s, %s\n",
 					intTemporaryRegisters[0], registers[0], registers[1])
-				fmt.Fprintf(w, "addi %s, %s, -1\n",
+				fmt.Fprintf(w, "ADDI %s, %s, -1\n",
 					intTemporaryRegisters[0], intTemporaryRegisters[0])
-				fmt.Fprintf(w, "beq %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
 			}
 
-			fmt.Fprintf(w, "j %s\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "J %s\n", elseLabel)
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
-				fmt.Fprintf(w, "nop\n")
+				fmt.Fprintf(w, "NOP\n")
 			}
 
 			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
@@ -1080,32 +1079,32 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Inner] == typing.FloatType {
-				fmt.Fprintf(w, "bls %s, %s 1\n", registers[0], floatZeroRegister)
+				fmt.Fprintf(w, "BLS %s, %s 1\n", registers[0], floatZeroRegister)
 			} else {
-				fmt.Fprintf(w, "slt %s, %s, %s\n",
+				fmt.Fprintf(w, "SLT %s, %s, %s\n",
 					intTemporaryRegisters[0], registers[0], intZeroRegister)
-				fmt.Fprintf(w, "addi %s, %s, -1\n",
+				fmt.Fprintf(w, "ADDI %s, %s, -1\n",
 					intTemporaryRegisters[0], intTemporaryRegisters[0])
-				fmt.Fprintf(w, "beq %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
 			}
 
-			fmt.Fprintf(w, "j %s\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "J %s\n", elseLabel)
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping1, storedVariables1 := emit(
 				destination, tail, n.True, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 			registerMapping2, storedVariables2 := emit(
 				destination, tail, n.False, registerMapping, storedVariables, map[string]struct{}{})
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
-				fmt.Fprintf(w, "nop\n")
+				fmt.Fprintf(w, "NOP\n")
 			}
 
 			for i := len(storedVariables); i < len(storedVariables1) && i < len(storedVariables2); i++ {
@@ -1237,7 +1236,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 					if !isInRegister || correctRegister != currentRegister {
 						if isInRegister {
-							fmt.Fprintf(w, "add.s %s, %s, %s\n",
+							fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 								correctRegister, currentRegister, floatZeroRegister)
 						} else {
 							idx := funk.IndexOfString(storedVariables, arg)
@@ -1246,7 +1245,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 								log.Fatalf("variable not found on stack: %s", arg)
 							}
 
-							fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+							fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
 								correctRegister, idx*4, stackPointer)
 						}
 
@@ -1267,7 +1266,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 					if !isInRegister || correctRegister != currentRegister {
 						if isInRegister {
-							fmt.Fprintf(w, "add %s, %s, %s\n",
+							fmt.Fprintf(w, "ADD %s, %s, %s\n",
 								correctRegister, currentRegister, intZeroRegister)
 						} else {
 							idx := funk.IndexOfString(storedVariables, arg)
@@ -1276,7 +1275,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 								log.Fatalf("variable not found on stack: %s", arg)
 							}
 
-							fmt.Fprintf(w, "lw %s, %d(%s)\n",
+							fmt.Fprintf(w, "LW %s, %d(%s)\n",
 								correctRegister, idx*4, stackPointer)
 						}
 
@@ -1290,10 +1289,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 				if isInRegister {
 					if types[arg] == typing.FloatType {
-						fmt.Fprintf(w, "add.s %s, %s, %s\n",
+						fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 							floatTemporaryRegister, floatZeroRegister, register)
 					} else {
-						fmt.Fprintf(w, "add %s, %s, %s\n",
+						fmt.Fprintf(w, "ADD %s, %s, %s\n",
 							intTemporaryRegisters[0], intZeroRegister, register)
 					}
 				} else {
@@ -1304,52 +1303,52 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 					}
 
 					if types[arg] == typing.FloatType {
-						fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+						fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
 							floatTemporaryRegister, idx*4, stackPointer)
 					} else {
-						fmt.Fprintf(w, "lw %s, %d(%s)\n",
+						fmt.Fprintf(w, "LW %s, %d(%s)\n",
 							intTemporaryRegisters[0], idx*4, stackPointer)
 					}
 				}
 
 				if types[arg] == typing.FloatType {
-					fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+					fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 						floatTemporaryRegister, (len(storedVariables)+1)*4+i*4, stackPointer)
 				} else {
-					fmt.Fprintf(w, "sw %s, %d(%s)\n",
+					fmt.Fprintf(w, "SW %s, %d(%s)\n",
 						intTemporaryRegisters[0], (len(storedVariables)+1)*4+i*4, stackPointer)
 				}
 			}
 
 			if tail {
 				for i := range argumentsToPassWithStack {
-					fmt.Fprintf(w, "lw %s, %d(%s)\n",
+					fmt.Fprintf(w, "LW %s, %d(%s)\n",
 						intTemporaryRegisters[0], (len(storedVariables)+1)*4+i*4, stackPointer)
-					fmt.Fprintf(w, "sw %s, %d(%s)\n",
+					fmt.Fprintf(w, "SW %s, %d(%s)\n",
 						intTemporaryRegisters[0], i*4, stackPointer)
 				}
 
-				fmt.Fprintf(w, "j %s\n", n.Function)
+				fmt.Fprintf(w, "J %s\n", n.Function)
 			} else {
-				fmt.Fprintf(w, "sw $ra, %d(%s)\n",
+				fmt.Fprintf(w, "SW $ra, %d(%s)\n",
 					len(storedVariables)*4, stackPointer)
 
-				fmt.Fprintf(w, "addi %s, %s, %d\n",
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 					stackPointer, stackPointer, (len(storedVariables)+1)*4)
 
-				fmt.Fprintf(w, "jal %s\n", n.Function)
+				fmt.Fprintf(w, "JAL %s\n", n.Function)
 
-				fmt.Fprintf(w, "addi %s, %s, %d\n",
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 					stackPointer, stackPointer, -(len(storedVariables)+1)*4)
 
-				fmt.Fprintf(w, "lw $ra, %d(%s)\n",
+				fmt.Fprintf(w, "LW $ra, %d(%s)\n",
 					len(storedVariables)*4, stackPointer)
 
 				if types[n.Function].(typing.FunctionType).Return == typing.FloatType {
-					fmt.Fprintf(w, "add.s %s, %s, %s\n",
+					fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 						destination, FloatRegister(0), floatZeroRegister)
 				} else {
-					fmt.Fprintf(w, "add %s, %s, %s\n",
+					fmt.Fprintf(w, "ADD %s, %s, %s\n",
 						destination, IntRegister(0), intZeroRegister)
 				}
 			}
@@ -1382,9 +1381,9 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 				switch registers[0].(type) {
 				case FloatRegister:
-					fmt.Fprintf(w, "swc1 %s, %d(%s)\n", registers[0], i*4, heapPointer)
+					fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", registers[0], i*4, heapPointer)
 				default:
-					fmt.Fprintf(w, "sw %s, %d(%s)\n", registers[0], i*4, heapPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s)\n", registers[0], i*4, heapPointer)
 				}
 			}
 
@@ -1395,11 +1394,11 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n", destination, heapPointer, intZeroRegister)
-			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, len(n.Elements)*4)
+			fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, heapPointer, intZeroRegister)
+			fmt.Fprintf(w, "ADDI %s, %s, %d\n", heapPointer, heapPointer, len(n.Elements)*4)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1422,15 +1421,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			switch destination.(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+				fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
 					destination, n.Index*4, registers[0])
 			default:
-				fmt.Fprintf(w, "lw %s, %d(%s)\n",
+				fmt.Fprintf(w, "LW %s, %d(%s)\n",
 					destination, n.Index*4, registers[0])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1444,14 +1443,14 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n",
+			fmt.Fprintf(w, "ADD %s, %s, %s\n",
 				intTemporaryRegisters[0], registers[0], intZeroRegister)
 
 			if types[n.Value] == typing.FloatType {
-				fmt.Fprintf(w, "add.s %s, %s, %s\n",
+				fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 					floatTemporaryRegister, registers[1], floatZeroRegister)
 			} else {
-				fmt.Fprintf(w, "add %s, %s, %s\n",
+				fmt.Fprintf(w, "ADD %s, %s, %s\n",
 					intTemporaryRegisters[1], registers[1], intZeroRegister)
 			}
 
@@ -1462,36 +1461,36 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n",
+			fmt.Fprintf(w, "ADD %s, %s, %s\n",
 				destination, heapPointer, intZeroRegister)
 
 			loopLabel := getLabel()
 
 			fmt.Fprintf(w, "%s:\n", loopLabel)
 
-			fmt.Fprintf(w, "beq %s, %s, 4\n",
+			fmt.Fprintf(w, "BEQ %s, %s, 4\n",
 				intTemporaryRegisters[0], intZeroRegister)
 
 			switch registers[1].(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "swc1 %s, 0(%s)\n",
+				fmt.Fprintf(w, "SWC1 %s, 0(%s)\n",
 					floatTemporaryRegister, heapPointer)
 			default:
-				fmt.Fprintf(w, "sw %s, 0(%s)\n",
+				fmt.Fprintf(w, "SW %s, 0(%s)\n",
 					intTemporaryRegisters[1], heapPointer)
 			}
 
-			fmt.Fprintf(w, "addi %s, %s, 4\n", heapPointer, heapPointer)
+			fmt.Fprintf(w, "ADDI %s, %s, 4\n", heapPointer, heapPointer)
 
-			fmt.Fprintf(w, "addi %s, %s, -1\n",
+			fmt.Fprintf(w, "ADDI %s, %s, -1\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0])
 
-			fmt.Fprintf(w, "j %s\n", loopLabel)
+			fmt.Fprintf(w, "J %s\n", loopLabel)
 
-			fmt.Fprintf(w, "nop\n")
+			fmt.Fprintf(w, "NOP\n")
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1506,10 +1505,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			)
 
 			if types[n.Value] == typing.FloatType {
-				fmt.Fprintf(w, "add.s %s, %s, %s\n",
+				fmt.Fprintf(w, "ADDS %s, %s, %s\n",
 					floatTemporaryRegister, registers[0], floatZeroRegister)
 			} else {
-				fmt.Fprintf(w, "add %s, %s, %s\n",
+				fmt.Fprintf(w, "ADD %s, %s, %s\n",
 					intTemporaryRegisters[0], registers[0], intZeroRegister)
 			}
 
@@ -1520,24 +1519,24 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "add %s, %s, %s\n",
+			fmt.Fprintf(w, "ADD %s, %s, %s\n",
 				destination, heapPointer, intZeroRegister)
 
 			for i := 0; i < int(n.Length); i++ {
 				switch registers[0].(type) {
 				case FloatRegister:
-					fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+					fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 						floatTemporaryRegister, i*4, heapPointer)
 				default:
-					fmt.Fprintf(w, "sw %s, %d(%s)\n",
+					fmt.Fprintf(w, "SW %s, %d(%s)\n",
 						intTemporaryRegisters[0], i*4, heapPointer)
 				}
 			}
 
-			fmt.Fprintf(w, "addi %s, %s, %d\n", heapPointer, heapPointer, n.Length*4)
+			fmt.Fprintf(w, "ADDI %s, %s, %d\n", heapPointer, heapPointer, n.Length*4)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1558,22 +1557,22 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sll %s, %s, %d\n",
+			fmt.Fprintf(w, "SLL %s, %s, %d\n",
 				intTemporaryRegisters[0], registers[1], 2)
-			fmt.Fprintf(w, "add %s, %s, %s\n",
+			fmt.Fprintf(w, "ADD %s, %s, %s\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0], registers[0])
 
 			switch destination.(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "lwc1 %s, 0(%s)\n",
+				fmt.Fprintf(w, "LWC1 %s, 0(%s)\n",
 					destination, intTemporaryRegisters[0])
 			default:
-				fmt.Fprintf(w, "lw %s, 0(%s)\n",
+				fmt.Fprintf(w, "LW %s, 0(%s)\n",
 					destination, intTemporaryRegisters[0])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1596,15 +1595,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			switch destination.(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "lwc1 %s, %d(%s)\n",
+				fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
 					destination, n.Index*4, registers[0])
 			default:
-				fmt.Fprintf(w, "lw %s, %d(%s)\n",
+				fmt.Fprintf(w, "LW %s, %d(%s)\n",
 					destination, n.Index*4, registers[0])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1618,22 +1617,22 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sll %s, %s, %d\n",
+			fmt.Fprintf(w, "SLL %s, %s, %d\n",
 				intTemporaryRegisters[0], registers[1], 2)
-			fmt.Fprintf(w, "add %s, %s, %s\n",
+			fmt.Fprintf(w, "ADD %s, %s, %s\n",
 				intTemporaryRegisters[0], intTemporaryRegisters[0], registers[0])
 
 			switch registers[2].(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "swc1 %s, 0(%s)\n",
+				fmt.Fprintf(w, "SWC1 %s, 0(%s)\n",
 					registers[2], intTemporaryRegisters[0])
 			default:
-				fmt.Fprintf(w, "sw %s, 0(%s)\n",
+				fmt.Fprintf(w, "SW %s, 0(%s)\n",
 					registers[2], intTemporaryRegisters[0])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1649,15 +1648,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			switch registers[1].(type) {
 			case FloatRegister:
-				fmt.Fprintf(w, "swc1 %s, %d(%s)\n",
+				fmt.Fprintf(w, "SWC1 %s, %d(%s)\n",
 					registers[1], n.Index*4, registers[0])
 			default:
-				fmt.Fprintf(w, "sw %s, %d(%s)\n",
+				fmt.Fprintf(w, "SW %s, %d(%s)\n",
 					registers[1], n.Index*4, registers[0])
 			}
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1671,62 +1670,62 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			l := []string{getLabel(), getLabel(), getLabel(), getLabel()}
 			continueLabel := getLabel()
 
-			fmt.Fprintf(w, "addi %s, %s, 0\n", destination, intZeroRegister)
+			fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
 
 			// intRegisters[0] = filePointer % 4
-			fmt.Fprintf(w, "addi %s, %s, 0\n", intRegisters[0], intZeroRegister)
+			fmt.Fprintf(w, "ADDI %s, %s, 0\n", intRegisters[0], intZeroRegister)
 			for i := 0; i < 2; i++ {
-				fmt.Fprintf(w, "addi %s, %s, %d\n", intTemporaryRegisters[1], filePointer, -(1 << i))
-				fmt.Fprintf(w, "ori %s, %s, %d\n", intTemporaryRegisters[1], intTemporaryRegisters[1], 1<<i)
-				fmt.Fprintf(w, "beq %s, %s, 1\n", filePointer, intTemporaryRegisters[1])
-				fmt.Fprintf(w, "beq %s, %s, 1\n", intZeroRegister, intZeroRegister)
-				fmt.Fprintf(w, "addi %s, %s, %d\n", intRegisters[0], intRegisters[0], 1<<i)
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intTemporaryRegisters[1], filePointer, -(1 << i))
+				fmt.Fprintf(w, "ORI %s, %s, %d\n", intTemporaryRegisters[1], intTemporaryRegisters[1], 1<<i)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", filePointer, intTemporaryRegisters[1])
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intRegisters[0], intRegisters[0], 1<<i)
 			}
 
 			// intRegisters[1] = M[filePointer - filePointer % 4]
-			fmt.Fprintf(w, "sub %s, %s, %s\n",
+			fmt.Fprintf(w, "SUB %s, %s, %s\n",
 				intRegisters[1], filePointer, intRegisters[0])
 
-			fmt.Fprintf(w, "lw %s, 0(%s)\n", intRegisters[1], intRegisters[1])
+			fmt.Fprintf(w, "LW %s, 0(%s)\n", intRegisters[1], intRegisters[1])
 
 			for i := 0; i < 4; i++ {
-				fmt.Fprintf(w, "addi %s, %s, %d\n", intTemporaryRegisters[0], intZeroRegister, i)
-				fmt.Fprintf(w, "beq %s, %s, 1\n", intRegisters[0], intTemporaryRegisters[0])
-				fmt.Fprintf(w, "beq %s, %s, 1\n", intZeroRegister, intZeroRegister)
-				fmt.Fprintf(w, "j %s\n", l[i])
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intTemporaryRegisters[0], intZeroRegister, i)
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intRegisters[0], intTemporaryRegisters[0])
+				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
+				fmt.Fprintf(w, "J %s\n", l[i])
 			}
 
 			for i := 0; i < 4; i++ {
 				fmt.Fprintf(w, "%s:\n", l[i])
 				for j := 0; j < 8; j++ {
 					// intRegisters[2] = 1 << (24 - i * 8 + j)
-					fmt.Fprintf(w, "addi %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
-					fmt.Fprintf(w, "sll %s, %s, %d\n",
+					fmt.Fprintf(w, "ADDI %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
+					fmt.Fprintf(w, "SLL %s, %s, %d\n",
 						intRegisters[2], intTemporaryRegisters[0], 24-i*8+j)
 
-					fmt.Fprintf(w, "sub %s, %s, %s\n",
+					fmt.Fprintf(w, "SUB %s, %s, %s\n",
 						intRegisters[3], intRegisters[1], intRegisters[2])
 					if 24-i*8+j < 16 {
-						fmt.Fprintf(w, "ori %s, %s, %d\n",
+						fmt.Fprintf(w, "ORI %s, %s, %d\n",
 							intRegisters[3], intRegisters[3], 1<<(24-i*8+j))
 					} else {
-						fmt.Fprintf(w, "lui %s, %s, %d\n",
+						fmt.Fprintf(w, "LUI %s, %s, %d\n",
 							intRegisters[3], intRegisters[3], 1<<(24-i*8+j-16))
 					}
-					fmt.Fprintf(w, "beq %s, %s, 1\n",
+					fmt.Fprintf(w, "BEQ %s, %s, 1\n",
 						intRegisters[3], intRegisters[1])
-					fmt.Fprintf(w, "beq %s, %s, 1\n", intZeroRegister, intZeroRegister)
-					fmt.Fprintf(w, "addi %s, %s, %d\n",
+					fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
+					fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 						destination, destination, 1<<j)
 				}
-				fmt.Fprintf(w, "j %s\n", continueLabel)
+				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 
 			fmt.Fprintf(w, "%s:\n", continueLabel)
-			fmt.Fprintf(w, "addi %s, %s, 1\n", filePointer, filePointer)
+			fmt.Fprintf(w, "ADDI %s, %s, 1\n", filePointer, filePointer)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return newRegisterMapping(), storedVariables
@@ -1741,7 +1740,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "read_f %s\n", destination.String())
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1758,7 +1757,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "out_i %s\n", registers[0].String())
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1772,10 +1771,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "out_c %s\n", registers[0].String())
+			fmt.Fprintf(w, "OUT %s\n", registers[0].String())
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1796,12 +1795,12 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sw %s, 0(%s)\n", registers[0], heapPointer)
-			fmt.Fprintf(w, "lwc1 %s, 0(%s)\n", floatTemporaryRegister, heapPointer)
-			fmt.Fprintf(w, "itof %s, %s\n", destination, floatTemporaryRegister)
+			fmt.Fprintf(w, "SW %s, 0(%s)\n", registers[0], heapPointer)
+			fmt.Fprintf(w, "LWC1 %s, 0(%s)\n", floatTemporaryRegister, heapPointer)
+			fmt.Fprintf(w, "ITOF %s, %s\n", destination, floatTemporaryRegister)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1822,12 +1821,12 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "ftoi %s, %s\n", floatTemporaryRegister, registers[0])
-			fmt.Fprintf(w, "swc1 %s, 0(%s)\n", floatTemporaryRegister, heapPointer)
-			fmt.Fprintf(w, "lw %s, 0(%s)\n", destination, heapPointer)
+			fmt.Fprintf(w, "FTOI %s, %s\n", floatTemporaryRegister, registers[0])
+			fmt.Fprintf(w, "SWC1 %s, 0(%s)\n", floatTemporaryRegister, heapPointer)
+			fmt.Fprintf(w, "LW %s, 0(%s)\n", destination, heapPointer)
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1848,10 +1847,10 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "sqrt %s, %s\n", destination, registers[0])
+			fmt.Fprintf(w, "SQRT %s, %s\n", destination, registers[0])
 
 			if tail {
-				fmt.Fprintf(w, "jr $ra\n")
+				fmt.Fprintf(w, "JR $ra\n")
 			}
 
 			return registerMapping, storedVariables
@@ -1906,5 +1905,5 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 		[]string{},
 		map[string]struct{}{},
 	)
-	fmt.Fprintf(w, "exit\n")
+	fmt.Fprintf(w, "EXIT\n")
 }
