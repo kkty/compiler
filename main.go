@@ -19,8 +19,10 @@ import (
 func main() {
 	interpret := flag.Bool("i", false, "interprets program instead of generating assembly")
 	debug := flag.Bool("debug", false, "enables debugging output")
+	graph := flag.Bool("graph", false, "outputs graph in dot format")
 	inline := flag.Int("inline", 0, "number of inline expansions")
 	iter := flag.Int("iter", 0, "number of iterations for optimization")
+
 	flag.Parse()
 
 	b, err := ioutil.ReadFile(flag.Arg(0))
@@ -45,7 +47,9 @@ func main() {
 		main = ir.Reorder(main, functions)
 	}
 
-	if *interpret {
+	if *graph {
+		ir.GenerateGraph(main, functions)
+	} else if *interpret {
 		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
 		emit.Emit(functions, main, types, os.Stdout)
