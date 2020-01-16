@@ -29,7 +29,6 @@ type IntZeroRegister struct{}
 type FloatZeroRegister struct{}
 type HeapPointer struct{}
 type StackPointer struct{}
-type FilePointer struct{}
 
 func (r IntRegister) register()            {}
 func (r FloatRegister) register()          {}
@@ -39,7 +38,6 @@ func (r IntZeroRegister) register()        {}
 func (r FloatZeroRegister) register()      {}
 func (r HeapPointer) regiser()             {}
 func (r StackPointer) register()           {}
-func (r FilePointer) register()            {}
 
 func (r IntRegister) String() string {
 	return fmt.Sprintf("$i%d", r)
@@ -73,10 +71,6 @@ func (r StackPointer) String() string {
 	return "$sp"
 }
 
-func (r FilePointer) String() string {
-	return "$tmp2"
-}
-
 var intRegisters []IntRegister
 var floatRegisters []FloatRegister
 var stackPointer = StackPointer{}
@@ -85,7 +79,6 @@ var intZeroRegister = IntZeroRegister{}
 var floatZeroRegister = FloatZeroRegister{}
 var intTemporaryRegisters []IntTemporaryRegister
 var floatTemporaryRegister = FloatTemporaryRegister{}
-var filePointer = FilePointer{}
 
 func init() {
 	for i := 0; i < 2; i++ {
@@ -254,20 +247,15 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 		return fmt.Sprintf("L%d", nextLabelId)
 	}
 
-	fmt.Fprintf(w, ".text\n")
 	fmt.Fprintf(w, "start:\n")
 
-	// 100000
-	fmt.Fprintf(w, "LUI %s, %s, 1\n", stackPointer, intZeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 34464\n", stackPointer, stackPointer)
+	// 990000
+	fmt.Fprintf(w, "LUI %s, %s, 15\n", stackPointer, intZeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 6960\n", stackPointer, stackPointer)
 
-	// 110000
-	fmt.Fprintf(w, "LUI %s, %s, 1\n", heapPointer, intZeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 44464\n", heapPointer, heapPointer)
-
-	// 590000
-	fmt.Fprintf(w, "LUI %s, %s, 9\n", filePointer, intZeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 176\n", filePointer, filePointer)
+	// 1000000
+	fmt.Fprintf(w, "LUI %s, %s, 15\n", heapPointer, intZeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 16960\n", heapPointer, heapPointer)
 
 	fmt.Fprintf(w, "J main\n")
 
@@ -807,7 +795,9 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 
 			if types[n.Left] == typing.FloatType {
 				fmt.Fprintf(w, "ADDI %s, %s, 1\n", destination, intZeroRegister)
-				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "SUBS %s, %s, %s\n",
+					floatTemporaryRegister, registers[0], registers[1])
+				fmt.Fprintf(w, "BZS %s, 1\n", floatTemporaryRegister)
 				fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
 			} else {
 				fmt.Fprintf(w, "ADDI %s, %s, 1\n", destination, intZeroRegister)
@@ -872,7 +862,9 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Left] == typing.FloatType {
-				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "SUBS %s, %s, %s\n",
+					floatTemporaryRegister, registers[0], registers[1])
+				fmt.Fprintf(w, "BZS %s, 1\n", floatTemporaryRegister)
 			} else {
 				fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], registers[1])
 			}
@@ -925,7 +917,9 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Inner] == typing.FloatType {
-				fmt.Fprintf(w, "BEQS %s, %s, 1\n", registers[0], registers[1])
+				fmt.Fprintf(w, "SUBS %s, %s, %s\n",
+					floatTemporaryRegister, registers[0], registers[1])
+				fmt.Fprintf(w, "BZS %s, 1\n", floatTemporaryRegister)
 			} else {
 				fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], intZeroRegister)
 			}
@@ -1079,7 +1073,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 
 			if types[n.Inner] == typing.FloatType {
-				fmt.Fprintf(w, "BLS %s, %s 1\n", registers[0], floatZeroRegister)
+				fmt.Fprintf(w, "BLS %s, %s, 1\n", registers[0], floatZeroRegister)
 			} else {
 				fmt.Fprintf(w, "SLT %s, %s, %s\n",
 					intTemporaryRegisters[0], registers[0], intZeroRegister)
@@ -1660,75 +1654,21 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 			}
 
 			return registerMapping, storedVariables
-		case *ir.ReadByte:
-			storedVariables = spillVariablesOnRegisters(
+		case *ir.ReadInt:
+			storedVariables = spillVariableOnRegister(
+				destination,
 				registerMapping,
 				storedVariables,
 				variablesToKeep,
 			)
 
-			l := []string{getLabel(), getLabel(), getLabel(), getLabel()}
-			continueLabel := getLabel()
-
-			fmt.Fprintf(w, "ADDI %s, %s, 0\n", destination, intZeroRegister)
-
-			// intRegisters[0] = filePointer % 4
-			fmt.Fprintf(w, "ADDI %s, %s, 0\n", intRegisters[0], intZeroRegister)
-			for i := 0; i < 2; i++ {
-				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intTemporaryRegisters[1], filePointer, -(1 << i))
-				fmt.Fprintf(w, "ORI %s, %s, %d\n", intTemporaryRegisters[1], intTemporaryRegisters[1], 1<<i)
-				fmt.Fprintf(w, "BEQ %s, %s, 1\n", filePointer, intTemporaryRegisters[1])
-				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
-				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intRegisters[0], intRegisters[0], 1<<i)
-			}
-
-			// intRegisters[1] = M[filePointer - filePointer % 4]
-			fmt.Fprintf(w, "SUB %s, %s, %s\n",
-				intRegisters[1], filePointer, intRegisters[0])
-
-			fmt.Fprintf(w, "LW %s, 0(%s)\n", intRegisters[1], intRegisters[1])
-
-			for i := 0; i < 4; i++ {
-				fmt.Fprintf(w, "ADDI %s, %s, %d\n", intTemporaryRegisters[0], intZeroRegister, i)
-				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intRegisters[0], intTemporaryRegisters[0])
-				fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
-				fmt.Fprintf(w, "J %s\n", l[i])
-			}
-
-			for i := 0; i < 4; i++ {
-				fmt.Fprintf(w, "%s:\n", l[i])
-				for j := 0; j < 8; j++ {
-					// intRegisters[2] = 1 << (24 - i * 8 + j)
-					fmt.Fprintf(w, "ADDI %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
-					fmt.Fprintf(w, "SLL %s, %s, %d\n",
-						intRegisters[2], intTemporaryRegisters[0], 24-i*8+j)
-
-					fmt.Fprintf(w, "SUB %s, %s, %s\n",
-						intRegisters[3], intRegisters[1], intRegisters[2])
-					if 24-i*8+j < 16 {
-						fmt.Fprintf(w, "ORI %s, %s, %d\n",
-							intRegisters[3], intRegisters[3], 1<<(24-i*8+j))
-					} else {
-						fmt.Fprintf(w, "LUI %s, %s, %d\n",
-							intRegisters[3], intRegisters[3], 1<<(24-i*8+j-16))
-					}
-					fmt.Fprintf(w, "BEQ %s, %s, 1\n",
-						intRegisters[3], intRegisters[1])
-					fmt.Fprintf(w, "BEQ %s, %s, 1\n", intZeroRegister, intZeroRegister)
-					fmt.Fprintf(w, "ADDI %s, %s, %d\n",
-						destination, destination, 1<<j)
-				}
-				fmt.Fprintf(w, "J %s\n", continueLabel)
-			}
-
-			fmt.Fprintf(w, "%s:\n", continueLabel)
-			fmt.Fprintf(w, "ADDI %s, %s, 1\n", filePointer, filePointer)
+			fmt.Fprintf(w, "IN %s\n", destination.String())
 
 			if tail {
 				fmt.Fprintf(w, "JR $ra\n")
 			}
 
-			return newRegisterMapping(), storedVariables
+			return registerMapping, storedVariables
 		case *ir.ReadFloat:
 			storedVariables = spillVariableOnRegister(
 				destination,
@@ -1737,7 +1677,7 @@ func Emit(functions []*ir.Function, body ir.Node, types map[string]typing.Type, 
 				variablesToKeep,
 			)
 
-			fmt.Fprintf(w, "read_f %s\n", destination.String())
+			fmt.Fprintf(w, "INF %s\n", destination.String())
 
 			if tail {
 				fmt.Fprintf(w, "JR $ra\n")
