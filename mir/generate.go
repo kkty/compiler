@@ -189,8 +189,6 @@ func Generate(node ast.Node) Node {
 		return &ReadInt{}
 	case *ast.ReadFloat:
 		return &ReadFloat{}
-	case *ast.ReadByte:
-		return &ReadByte{}
 	case *ast.PrintInt:
 		n := node.(*ast.PrintInt)
 		return insertTemporaries([]ast.Node{n.Inner},

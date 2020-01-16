@@ -36,7 +36,6 @@ import "github.com/kkty/compiler/ast"
 %token<> ARRAY_CREATE
 %token<> READ_INT
 %token<> READ_FLOAT
-%token<> READ_BYTE
 %token<> PRINT_INT
 %token<> PRINT_CHAR
 %token<> INT_TO_FLOAT
@@ -158,9 +157,6 @@ exp: simple_exp
 | READ_FLOAT LPAREN RPAREN
   %prec prec_app
   { $$ = &ast.ReadFloat{} }
-| READ_BYTE LPAREN RPAREN
-  %prec prec_app
-  { $$ = &ast.ReadByte{} }
 | PRINT_INT simple_exp
   %prec prec_app
   { $$ = &ast.PrintInt{$2} }
