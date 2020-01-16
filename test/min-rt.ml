@@ -71,6 +71,27 @@ let reflections =
   create_array 180 (0, dummydv, 0.0) in
 (* reflectionsの有効な要素数 *)
 let n_reflections = create_array 1 0 in
+let rec float_to_int x =
+  if x < 0.0 then - (float_to_int (x *. -1.0)) else
+  if x > 10000.0 then 10000 + float_to_int (x -. 10000.0) else
+  if x > 100.0 then 100 + float_to_int (x -. 100.0) else
+  let rec f x y = if x < 0.5 then y else f (x -. 1.0) (y + 1) in f x 0 in
+let rec int_to_float x =
+  if x < 0 then -1.0 *. (int_to_float (-x)) else
+  if x > 10000 then 10000.0 +. int_to_float (x - 10000) else
+  if x > 100 then 100.0 +. int_to_float (x - 100) else
+  let rec f x y = if x = 0 then y else f (x - 1) (y +. 1.0) in f x 0.0 in
+let rec sqrt x =
+  if x < 0.0000001 then 0.0 else
+  if x < 1.0 then 1.0 /. sqrt ( 1.0 /. x ) else
+  let rec f left right iter =
+    if iter = 0 then left
+    else
+      let mid = (left +. right) /. 2.0 in
+      if mid *. mid > x
+      then f left mid (iter - 1)
+      else f mid right (iter - 1)
+  in f 0.0 x 30 in
 let rec mul x y =
   if y < 0 then - (mul x (-y))
   else let rec f x y = if y = 0 then 0 else x + (f x (y - 1)) in f x y in
@@ -84,37 +105,6 @@ let rec fabs x = if x > 0.0 then x else x *. -1.0 in
 let rec fneg x = x *. -1.0 in
 let rec fhalf x = x /. 2.0 in
 let rec fsqr x = x *. x in
-let rec skip _ =
-  let i = read_byte () in
-  if i = 45 then
-    (read_byte () - 48, true)
-  else if i >= 48 then
-    if i <= 57 then
-      (i - 48, false)
-    else skip ()
-  else skip () in
-let rec read_int _ =
-  let rec f i =
-    let (i, neg) = i in
-    let j = read_byte () in
-    if j >= 48 then (
-      if j <= 57 then
-        f ((mul i 10 + j - 48), neg)
-      else (if neg then 0 - i else i)
-    ) else (if neg then 0 - i else i) in
-  f (skip ()) in
-let rec read_float _ =
-  let rec f i =
-    let (i, neg) = i in
-    let j = read_byte () in
-    if j = 46 then
-      let k = read_int () in
-      let l = int_to_float i +. (int_to_float k) /. 10.0 in
-      (if neg then 0.0 -. l else l)
-    else if j >= 48 then
-      (if j <= 57 then f ((mul i 10 + j - 48), neg) else (if neg then 0.0 -. int_to_float i else int_to_float i))
-    else (if neg then 0.0 -. int_to_float i else int_to_float i) in
-  f (skip ()) in
 let rec div x y =
   let rec f x y z =
     if mul y z > x then z - 1
@@ -2092,7 +2082,7 @@ in
 let rec write_ppm_header _ =
   (
     print_char 80; (* 'P' *)
-    print_char (48 + 3); (* +6 if binary *) (* 48 = '0' *)
+    print_char (48 + 6); (* +6 if binary *) (* 48 = '0' *)
     print_char 10;
     print_int image_size.(0);
     print_char 32;
@@ -2106,16 +2096,13 @@ in
 let rec write_rgb_element x =
   let ix = int_of_float x in
   let elem = if ix > 255 then 255 else if ix < 0 then 0 else ix in
-  print_int elem
+  print_char elem
 in
 
 let rec write_rgb _ =
    write_rgb_element rgb.(0); (* Red   *)
-   print_char 32;
    write_rgb_element rgb.(1); (* Green *)
-   print_char 32;
-   write_rgb_element rgb.(2); (* Blue  *)
-   print_char 10
+   write_rgb_element rgb.(2) (* Blue  *)
 in
 
 (******************************************************************************
