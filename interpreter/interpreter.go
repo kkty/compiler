@@ -68,7 +68,7 @@ func Execute(functions []*ir.Function, main ir.Node, w io.Writer, r io.Reader) {
 			return !values[n.Inner].(bool)
 		case *ir.Equal:
 			n := node.(*ir.Equal)
-			if n.Left == n.Right {
+			if values[n.Left] == values[n.Right] {
 				return true
 			} else {
 				return false
