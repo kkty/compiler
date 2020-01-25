@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kkty/compiler/ast"
 	"github.com/kkty/compiler/emit"
-	"github.com/kkty/compiler/interpreter"
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/parser"
 	"io/ioutil"
@@ -47,7 +46,7 @@ func main() {
 	if *graph {
 		ir.GenerateGraph(main, functions)
 	} else if *interpret {
-		interpreter.Execute(functions, main, os.Stdout, os.Stdin)
+		ir.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
 		emit.Emit(functions, main, types, os.Stdout)
 	}

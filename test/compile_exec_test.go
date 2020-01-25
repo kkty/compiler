@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/kkty/compiler/ast"
-	"github.com/kkty/compiler/interpreter"
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/parser"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +41,7 @@ func TestCompileAndExec(t *testing.T) {
 			assert.Equal(t, 0, len(main.FreeVariables(map[string]struct{}{})))
 
 			buf := bytes.Buffer{}
-			interpreter.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
+			ir.Execute(functions, main, &buf, bytes.NewBufferString(c.input))
 			assert.Equal(t, c.expected, buf.String())
 		})
 	}
