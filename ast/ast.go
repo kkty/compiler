@@ -1,8 +1,12 @@
 package ast
 
+import (
+	"github.com/kkty/compiler/typing"
+)
+
 type Node interface {
-	astNode()
 	Children() []Node
+	GetType(map[string]typing.Type) typing.Type
 }
 
 type Variable struct{ Name string }
@@ -39,7 +43,9 @@ type Application struct {
 	Args     []Node
 }
 
-type Tuple struct{ Elements []Node }
+type Tuple struct {
+	Elements []Node
+}
 
 type TupleBinding struct {
 	Names       []string
@@ -47,15 +53,8 @@ type TupleBinding struct {
 }
 
 type ArrayCreate struct{ Size, Value Node }
-
-type ArrayGet struct {
-	Array, Index Node
-}
-
-type ArrayPut struct {
-	Array, Index, Value Node
-}
-
+type ArrayGet struct{ Array, Index Node }
+type ArrayPut struct{ Array, Index, Value Node }
 type ReadInt struct{}
 type ReadFloat struct{}
 type PrintInt struct{ Inner Node }
@@ -64,38 +63,68 @@ type IntToFloat struct{ Inner Node }
 type FloatToInt struct{ Inner Node }
 type Sqrt struct{ Inner Node }
 
-func (n *Variable) astNode()        {}
-func (n *Unit) astNode()            {}
-func (n *Int) astNode()             {}
-func (n *Bool) astNode()            {}
-func (n *Float) astNode()           {}
-func (n *Add) astNode()             {}
-func (n *Sub) astNode()             {}
-func (n *FloatAdd) astNode()        {}
-func (n *FloatSub) astNode()        {}
-func (n *FloatDiv) astNode()        {}
-func (n *FloatMul) astNode()        {}
-func (n *Equal) astNode()           {}
-func (n *LessThan) astNode()        {}
-func (n *Neg) astNode()             {}
-func (n *FloatNeg) astNode()        {}
-func (n *Not) astNode()             {}
-func (n *If) astNode()              {}
-func (n *ValueBinding) astNode()    {}
-func (n *FunctionBinding) astNode() {}
-func (n *Application) astNode()     {}
-func (n *Tuple) astNode()           {}
-func (n *TupleBinding) astNode()    {}
-func (n *ArrayCreate) astNode()     {}
-func (n *ArrayGet) astNode()        {}
-func (n *ArrayPut) astNode()        {}
-func (n *ReadInt) astNode()         {}
-func (n *ReadFloat) astNode()       {}
-func (n *PrintInt) astNode()        {}
-func (n *WriteByte) astNode()       {}
-func (n *IntToFloat) astNode()      {}
-func (n *FloatToInt) astNode()      {}
-func (n *Sqrt) astNode()            {}
+func (n *Variable) GetType(nameToType map[string]typing.Type) typing.Type { return nameToType[n.Name] }
+func (n *Unit) GetType(nameToType map[string]typing.Type) typing.Type     { return typing.UnitType }
+func (n *Int) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
+func (n *Bool) GetType(nameToType map[string]typing.Type) typing.Type     { return typing.BoolType }
+func (n *Float) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.FloatType }
+func (n *Add) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
+func (n *Sub) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
+func (n *FloatAdd) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *FloatSub) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *FloatDiv) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *FloatMul) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *Equal) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.BoolType }
+func (n *LessThan) GetType(nameToType map[string]typing.Type) typing.Type { return typing.BoolType }
+
+func (n *Neg) GetType(nameToType map[string]typing.Type) typing.Type {
+	return n.Inner.GetType(nameToType)
+}
+
+func (n *FloatNeg) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *Not) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.BoolType }
+func (n *If) GetType(nameToType map[string]typing.Type) typing.Type       { return n.True.GetType(nameToType) }
+
+func (n *ValueBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+	return n.Next.GetType(nameToType)
+}
+
+func (n *FunctionBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+	return n.Next.GetType(nameToType)
+}
+
+func (n *Application) GetType(nameToType map[string]typing.Type) typing.Type {
+	return nameToType[n.Function].(typing.FunctionType).Return
+}
+
+func (n *Tuple) GetType(nameToType map[string]typing.Type) typing.Type {
+	elementTypes := []typing.Type{}
+	for _, element := range n.Elements {
+		elementTypes = append(elementTypes, element.GetType(nameToType))
+	}
+	return typing.TupleType{elementTypes}
+}
+
+func (n *TupleBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+	return n.Next.GetType(nameToType)
+}
+
+func (n *ArrayCreate) GetType(nameToType map[string]typing.Type) typing.Type {
+	return typing.ArrayType{Inner: n.Value.GetType(nameToType)}
+}
+
+func (n *ArrayGet) GetType(nameToType map[string]typing.Type) typing.Type {
+	return n.Array.GetType(nameToType).(typing.ArrayType).Inner
+}
+
+func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type   { return typing.UnitType }
+func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.IntType }
+func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.FloatType }
+func (n *PrintInt) GetType(nameToType map[string]typing.Type) typing.Type   { return typing.UnitType }
+func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.UnitType }
+func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
+func (n *FloatToInt) GetType(nameToType map[string]typing.Type) typing.Type { return typing.IntType }
+func (n *Sqrt) GetType(nameToType map[string]typing.Type) typing.Type       { return typing.FloatType }
 
 func (n *Variable) Children() []Node        { return []Node{} }
 func (n *Unit) Children() []Node            { return []Node{} }
