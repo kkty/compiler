@@ -3,17 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
-
 	"github.com/kkty/compiler/ast"
 	"github.com/kkty/compiler/emit"
 	"github.com/kkty/compiler/interpreter"
 	"github.com/kkty/compiler/ir"
-	"github.com/kkty/compiler/mir"
 	"github.com/kkty/compiler/parser"
-	"github.com/kkty/compiler/typing"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
 func main() {
@@ -31,11 +28,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	astNode := parser.Parse(string(b))
-	ast.AlphaTransform(astNode)
-	mirNode := mir.Generate(astNode)
-	types := typing.GetTypes(mirNode)
-	main, functions, _ := ir.Generate(mirNode, types)
+	root := parser.Parse(string(b))
+	ast.AlphaTransform(root)
+	types := ast.GetTypes(root)
+
+	main, functions, _ := ir.Generate(root, types)
 	main, functions = ir.Inline(main, functions, *inline, types, *debug)
 
 	for i := 0; i < *iter; i++ {

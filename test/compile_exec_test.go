@@ -8,9 +8,7 @@ import (
 	"github.com/kkty/compiler/ast"
 	"github.com/kkty/compiler/interpreter"
 	"github.com/kkty/compiler/ir"
-	"github.com/kkty/compiler/mir"
 	"github.com/kkty/compiler/parser"
-	"github.com/kkty/compiler/typing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,9 +31,8 @@ func TestCompileAndExec(t *testing.T) {
 			program := string(b)
 			astNode := parser.Parse(program)
 			ast.AlphaTransform(astNode)
-			mirNode := mir.Generate(astNode)
-			types := typing.GetTypes(mirNode)
-			main, functions, _ := ir.Generate(mirNode, types)
+			types := ast.GetTypes(astNode)
+			main, functions, _ := ir.Generate(astNode, types)
 			main, functions = ir.Inline(main, functions, 5, types, false)
 			main = ir.RemoveRedundantVariables(main, functions)
 
