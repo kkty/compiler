@@ -22,6 +22,8 @@ func (m Map) Keys() []string {
 	return keys
 }
 
+// Join joins two maps and returns a function to restore the original map.
+// It can be used like `restore := m.Join(mm); ... ; restore(m)`
 func (m Map) Join(mm Map) func(Map) {
 	added := []string{}
 	updated := Map{}
@@ -41,6 +43,7 @@ func (m Map) Join(mm Map) func(Map) {
 	}
 }
 
+// Remove removes elements from the map.
 func (m Map) Remove(keys []string) {
 	for _, k := range keys {
 		delete(m, k)
