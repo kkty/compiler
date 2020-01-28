@@ -124,22 +124,26 @@ func GenerateGraph(main Node, functions []*Function) error {
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayGetImmediate(%v, %v)", n.Array, n.Index))
 		case *ArrayPut:
 			n := node.(*ArrayPut)
-			return g.Node(newID()).Label(fmt.Sprintf("ArrayPut(%v, %v, %v", n.Array, n.Index, n.Value))
+			return g.Node(newID()).Label(fmt.Sprintf("ArrayPut(%v, %v, %v)", n.Array, n.Index, n.Value))
 		case *ArrayPutImmediate:
 			n := node.(*ArrayPutImmediate)
-			return g.Node(newID()).Label(fmt.Sprintf("ArrayPutImmediate(%v, %v, %v", n.Array, n.Index, n.Value))
+			return g.Node(newID()).Label(fmt.Sprintf("ArrayPutImmediate(%v, %v, %v)", n.Array, n.Index, n.Value))
 		case *ReadInt:
 			return g.Node(newID()).Label("ReadInt")
 		case *ReadFloat:
 			return g.Node(newID()).Label("ReadFloat")
 		case *PrintInt:
-			return g.Node(newID()).Label("PrintInt")
+			n := node.(*PrintInt)
+			return g.Node(newID()).Label(fmt.Sprintf("PrintInt(%v)", n.Arg))
 		case *WriteByte:
-			return g.Node(newID()).Label("WriteByte")
+			n := node.(*WriteByte)
+			return g.Node(newID()).Label(fmt.Sprintf("WriteByte(%v)", n.Arg))
 		case *IntToFloat:
-			return g.Node(newID()).Label("IntToFloat")
+			n := node.(*IntToFloat)
+			return g.Node(newID()).Label(fmt.Sprintf("IntToFloat(%v)", n.Arg))
 		case *FloatToInt:
-			return g.Node(newID()).Label("FloatToInt")
+			n := node.(*FloatToInt)
+			return g.Node(newID()).Label(fmt.Sprintf("FloatToInt(%v)", n.Arg))
 		case *Sqrt:
 			return g.Node(newID()).Label("Sqrt")
 		}
