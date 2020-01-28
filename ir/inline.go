@@ -156,7 +156,7 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 	cnt := map[string]int{}
 
 	priority := func(f *Function) int {
-		return -(f.Body.Size() + cnt[f.Name]*10)
+		return -(f.Body.Size() + cnt[f.Name]*5)
 	}
 
 	for i := 0; i < n; i++ {

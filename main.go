@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 )
 
 func main() {
@@ -53,12 +54,30 @@ func main() {
 		}
 	}
 
+	spills := emit.AllocateRegisters(main, functions, types)
+	if *debug {
+		for function, count := range spills {
+			fmt.Fprintf(os.Stderr, "spilled %d variables in %s\n", count, function)
+		}
+	}
+
 	if *graph {
 		ir.GenerateGraph(main, functions)
 	} else if *interpret {
-		ir.Execute(functions, main, os.Stdout, os.Stdin)
+		counter := ir.Execute(functions, main, os.Stdout, os.Stdin)
+		if *debug {
+			keys := []string{}
+			for key := range counter {
+				keys = append(keys, key)
+			}
+			sort.Slice(keys, func(i, j int) bool {
+				return counter[keys[i]] > counter[keys[j]]
+			})
+			for _, key := range keys {
+				fmt.Fprintf(os.Stderr, "%s: %d\n", key, counter[key])
+			}
+		}
 	} else {
-		emit.AllocateRegisters(main, functions, types)
 		emit.Emit(functions, main, types, os.Stdout)
 	}
 }

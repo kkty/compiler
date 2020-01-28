@@ -50,25 +50,33 @@ func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 // Variable names in ir.Node are replaced with register names like $i1.
 // If a variable could not be assigned to any registers, it will be kept unchanged
 // and should be treated accordingly in the later stage.
-func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]typing.Type) {
+// The number of spills for each function is returned.
+func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]typing.Type) map[string]int {
+	spills := map[string]int{}
+
 	allocate := func(function *ir.Function) {
 		intGraph := map[string]stringset.Set{}
 		floatGraph := map[string]stringset.Set{}
 
 		addEdges := func(variables stringset.Set) {
 			for _, i := range variables.Slice() {
+				if types[i] == typing.FloatType {
+					if _, exists := floatGraph[i]; !exists {
+						floatGraph[i] = stringset.New()
+					}
+				} else {
+					if _, exists := intGraph[i]; !exists {
+						intGraph[i] = stringset.New()
+					}
+				}
+			}
+			for _, i := range variables.Slice() {
 				for _, j := range variables.Slice() {
 					if i != j {
 						if types[i] == typing.FloatType && types[j] == typing.FloatType {
-							if floatGraph[i] == nil {
-								floatGraph[i] = stringset.New()
-							}
 							floatGraph[i].Add(j)
 						}
 						if types[i] != typing.FloatType && types[j] != typing.FloatType {
-							if intGraph[i] == nil {
-								intGraph[i] = stringset.New()
-							}
 							intGraph[i].Add(j)
 						}
 					}
@@ -129,9 +137,13 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				v := stringset.New()
 				v.Join(liveVariables(n.Next, variablesToKeep))
 				v.Remove(n.Name)
+				copied := v.Copy()
+				copied.Join(variablesToKeep)
+				v.Join(liveVariables(n.Value, copied))
 				restore := v.Join(variablesToKeep)
-				v.Join(liveVariables(n.Value, v))
+				v.Add(n.Name)
 				addEdges(v)
+				v.Remove(n.Name)
 				restore(v)
 				return v
 			default:
@@ -159,9 +171,6 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		removeNode := func(node string, graph map[string]stringset.Set) {
 			for _, adjacent := range graph[node].Slice() {
 				graph[adjacent].Remove(node)
-				if len(graph[adjacent].Slice()) == 0 {
-					delete(graph, adjacent)
-				}
 			}
 			delete(graph, node)
 		}
@@ -185,6 +194,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				break
 			}
 			removeNode(i, intGraph)
+			spills[function.Name]++
 		}
 
 		for _, i := range getNodes(floatGraph) {
@@ -198,6 +208,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				break
 			}
 			removeNode(i, floatGraph)
+			spills[function.Name]++
 		}
 	}
 
@@ -208,4 +219,6 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 	}) {
 		allocate(function)
 	}
+
+	return spills
 }

@@ -5,10 +5,13 @@ import (
 	"io"
 	"log"
 	"math"
+	"reflect"
+	"strings"
 )
 
 // Execute interprets and executes the program.
-func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) {
+// Returns the number of evaluated nodes grouped by type.
+func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) map[string]int {
 	findFunction := func(name string) *Function {
 		for _, function := range functions {
 			if function.Name == name {
@@ -20,8 +23,16 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) {
 		return nil
 	}
 
+	counter := map[string]int{}
+
 	var evaluate func(Node, map[string]interface{}) interface{}
 	evaluate = func(node Node, values map[string]interface{}) interface{} {
+		{
+			op := reflect.TypeOf(node).String()
+			op = op[strings.LastIndex(op, ".")+1:]
+			counter[op]++
+		}
+
 		switch node.(type) {
 		case *Variable:
 			n := node.(*Variable)
@@ -237,4 +248,6 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) {
 	}
 
 	evaluate(main, map[string]interface{}{})
+
+	return counter
 }
