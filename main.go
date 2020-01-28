@@ -32,15 +32,25 @@ func main() {
 	types := ast.GetTypes(root)
 
 	main, functions, _ := ir.Generate(root, types)
+
 	main, functions = ir.Inline(main, functions, *inline, types, *debug)
 
 	for i := 0; i < *iter; i++ {
 		if *debug {
 			fmt.Fprintf(os.Stderr, "optimizing (i=%d)\n", i)
 		}
+
 		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)
+
+		if *debug {
+			cnt := 0
+			for _, function := range functions {
+				cnt += function.Body.Size()
+			}
+			fmt.Fprintf(os.Stderr, "program size = %d\n", cnt)
+		}
 	}
 
 	if *graph {
