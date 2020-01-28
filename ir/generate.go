@@ -26,17 +26,23 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		// for K-normalization
 		insert := func(nodes []ast.Node, getNext func([]string) Node) Node {
 			names := []string{}
-			for i := 0; i < len(nodes); i++ {
-				names = append(names, newName())
+			for _, node := range nodes {
+				if v, ok := node.(*ast.Variable); ok {
+					names = append(names, v.Name)
+				} else {
+					name := newName()
+					names = append(names, name)
+					nameToType[name] = node.GetType(nameToType)
+				}
 			}
 			ret := getNext(names)
 			for i, node := range nodes {
-				name := names[i]
-				nameToType[name] = node.GetType(nameToType)
-				ret = &ValueBinding{
-					Name:  name,
-					Value: construct(node),
-					Next:  ret,
+				if _, ok := node.(*ast.Variable); !ok {
+					ret = &ValueBinding{
+						Name:  names[i],
+						Value: construct(node),
+						Next:  ret,
+					}
 				}
 			}
 			return ret
