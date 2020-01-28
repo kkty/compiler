@@ -48,6 +48,7 @@ func main() {
 	} else if *interpret {
 		ir.Execute(functions, main, os.Stdout, os.Stdin)
 	} else {
+		emit.AllocateRegisters(main, functions, types)
 		emit.Emit(functions, main, types, os.Stdout)
 	}
 }
