@@ -71,27 +71,6 @@ let reflections =
   create_array 180 (0, dummydv, 0.0) in
 (* reflectionsの有効な要素数 *)
 let n_reflections = create_array 1 0 in
-let rec float_to_int x =
-  if x < 0.0 then - (float_to_int (x *. -1.0)) else
-  if x > 10000.0 then 10000 + float_to_int (x -. 10000.0) else
-  if x > 100.0 then 100 + float_to_int (x -. 100.0) else
-  let rec f x y = if x < 0.5 then y else f (x -. 1.0) (y + 1) in f x 0 in
-let rec int_to_float x =
-  if x < 0 then -1.0 *. (int_to_float (-x)) else
-  if x > 10000 then 10000.0 +. int_to_float (x - 10000) else
-  if x > 100 then 100.0 +. int_to_float (x - 100) else
-  let rec f x y = if x = 0 then y else f (x - 1) (y +. 1.0) in f x 0.0 in
-let rec sqrt x =
-  if x < 0.0000001 then 0.0 else
-  if x < 1.0 then 1.0 /. sqrt ( 1.0 /. x ) else
-  let rec f left right iter =
-    if iter = 0 then left
-    else
-      let mid = (left +. right) /. 2.0 in
-      if mid *. mid > x
-      then f left mid (iter - 1)
-      else f mid right (iter - 1)
-  in f 0.0 x 30 in
 let rec mul x y =
   if y < 0 then - (mul x (-y))
   else let rec f x y = if y = 0 then 0 else x + (f x (y - 1)) in f x y in
@@ -148,17 +127,31 @@ let rec cos x =
   if x > 2.0 *. pi then cos (x -. 2.0 *. pi *. (floor (x /. 2.0 /. pi))) else
   if x > pi then -1.0 *. cos (x -. pi) else
   if x > pi *. 0.5 then -1.0 *. cos (pi -. x) else
-  1.0 -. (pow x 2) /. 2.0 +. (pow x 4) /. 24.0  -. (pow x 6) /. 720.0 +. (pow x 8) /. 40320.0 in
+  let x2 = x *. x in
+  let x4 = x2 *. x2 in
+  let x6 = x2 *. x4 in
+  1.0 -. x2 /. 2.0 +. x4 /. 24.0  -. x6 /. 720.0 in
 let rec sin x =
   if x < 0.0 then -1.0 *. sin (-1.0 *. x) else
   if x > 2.0 *. pi then sin (x -. 2.0 *. pi *. (floor (x /. 2.0 /. pi))) else
   if x > pi then -1.0 *. sin (x -. pi) else
   if x > pi *. 0.5 then sin (pi -. x) else
   if x > pi *. 0.25 then cos (pi *. 0.5 -. x) else
-  x -. (pow x 3) /. 6.0 +. (pow x 5) /. 120.0  -. (pow x 7) /. 5040.0 in
+  let x2 = x *. x in
+  let x3 = x2 *. x in
+  let x5 = x3 *. x2 in
+  let x7 = x5 *. x2 in
+  x -. x3 /. 6.0 +. x5 /. 120.0  -. x7 /. 5040.0 in
 let rec atan x =
   if x < 0.0 then -1.0 *. atan (-1.0 *. x) else
-  if x < 0.4375 then x -. (pow x 3) /. 3.0 +. (pow x 5) /. 5.0 -. (pow x 7) /. 7.0 +. (pow x 9) /. 9.0 -. (pow x 11) /. 11.0 +. (pow x 13) /. 13.0 else
+  if x < 0.4375 then (
+      let x2 = x *. x in
+      let x3 = x2 *. x in
+      let x5 = x3 *. x2 in
+      let x7 = x5 *. x2 in
+      let x9 = x7 *. x2 in
+      x -. x3 /. 3.0 +. x5 /. 5.0 -. x7 /. 7.0 +. x9 /. 9.0
+   ) else
   if x < 2.4375 then pi *. 0.25 +. atan ((x -. 1.0) /. (x +. 1.0)) else
   pi *. 0.5 -. atan 1.0 /. x in
 (****************************************************************)
