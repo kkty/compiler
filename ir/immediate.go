@@ -1,5 +1,6 @@
 package ir
 
+// Immediate applies immediate-value optimization.
 func Immediate(main Node, functions []*Function) Node {
 	// Updates a node to use immediate values, and evaluates the value of each node at the
 	// time. nil is used for unknown values.
