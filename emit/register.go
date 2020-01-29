@@ -60,7 +60,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 
 		addEdges := func(variables stringset.Set) {
 			for _, i := range variables.Slice() {
-				if types[i] == typing.FloatType {
+				if _, ok := types[i].(*typing.FloatType); ok {
 					if _, exists := floatGraph[i]; !exists {
 						floatGraph[i] = stringset.New()
 					}
@@ -73,11 +73,16 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			for _, i := range variables.Slice() {
 				for _, j := range variables.Slice() {
 					if i != j {
-						if types[i] == typing.FloatType && types[j] == typing.FloatType {
-							floatGraph[i].Add(j)
+						if _, ok := types[i].(*typing.FloatType); ok {
+							if _, ok := types[j].(*typing.FloatType); ok {
+								floatGraph[i].Add(j)
+							}
 						}
-						if types[i] != typing.FloatType && types[j] != typing.FloatType {
-							intGraph[i].Add(j)
+
+						if _, ok := types[i].(*typing.FloatType); !ok {
+							if _, ok := types[j].(*typing.FloatType); !ok {
+								intGraph[i].Add(j)
+							}
 						}
 					}
 				}

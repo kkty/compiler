@@ -63,25 +63,25 @@ type FloatToInt struct{ Inner Node }
 type Sqrt struct{ Inner Node }
 
 func (n *Variable) GetType(nameToType map[string]typing.Type) typing.Type { return nameToType[n.Name] }
-func (n *Unit) GetType(nameToType map[string]typing.Type) typing.Type     { return typing.UnitType }
-func (n *Int) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
-func (n *Bool) GetType(nameToType map[string]typing.Type) typing.Type     { return typing.BoolType }
-func (n *Float) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.FloatType }
-func (n *Add) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
-func (n *Sub) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.IntType }
-func (n *FloatAdd) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *FloatSub) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *FloatDiv) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *FloatMul) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *Equal) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.BoolType }
-func (n *LessThan) GetType(nameToType map[string]typing.Type) typing.Type { return typing.BoolType }
+func (n *Unit) GetType(nameToType map[string]typing.Type) typing.Type     { return &typing.UnitType{} }
+func (n *Int) GetType(nameToType map[string]typing.Type) typing.Type      { return &typing.IntType{} }
+func (n *Bool) GetType(nameToType map[string]typing.Type) typing.Type     { return &typing.BoolType{} }
+func (n *Float) GetType(nameToType map[string]typing.Type) typing.Type    { return &typing.FloatType{} }
+func (n *Add) GetType(nameToType map[string]typing.Type) typing.Type      { return &typing.IntType{} }
+func (n *Sub) GetType(nameToType map[string]typing.Type) typing.Type      { return &typing.IntType{} }
+func (n *FloatAdd) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *FloatSub) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *FloatDiv) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *FloatMul) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *Equal) GetType(nameToType map[string]typing.Type) typing.Type    { return &typing.BoolType{} }
+func (n *LessThan) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.BoolType{} }
 
 func (n *Neg) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Inner.GetType(nameToType)
 }
 
-func (n *FloatNeg) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *Not) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.BoolType }
+func (n *FloatNeg) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *Not) GetType(nameToType map[string]typing.Type) typing.Type      { return &typing.BoolType{} }
 func (n *If) GetType(nameToType map[string]typing.Type) typing.Type       { return n.True.GetType(nameToType) }
 
 func (n *Assignment) GetType(nameToType map[string]typing.Type) typing.Type {
@@ -93,7 +93,7 @@ func (n *FunctionBinding) GetType(nameToType map[string]typing.Type) typing.Type
 }
 
 func (n *Application) GetType(nameToType map[string]typing.Type) typing.Type {
-	return nameToType[n.Function].(typing.FunctionType).Return
+	return nameToType[n.Function].(*typing.FunctionType).Return
 }
 
 func (n *Tuple) GetType(nameToType map[string]typing.Type) typing.Type {
@@ -101,7 +101,7 @@ func (n *Tuple) GetType(nameToType map[string]typing.Type) typing.Type {
 	for _, element := range n.Elements {
 		elementTypes = append(elementTypes, element.GetType(nameToType))
 	}
-	return typing.TupleType{elementTypes}
+	return &typing.TupleType{elementTypes}
 }
 
 func (n *TupleAssignment) GetType(nameToType map[string]typing.Type) typing.Type {
@@ -109,20 +109,20 @@ func (n *TupleAssignment) GetType(nameToType map[string]typing.Type) typing.Type
 }
 
 func (n *ArrayCreate) GetType(nameToType map[string]typing.Type) typing.Type {
-	return typing.ArrayType{Inner: n.Value.GetType(nameToType)}
+	return &typing.ArrayType{Inner: n.Value.GetType(nameToType)}
 }
 
 func (n *ArrayGet) GetType(nameToType map[string]typing.Type) typing.Type {
-	return n.Array.GetType(nameToType).(typing.ArrayType).Inner
+	return n.Array.GetType(nameToType).(*typing.ArrayType).Inner
 }
 
-func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type   { return typing.UnitType }
-func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.IntType }
-func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.FloatType }
-func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.UnitType }
-func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
-func (n *FloatToInt) GetType(nameToType map[string]typing.Type) typing.Type { return typing.IntType }
-func (n *Sqrt) GetType(nameToType map[string]typing.Type) typing.Type       { return typing.FloatType }
+func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type   { return &typing.UnitType{} }
+func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type    { return &typing.IntType{} }
+func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type  { return &typing.FloatType{} }
+func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type  { return &typing.UnitType{} }
+func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *FloatToInt) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.IntType{} }
+func (n *Sqrt) GetType(nameToType map[string]typing.Type) typing.Type       { return &typing.FloatType{} }
 
 func (n *Variable) Children() []Node        { return []Node{} }
 func (n *Unit) Children() []Node            { return []Node{} }

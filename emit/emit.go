@@ -63,7 +63,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if idx == -1 {
 					log.Panicf("variable not found on stack: %s", variable)
 				}
-				if types[variable] == typing.FloatType {
+				if _, ok := types[variable].(*typing.FloatType); ok {
 					register := floatArgRegisters[nextFloatArgRegister]
 					nextFloatArgRegister++
 					fmt.Fprintf(w, "LWC1 %s, %d(%s)\n",
@@ -209,7 +209,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if isRegister(destination) {
 					fmt.Fprintf(w, "LW %s, %d(%s)\n", destination, findPosition(n.Name)*4, stackPointer)
 				} else {
-					if types[n.Name] == typing.FloatType {
+					if _, ok := types[n.Name].(*typing.FloatType); ok {
 						fmt.Fprintf(w, "LWC1 %s, %d(%s)\n", floatTemporaryRegisters[0], findPosition(n.Name)*4, stackPointer)
 						fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", floatTemporaryRegisters[0], findPosition(destination)*4, stackPointer)
 					} else {
@@ -690,7 +690,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				}
 			}
 
-			if types[f.Name].(typing.FunctionType).Return == typing.FloatType {
+			if _, ok := types[f.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
 				if isRegister(destination) {
 					fmt.Fprintf(w, "ADDS %s, %s, %s\n", destination, floatReturnRegister, floatZeroRegister)
 				} else {
@@ -737,9 +737,9 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			if isIntRegister(destination) {
 				fmt.Fprintf(w, "LW %s, %d(%s)\n", destination, n.Index*4, registers[0])
-			} else if isFloatRegister(destination){
+			} else if isFloatRegister(destination) {
 				fmt.Fprintf(w, "LWC1 %s, %d(%s)\n", destination, n.Index*4, registers[0])
-			} else if types[destination] == typing.FloatType {
+			} else if _, ok := types[destination].(*typing.FloatType); ok {
 				fmt.Fprintf(w, "LWC1 %s, %d(%s)\n", floatTemporaryRegisters[0], n.Index*4, registers[0])
 				fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", floatTemporaryRegisters[0], findPosition(destination)*4, stackPointer)
 			} else {
@@ -846,7 +846,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "LWC1 %s, 0(%s)\n", destination, intTemporaryRegisters[0])
 				}
 			} else {
-				if types[destination] != typing.FloatType {
+				if _, ok := types[destination].(*typing.FloatType); !ok {
 					fmt.Fprintf(w, "LW %s, 0(%s)\n", intTemporaryRegisters[1], intTemporaryRegisters[0])
 					fmt.Fprintf(w, "SW %s, %d(%s)\n", intTemporaryRegisters[1], findPosition(destination)*4, stackPointer)
 				} else {
@@ -870,7 +870,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "LWC1 %s, %d(%s)\n", destination, n.Index*4, registers[0])
 				}
 			} else {
-				if types[destination] != typing.FloatType {
+				if _, ok := types[destination].(*typing.FloatType); !ok {
 					fmt.Fprintf(w, "LW %s, %d(%s)\n", intTemporaryRegisters[0], n.Index*4, registers[0])
 					fmt.Fprintf(w, "SW %s, %d(%s)\n", intTemporaryRegisters[0], findPosition(destination)*4, stackPointer)
 				} else {
@@ -989,7 +989,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			if isRegister(destination) {
 				fmt.Fprintf(w, "SQRT %s, %s\n", destination, registers[0])
-			}  else {
+			} else {
 				fmt.Fprintf(w, "SQRT %s, %s\n", floatTemporaryRegisters[0], registers[0])
 				fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", floatTemporaryRegisters[0], findPosition(destination)*4, stackPointer)
 			}
@@ -1021,7 +1021,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		fmt.Fprintf(w, "%s:\n", function.Name)
 		if function.Name == "main" {
 			emit(intReturnRegister, true, function.Body, functionToSpills[function.Name])
-		} else if types[function.Name].(typing.FunctionType).Return == typing.FloatType {
+		} else if _, ok := types[function.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
 			emit(floatReturnRegister, true, function.Body, functionToSpills[function.Name])
 		} else {
 			emit(intReturnRegister, true, function.Body, functionToSpills[function.Name])

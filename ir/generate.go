@@ -101,7 +101,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			})
 		case *ast.Neg:
 			n := node.(*ast.Neg)
-			if n.GetType(nameToType) == typing.IntType {
+			if _, ok := n.GetType(nameToType).(*typing.IntType); ok {
 				return insert([]ast.Node{&ast.Int{Value: 0}, n.Inner}, func(names []string) Node {
 					return &Sub{Left: names[0], Right: names[1]}
 				})
@@ -246,9 +246,9 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			for _, freeVariable := range freeVariables {
 				appended[freeVariable] = struct{}{}
 				function.Args = append(function.Args, freeVariable)
-				nameToType[function.Name] = typing.FunctionType{
-					append(nameToType[function.Name].(typing.FunctionType).Args, nameToType[freeVariable]),
-					nameToType[function.Name].(typing.FunctionType).Return}
+				nameToType[function.Name] = &typing.FunctionType{
+					append(nameToType[function.Name].(*typing.FunctionType).Args, nameToType[freeVariable]),
+					nameToType[function.Name].(*typing.FunctionType).Return}
 			}
 		}
 

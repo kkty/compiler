@@ -18,77 +18,77 @@ func GetTypes(root Node) map[string]typing.Type {
 			n := node.(*Variable)
 			return nameToType[n.Name]
 		case *Unit:
-			return typing.UnitType
+			return &typing.UnitType{}
 		case *Int:
-			return typing.IntType
+			return &typing.IntType{}
 		case *Bool:
-			return typing.BoolType
+			return &typing.BoolType{}
 		case *Float:
-			return typing.FloatType
+			return &typing.FloatType{}
 		case *Add:
 			n := node.(*Add)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.IntType},
-				typing.Constraint{getType(n.Right), typing.IntType})
-			return typing.IntType
+				typing.Constraint{getType(n.Left), &typing.IntType{}},
+				typing.Constraint{getType(n.Right),&typing.IntType{}})
+			return &typing.IntType{}
 		case *Sub:
 			n := node.(*Sub)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.IntType},
-				typing.Constraint{getType(n.Right), typing.IntType})
-			return typing.IntType
+				typing.Constraint{getType(n.Left), &typing.IntType{}},
+				typing.Constraint{getType(n.Right), &typing.IntType{}})
+			return &typing.IntType{}
 		case *FloatAdd:
 			n := node.(*FloatAdd)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.FloatType},
-				typing.Constraint{getType(n.Right), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Left), &typing.FloatType{}},
+				typing.Constraint{getType(n.Right), &typing.FloatType{}})
+			return &typing.FloatType{}
 		case *FloatSub:
 			n := node.(*FloatSub)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.FloatType},
-				typing.Constraint{getType(n.Right), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Left), &typing.FloatType{}},
+				typing.Constraint{getType(n.Right), &typing.FloatType{}})
+			return &typing.FloatType{}
 		case *FloatDiv:
 			n := node.(*FloatDiv)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.FloatType},
-				typing.Constraint{getType(n.Right), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Left), &typing.FloatType{}},
+				typing.Constraint{getType(n.Right), &typing.FloatType{}})
+			return &typing.FloatType{}
 		case *FloatMul:
 			n := node.(*FloatMul)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Left), typing.FloatType},
-				typing.Constraint{getType(n.Right), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Left), &typing.FloatType{}},
+				typing.Constraint{getType(n.Right), &typing.FloatType{}})
+			return &typing.FloatType{}
 		case *Equal:
 			n := node.(*Equal)
 			constraints = append(constraints,
 				typing.Constraint{getType(n.Left), getType(n.Right)})
-			return typing.BoolType
+			return &typing.BoolType{}
 		case *LessThan:
 			n := node.(*LessThan)
 			constraints = append(constraints,
 				typing.Constraint{getType(n.Left), getType(n.Right)})
-			return typing.BoolType
+			return &typing.BoolType{}
 		case *Neg:
 			n := node.(*Neg)
 			return getType(n.Inner)
 		case *FloatNeg:
 			n := node.(*FloatNeg)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Inner), &typing.FloatType{}})
+			return &typing.FloatType{}
 		case *Not:
 			n := node.(*Not)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.BoolType})
-			return typing.BoolType
+				typing.Constraint{getType(n.Inner), &typing.BoolType{}})
+			return &typing.BoolType{}
 		case *If:
 			n := node.(*If)
 			t1, t2 := getType(n.True), getType(n.False)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Condition), typing.BoolType},
+				typing.Constraint{getType(n.Condition), &typing.BoolType{}},
 				typing.Constraint{t1, t2})
 			return t1
 		case *Assignment:
@@ -104,7 +104,7 @@ func GetTypes(root Node) map[string]typing.Type {
 				nameToType[arg] = t
 			}
 			returnType := typing.NewTypeVar()
-			nameToType[n.Name] = typing.FunctionType{argTypes, returnType}
+			nameToType[n.Name] = &typing.FunctionType{argTypes, returnType}
 			constraints = append(constraints,
 				typing.Constraint{getType(n.Body), returnType})
 			return getType(n.Next)
@@ -116,7 +116,7 @@ func GetTypes(root Node) map[string]typing.Type {
 			}
 			t := typing.NewTypeVar()
 			constraints = append(constraints,
-				typing.Constraint{nameToType[n.Function], typing.FunctionType{argTypes, t}})
+				typing.Constraint{nameToType[n.Function], &typing.FunctionType{argTypes, t}})
 			return t
 		case *Tuple:
 			n := node.(*Tuple)
@@ -124,7 +124,7 @@ func GetTypes(root Node) map[string]typing.Type {
 			for _, element := range n.Elements {
 				elements = append(elements, getType(element))
 			}
-			return typing.TupleType{elements}
+			return &typing.TupleType{elements}
 		case *TupleAssignment:
 			n := node.(*TupleAssignment)
 			ts := []typing.Type{}
@@ -134,50 +134,50 @@ func GetTypes(root Node) map[string]typing.Type {
 				nameToType[name] = t
 			}
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Tuple), typing.TupleType{ts}})
+				typing.Constraint{getType(n.Tuple), &typing.TupleType{ts}})
 			return getType(n.Next)
 		case *ArrayCreate:
 			n := node.(*ArrayCreate)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Size), typing.IntType})
-			return typing.ArrayType{getType(n.Value)}
+				typing.Constraint{getType(n.Size), &typing.IntType{}})
+			return &typing.ArrayType{getType(n.Value)}
 		case *ArrayGet:
 			n := node.(*ArrayGet)
 			t := typing.NewTypeVar()
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Index), typing.IntType},
-				typing.Constraint{getType(n.Array), typing.ArrayType{t}})
+				typing.Constraint{getType(n.Index), &typing.IntType{}},
+				typing.Constraint{getType(n.Array), &typing.ArrayType{t}})
 			return t
 		case *ArrayPut:
 			n := node.(*ArrayPut)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Index), typing.IntType},
-				typing.Constraint{getType(n.Array), typing.ArrayType{getType(n.Value)}})
-			return typing.UnitType
+				typing.Constraint{getType(n.Index), &typing.IntType{}},
+				typing.Constraint{getType(n.Array), &typing.ArrayType{getType(n.Value)}})
+			return &typing.UnitType{}
 		case *ReadInt:
-			return typing.IntType
+			return &typing.IntType{}
 		case *ReadFloat:
-			return typing.FloatType
+			return &typing.FloatType{}
 		case *WriteByte:
 			n := node.(*WriteByte)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.IntType})
-			return typing.UnitType
+				typing.Constraint{getType(n.Inner), &typing.IntType{}})
+			return &typing.UnitType{}
 		case *IntToFloat:
 			n := node.(*IntToFloat)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.IntType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Inner), &typing.IntType{}})
+			return &typing.FloatType{}
 		case *FloatToInt:
 			n := node.(*FloatToInt)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.FloatType})
-			return typing.IntType
+				typing.Constraint{getType(n.Inner), &typing.FloatType{}})
+			return &typing.IntType{}
 		case *Sqrt:
 			n := node.(*Sqrt)
 			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.FloatType})
-			return typing.FloatType
+				typing.Constraint{getType(n.Inner), &typing.FloatType{}})
+			return &typing.FloatType{}
 		}
 
 		panic("invalid node type")
@@ -191,7 +191,7 @@ func GetTypes(root Node) map[string]typing.Type {
 		nameToType[name] = t.Replace(mapping, true)
 	}
 
-	if root.GetType(nameToType) != typing.UnitType {
+	if _, ok := root.GetType(nameToType).(*typing.UnitType); !ok {
 		panic("the program should be of unit type")
 	}
 
