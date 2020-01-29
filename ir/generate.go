@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"github.com/kkty/compiler/ast"
 	"github.com/kkty/compiler/typing"
-	"github.com/thoas/go-funk"
 )
 
 // Generate generates Node from ast.Node.
 // K-normalization is performed and functions are separated from the main program.
 // Functions (and function applications) are modified so that they do not have free variables.
-// Variables with unit types, which will never be used as arguments, are renamed to "".
 func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Function, map[string]typing.Type) {
 	functions := map[string]*Function{}
 
@@ -140,18 +138,26 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			})
 		case *ast.Assignment:
 			n := node.(*ast.Assignment)
-			name := n.Name
-			// use empty string for variables of unit type
-			if _,ok := n.Body.GetType(nameToType).(*typing.UnitType); ok {
-				name = ""
-			}
-			return &Assignment{Name: name, Value: construct(n.Body), Next: construct(n.Next)}
+			return &Assignment{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
 		case *ast.FunctionAssignment:
 			n := node.(*ast.FunctionAssignment)
-			functions[n.Name] = &Function{Name: n.Name, Args: n.Args, Body: construct(n.Body)}
+			// TODO: this might better be in parser
+			args := n.Args
+			if len(args) == 1 {
+				if _, ok := nameToType[args[0]].(*typing.UnitType); ok {
+					args = []string{}
+				}
+			}
+			functions[n.Name] = &Function{Name: n.Name, Args: args, Body: construct(n.Body)}
 			return construct(n.Next)
 		case *ast.Application:
 			n := node.(*ast.Application)
+			// TODO: this might better be in parser
+			if len(n.Args) == 1 {
+				if _, ok := n.Args[0].GetType(nameToType).(*typing.UnitType); ok {
+					return &Application{Function: n.Function, Args: nil}
+				}
+			}
 			return insert(n.Args, func(names []string) Node {
 				return &Application{Function: n.Function, Args: names}
 			})
@@ -236,7 +242,10 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 	// removes free variables in functions (lambda lifting)
 	for {
 		for _, function := range functions {
-			freeVariables := funk.Keys(function.FreeVariables()).([]string)
+			freeVariables := []string{}
+			for freeVariable := range function.FreeVariables() {
+				freeVariables = append(freeVariables, freeVariable)
+			}
 
 			functionToApplications["main"] = applicationsInMain
 			for _, applications := range functionToApplications {

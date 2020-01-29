@@ -62,8 +62,9 @@ func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 
 // AllocateRegisters does register allocation with graph coloring.
 // Variable names in ir.Node are replaced with register names like $i1.
-// If a variable could not be assigned to any registers, it will be kept unchanged
-// and should be treated accordingly in the later stage.
+// Variables that are never referenced are renamed to "".
+// If a variable could not be assigned to any registers, its name will be kept unchanged
+// and should be saved on the stack.
 // The number of spills for each function is returned.
 func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]typing.Type) map[string]int {
 	spills := map[string]int{}
@@ -103,7 +104,9 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			}
 		}
 
-		// liveVariables returns live variables at a node, creating the interference graphs at the same time.
+		// liveVariables returns live variables at a node.
+		// At the same time, the interference graphs are constructed and the variables that are never referenced
+		// are renamed to "".
 		var liveVariables func(ir.Node, stringset.Set) stringset.Set
 		liveVariables = func(node ir.Node, variablesToKeep stringset.Set) stringset.Set {
 			switch node.(type) {
@@ -154,6 +157,9 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				return v
 			case *ir.Assignment:
 				n := node.(*ir.Assignment)
+				if !stringset.Set(n.Next.FreeVariables(stringset.New())).Has(n.Name) {
+					n.Name = ""
+				}
 				v := stringset.New()
 				v.Join(liveVariables(n.Next, variablesToKeep))
 				v.Remove(n.Name)
@@ -196,7 +202,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			delete(graph, node)
 		}
 
-		// variables names to register names
+		// variable names to register names
 		mapping := map[string]string{}
 
 		for _, i := range getNodes(intGraph) {
@@ -221,13 +227,18 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			spills[function.Name]++
 		}
 
-		function.Body.UpdateNames(mapping)
-
-		for i, arg := range function.Args {
-			if updated, exists := mapping[arg]; exists {
-				function.Args[i] = updated
+		{
+			freeVariables := stringset.Set(function.Body.FreeVariables(stringset.New()))
+			for i, arg := range function.Args {
+				if !freeVariables.Has(arg) {
+					function.Args[i] = ""
+				} else if updated, exists := mapping[arg]; exists {
+					function.Args[i] = updated
+				}
 			}
 		}
+
+		function.Body.UpdateNames(mapping)
 	}
 
 	for _, function := range append(functions, &ir.Function{
