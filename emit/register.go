@@ -8,6 +8,20 @@ import (
 	"sort"
 )
 
+var (
+	intRegisters   []string
+	floatRegisters []string
+)
+
+func init() {
+	for i := 0; i < 22; i++ {
+		intRegisters = append(intRegisters, fmt.Sprintf("$i%d", i+1))
+	}
+	for i := 0; i < 27; i++ {
+		floatRegisters = append(floatRegisters, fmt.Sprintf("$f%d", i+1))
+	}
+}
+
 // colorGraph colors a graph with k colors (0, 1, ... k - 1).
 // When failed, the second return value is set to false.
 func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
@@ -186,9 +200,9 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		mapping := map[string]string{}
 
 		for _, i := range getNodes(intGraph) {
-			if colorMap, ok := colorGraph(intGraph, 22); ok {
+			if colorMap, ok := colorGraph(intGraph, len(intRegisters)); ok {
 				for variable, color := range colorMap {
-					mapping[variable] = fmt.Sprintf("$i%d", color+1)
+					mapping[variable] = intRegisters[color]
 				}
 				break
 			}
@@ -197,9 +211,9 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		}
 
 		for _, i := range getNodes(floatGraph) {
-			if colorMap, ok := colorGraph(floatGraph, 27); ok {
+			if colorMap, ok := colorGraph(floatGraph, len(floatRegisters)); ok {
 				for variable, color := range colorMap {
-					mapping[variable] = fmt.Sprintf("$f%d", color+1)
+					mapping[variable] = floatRegisters[color]
 				}
 				break
 			}
