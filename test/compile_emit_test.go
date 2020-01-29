@@ -44,6 +44,7 @@ func TestCompileAndEmit(t *testing.T) {
 			}
 			assert.Equal(t, 0, len(main.FreeVariables(map[string]struct{}{})))
 
+			emit.AllocateRegisters(main, functions, types)
 			emit.Emit(functions, main, types, &bytes.Buffer{})
 		})
 	}
