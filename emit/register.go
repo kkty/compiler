@@ -132,8 +132,8 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				addEdges(v)
 				restore(v)
 				return v
-			case *ir.ValueBinding:
-				n := node.(*ir.ValueBinding)
+			case *ir.Assignment:
+				n := node.(*ir.Assignment)
 				v := stringset.New()
 				v.Join(liveVariables(n.Next, variablesToKeep))
 				v.Remove(n.Name)

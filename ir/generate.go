@@ -38,7 +38,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			ret := getNext(names)
 			for i, node := range nodes {
 				if _, ok := node.(*ast.Variable); !ok {
-					ret = &ValueBinding{
+					ret = &Assignment{
 						Name:  names[i],
 						Value: construct(node),
 						Next:  ret,
@@ -138,9 +138,9 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			return insert([]ast.Node{n.Condition, &ast.Bool{Value: true}}, func(names []string) Node {
 				return &IfEqual{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
 			})
-		case *ast.ValueBinding:
-			n := node.(*ast.ValueBinding)
-			return &ValueBinding{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
+		case *ast.Assignment:
+			n := node.(*ast.Assignment)
+			return &Assignment{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
 		case *ast.FunctionBinding:
 			n := node.(*ast.FunctionBinding)
 			functions[n.Name] = &Function{Name: n.Name, Args: n.Args, Body: construct(n.Body)}
@@ -161,7 +161,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 				tupleName := names[0]
 				var ret Node = construct(n.Next)
 				for i, name := range n.Names {
-					ret = &ValueBinding{
+					ret = &Assignment{
 						Name: name,
 						Value: &TupleGet{
 							Tuple: tupleName,
@@ -191,11 +191,6 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			return &ReadInt{}
 		case *ast.ReadFloat:
 			return &ReadFloat{}
-		case *ast.PrintInt:
-			n := node.(*ast.PrintInt)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
-				return &PrintInt{Arg: names[0]}
-			})
 		case *ast.WriteByte:
 			n := node.(*ast.WriteByte)
 			return insert([]ast.Node{n.Inner}, func(names []string) Node {

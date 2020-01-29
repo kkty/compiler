@@ -91,8 +91,8 @@ func GetTypes(root Node) map[string]typing.Type {
 				typing.Constraint{getType(n.Condition), typing.BoolType},
 				typing.Constraint{t1, t2})
 			return t1
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 			nameToType[n.Name] = getType(n.Body)
 			return getType(n.Next)
 		case *FunctionBinding:
@@ -158,11 +158,6 @@ func GetTypes(root Node) map[string]typing.Type {
 			return typing.IntType
 		case *ReadFloat:
 			return typing.FloatType
-		case *PrintInt:
-			n := node.(*PrintInt)
-			constraints = append(constraints,
-				typing.Constraint{getType(n.Inner), typing.IntType})
-			return typing.UnitType
 		case *WriteByte:
 			n := node.(*WriteByte)
 			constraints = append(constraints,
@@ -183,9 +178,9 @@ func GetTypes(root Node) map[string]typing.Type {
 			constraints = append(constraints,
 				typing.Constraint{getType(n.Inner), typing.FloatType})
 			return typing.FloatType
-		default:
-			panic("invalid node type")
 		}
+
+		panic("invalid node type")
 	}
 
 	getType(root)

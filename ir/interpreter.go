@@ -151,8 +151,8 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) map[str
 					return evaluate(n.False, values)
 				}
 			}
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 			values[n.Name] = evaluate(n.Value, values)
 			ret := evaluate(n.Next, values)
 			delete(values, n.Name)
@@ -219,10 +219,6 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) map[str
 			var value float32
 			fmt.Fscan(r, &value)
 			return value
-		case *PrintInt:
-			n := node.(*PrintInt)
-			fmt.Fprintf(w, "%d", values[n.Arg].(int32))
-			return nil
 		case *WriteByte:
 			n := node.(*WriteByte)
 			w.Write([]byte{byte(values[n.Arg].(int32) % 256)})

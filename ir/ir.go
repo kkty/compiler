@@ -62,7 +62,6 @@ type Node interface {
 	Applications() []*Application
 	Size() int
 	Evaluate(map[string]interface{}, []*Function) interface{}
-	irNode()
 }
 
 type Variable struct{ Name string }
@@ -115,7 +114,7 @@ type IfLessThanZero struct {
 	True, False Node
 }
 
-type ValueBinding struct {
+type Assignment struct {
 	Name        string
 	Value, Next Node
 }
@@ -156,51 +155,10 @@ type ArrayPutImmediate struct {
 
 type ReadInt struct{}
 type ReadFloat struct{}
-type PrintInt struct{ Arg string }
 type WriteByte struct{ Arg string }
 type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
-
-func (n *Variable) irNode()             {}
-func (n *Unit) irNode()                 {}
-func (n *Int) irNode()                  {}
-func (n *Bool) irNode()                 {}
-func (n *Float) irNode()                {}
-func (n *Add) irNode()                  {}
-func (n *AddImmediate) irNode()         {}
-func (n *Sub) irNode()                  {}
-func (n *SubFromZero) irNode()          {}
-func (n *FloatAdd) irNode()             {}
-func (n *FloatSub) irNode()             {}
-func (n *FloatSubFromZero) irNode()     {}
-func (n *FloatDiv) irNode()             {}
-func (n *FloatMul) irNode()             {}
-func (n *Not) irNode()                  {}
-func (n *Equal) irNode()                {}
-func (n *LessThan) irNode()             {}
-func (n *IfEqual) irNode()              {}
-func (n *IfEqualZero) irNode()          {}
-func (n *IfEqualTrue) irNode()          {}
-func (n *IfLessThan) irNode()           {}
-func (n *IfLessThanZero) irNode()       {}
-func (n *ValueBinding) irNode()         {}
-func (n *Application) irNode()          {}
-func (n *Tuple) irNode()                {}
-func (n *ArrayCreate) irNode()          {}
-func (n *ArrayCreateImmediate) irNode() {}
-func (n *ArrayGet) irNode()             {}
-func (n *ArrayGetImmediate) irNode()    {}
-func (n *ArrayPut) irNode()             {}
-func (n *ArrayPutImmediate) irNode()    {}
-func (n *ReadInt) irNode()              {}
-func (n *ReadFloat) irNode()            {}
-func (n *PrintInt) irNode()             {}
-func (n *WriteByte) irNode()            {}
-func (n *IntToFloat) irNode()           {}
-func (n *FloatToInt) irNode()           {}
-func (n *Sqrt) irNode()                 {}
-func (n *TupleGet) irNode()             {}
 
 func replaceIfFound(k string, m map[string]string) string {
 	if v, ok := m[k]; ok {
@@ -307,7 +265,7 @@ func (n *IfLessThanZero) UpdateNames(mapping map[string]string) {
 	n.False.UpdateNames(mapping)
 }
 
-func (n *ValueBinding) UpdateNames(mapping map[string]string) {
+func (n *Assignment) UpdateNames(mapping map[string]string) {
 	n.Name = replaceIfFound(n.Name, mapping)
 	n.Value.UpdateNames(mapping)
 	n.Next.UpdateNames(mapping)
@@ -356,10 +314,6 @@ func (n *ArrayPutImmediate) UpdateNames(mapping map[string]string) {
 
 func (n *ReadInt) UpdateNames(mapping map[string]string)   {}
 func (n *ReadFloat) UpdateNames(mapping map[string]string) {}
-
-func (n *PrintInt) UpdateNames(mapping map[string]string) {
-	n.Arg = replaceIfFound(n.Arg, mapping)
-}
 
 func (n *WriteByte) UpdateNames(mapping map[string]string) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
@@ -598,7 +552,7 @@ func (n *IfLessThanZero) FreeVariables(bound map[string]struct{}) map[string]str
 	return ret
 }
 
-func (n *ValueBinding) FreeVariables(bound map[string]struct{}) map[string]struct{} {
+func (n *Assignment) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	for v := range n.Value.FreeVariables(bound) {
 		ret[v] = struct{}{}
@@ -702,14 +656,6 @@ func (n *ReadFloat) FreeVariables(bound map[string]struct{}) map[string]struct{}
 	return map[string]struct{}{}
 }
 
-func (n *PrintInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Arg]; !ok {
-		ret[n.Arg] = struct{}{}
-	}
-	return ret
-}
-
 func (n *WriteByte) FreeVariables(bound map[string]struct{}) map[string]struct{} {
 	ret := map[string]struct{}{}
 	if _, ok := bound[n.Arg]; !ok {
@@ -788,7 +734,7 @@ func (n *IfLessThanZero) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
-func (n *ValueBinding) FloatValues() []float32 {
+func (n *Assignment) FloatValues() []float32 {
 	return append(n.Value.FloatValues(), n.Next.FloatValues()...)
 }
 
@@ -803,7 +749,6 @@ func (n *ArrayPut) FloatValues() []float32             { return []float32{} }
 func (n *ArrayPutImmediate) FloatValues() []float32    { return []float32{} }
 func (n *ReadInt) FloatValues() []float32              { return []float32{} }
 func (n *ReadFloat) FloatValues() []float32            { return []float32{} }
-func (n *PrintInt) FloatValues() []float32             { return []float32{} }
 func (n *WriteByte) FloatValues() []float32            { return []float32{} }
 func (n *IntToFloat) FloatValues() []float32           { return []float32{} }
 func (n *FloatToInt) FloatValues() []float32           { return []float32{} }
@@ -847,8 +792,8 @@ func (n *IfLessThanZero) Clone() Node {
 	return &IfLessThanZero{n.Inner, n.True.Clone(), n.False.Clone()}
 }
 
-func (n *ValueBinding) Clone() Node {
-	return &ValueBinding{n.Name, n.Value.Clone(), n.Next.Clone()}
+func (n *Assignment) Clone() Node {
+	return &Assignment{n.Name, n.Value.Clone(), n.Next.Clone()}
 }
 
 func (n *Application) Clone() Node {
@@ -897,7 +842,6 @@ func (n *ArrayPutImmediate) Clone() Node {
 
 func (n *ReadInt) Clone() Node    { return &ReadInt{} }
 func (n *ReadFloat) Clone() Node  { return &ReadFloat{} }
-func (n *PrintInt) Clone() Node   { return &PrintInt{n.Arg} }
 func (n *WriteByte) Clone() Node  { return &WriteByte{n.Arg} }
 func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
@@ -947,7 +891,7 @@ func (n *IfLessThanZero) HasSideEffects(functionsWithoutSideEffects map[string]s
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *ValueBinding) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *Assignment) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return n.Value.HasSideEffects(functionsWithoutSideEffects) || n.Next.HasSideEffects(functionsWithoutSideEffects)
 }
 
@@ -981,7 +925,6 @@ func (n *ArrayPutImmediate) HasSideEffects(functionsWithoutSideEffects map[strin
 
 func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool   { return true }
 func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
-func (n *PrintInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool  { return true }
 func (n *WriteByte) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
 func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
 	return false
@@ -1029,7 +972,7 @@ func (n *IfLessThanZero) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
 }
 
-func (n *ValueBinding) Applications() []*Application {
+func (n *Assignment) Applications() []*Application {
 	return append(n.Value.Applications(), n.Next.Applications()...)
 }
 
@@ -1047,7 +990,6 @@ func (n *ArrayPut) Applications() []*Application             { return []*Applica
 func (n *ArrayPutImmediate) Applications() []*Application    { return []*Application{} }
 func (n *ReadInt) Applications() []*Application              { return []*Application{} }
 func (n *ReadFloat) Applications() []*Application            { return []*Application{} }
-func (n *PrintInt) Applications() []*Application             { return []*Application{} }
 func (n *WriteByte) Applications() []*Application            { return []*Application{} }
 func (n *IntToFloat) Applications() []*Application           { return []*Application{} }
 func (n *FloatToInt) Applications() []*Application           { return []*Application{} }
@@ -1075,7 +1017,7 @@ func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size(
 func (n *IfEqualTrue) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfLessThan) Size() int           { return n.True.Size() + n.False.Size() }
 func (n *IfLessThanZero) Size() int       { return n.True.Size() + n.False.Size() }
-func (n *ValueBinding) Size() int         { return n.Value.Size() + n.Next.Size() }
+func (n *Assignment) Size() int           { return n.Value.Size() + n.Next.Size() }
 func (n *Application) Size() int          { return 1 }
 func (n *Tuple) Size() int                { return 1 }
 func (n *TupleGet) Size() int             { return 1 }
@@ -1087,7 +1029,6 @@ func (n *ArrayPut) Size() int             { return 1 }
 func (n *ArrayPutImmediate) Size() int    { return 1 }
 func (n *ReadInt) Size() int              { return 1 }
 func (n *ReadFloat) Size() int            { return 1 }
-func (n *PrintInt) Size() int             { return 1 }
 func (n *WriteByte) Size() int            { return 1 }
 func (n *IntToFloat) Size() int           { return 1 }
 func (n *FloatToInt) Size() int           { return 1 }
@@ -1353,7 +1294,7 @@ func (n *IfLessThanZero) Evaluate(values map[string]interface{}, functions []*Fu
 	return nil
 }
 
-func (n *ValueBinding) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+func (n *Assignment) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	valuesExtended := map[string]interface{}{}
 	for k, v := range values {
 		valuesExtended[k] = v
@@ -1433,10 +1374,6 @@ func (n *ReadInt) Evaluate(values map[string]interface{}, functions []*Function)
 }
 
 func (n *ReadFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
-	return nil
-}
-
-func (n *PrintInt) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	return nil
 }
 

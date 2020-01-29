@@ -31,8 +31,8 @@ func Reorder(main Node, functions []*Function) Node {
 			n.True = reorder(n.True)
 			n.False = reorder(n.False)
 			return n
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 
 			if n.Value.HasSideEffects(functionsWithoutSideEffects) {
 				n.Value = reorder(n.Value)
@@ -49,12 +49,12 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 
 				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
 				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *IfEqualZero:
@@ -65,12 +65,12 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 
 				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
 				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *IfEqualTrue:
@@ -81,12 +81,12 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 
 				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
 				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *IfLessThan:
@@ -97,12 +97,12 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 
 				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
 				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *IfLessThanZero:
@@ -113,24 +113,24 @@ func Reorder(main Node, functions []*Function) Node {
 				}
 
 				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.False = &ValueBinding{n.Name, reorder(n.Value), reorder(next.False)}
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
 				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.True = &ValueBinding{n.Name, reorder(n.Value), reorder(next.True)}
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
-			case *ValueBinding:
-				next := n.Next.(*ValueBinding)
+			case *Assignment:
+				next := n.Next.(*Assignment)
 
 				if _, exists := next.Value.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.Next = &ValueBinding{n.Name, reorder(n.Value), reorder(next.Next)}
+					next.Next = &Assignment{n.Name, reorder(n.Value), reorder(next.Next)}
 					return next
 				}
 
 				if _, exists := next.Next.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
-					next.Value = &ValueBinding{n.Name, reorder(n.Value), reorder(next.Value)}
+					next.Value = &Assignment{n.Name, reorder(n.Value), reorder(next.Value)}
 					return next
 				}
 			}

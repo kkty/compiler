@@ -31,8 +31,8 @@ func RemoveRedundantVariables(main Node, functions []*Function) Node {
 			n.True = removeRedundantVariables(n.True)
 			n.False = removeRedundantVariables(n.False)
 			return n
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 			if _, hasFreeVariable := n.Next.FreeVariables(map[string]struct{}{})[n.Name]; n.Value.HasSideEffects(functionsWithoutSideEffects) || hasFreeVariable {
 				n.Value = removeRedundantVariables(n.Value)
 				n.Next = removeRedundantVariables(n.Next)

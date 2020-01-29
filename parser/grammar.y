@@ -132,7 +132,7 @@ exp: simple_exp
   { $$ = &ast.FloatDiv{$1, $3} }
 | LET IDENT EQUAL exp IN exp
   %prec prec_let
-  { $$ = &ast.ValueBinding{$2.(string), $4, $6} }
+  { $$ = &ast.Assignment{$2.(string), $4, $6} }
 | LET REC IDENT formal_args EQUAL exp IN exp
   %prec prec_let
   { $$ = &ast.FunctionBinding{$3.(string), $4.([]string), $6, $8} }
@@ -147,7 +147,7 @@ exp: simple_exp
 | simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp
   { $$ = &ast.ArrayPut{$1, $4, $7} }
 | exp SEMICOLON exp
-  { $$ = &ast.ValueBinding{"", $1, $3} }
+  { $$ = &ast.Assignment{"", $1, $3} }
 | ARRAY_CREATE simple_exp simple_exp
   %prec prec_app
   { $$ = &ast.ArrayCreate{$2, $3} }
@@ -157,9 +157,6 @@ exp: simple_exp
 | READ_FLOAT LPAREN RPAREN
   %prec prec_app
   { $$ = &ast.ReadFloat{} }
-| PRINT_INT simple_exp
-  %prec prec_app
-  { $$ = &ast.PrintInt{$2} }
 | PRINT_CHAR simple_exp
   %prec prec_app
   { $$ = &ast.WriteByte{$2} }

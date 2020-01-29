@@ -169,8 +169,8 @@ func Immediate(main Node, functions []*Function) Node {
 			n := node.(*IfLessThanZero)
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 			n.Value = update(n.Value, values)
 			valuesExtended := map[string]interface{}{}
 			for k, v := range values {

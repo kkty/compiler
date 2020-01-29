@@ -10,43 +10,44 @@ import (
 
 func TestExecute(t *testing.T) {
 	for i, c := range []struct {
-		functions     []*Function
-		main          Node
-		input, output string
+		functions []*Function
+		main      Node
+		input     string
+		output    []byte
 	}{
 		{
 			[]*Function{},
-			&ValueBinding{
+			&Assignment{
 				"a", &ReadInt{},
-				&ValueBinding{
+				&Assignment{
 					"b",
 					&AddImmediate{"a", 10},
-					&PrintInt{"b"},
+					&WriteByte{"b"},
 				},
 			},
-			"1", "11",
+			"1", []byte{11},
 		},
 		{
 			[]*Function{
-				&Function{"f", []string{"a", "b"}, &Sub{"a", "b"}},
+				&Function{"f", []string{"a", "b"}, &Add{"a", "b"}},
 			},
-			&ValueBinding{
+			&Assignment{
 				"x", &ReadInt{},
-				&ValueBinding{
+				&Assignment{
 					"y", &ReadInt{},
-					&ValueBinding{
+					&Assignment{
 						"z", &Application{"f", []string{"x", "y"}},
-						&PrintInt{"z"},
+						&WriteByte{"z"},
 					},
 				},
 			},
-			"2 3", "-1",
+			"2 3", []byte{5},
 		},
 	} {
 		t.Run(fmt.Sprintf("Case%d", i), func(t *testing.T) {
 			buf := bytes.Buffer{}
 			Execute(c.functions, c.main, &buf, bytes.NewBufferString(c.input))
-			assert.Equal(t, c.output, buf.String())
+			assert.Equal(t, c.output, buf.Bytes())
 		})
 	}
 }

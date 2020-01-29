@@ -22,8 +22,8 @@ func AlphaTransform(node Node) {
 		case *Variable:
 			n := node.(*Variable)
 			n.Name = mapping[n.Name]
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 
 			transform(n.Body, mapping)
 

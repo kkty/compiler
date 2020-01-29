@@ -94,9 +94,9 @@ func GenerateGraph(main Node, functions []*Function) error {
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
-		case *ValueBinding:
-			n := node.(*ValueBinding)
-			gn := g.Node(newID()).Label(fmt.Sprintf("ValueBinding(%v)", n.Name))
+		case *Assignment:
+			n := node.(*Assignment)
+			gn := g.Node(newID()).Label(fmt.Sprintf("Assignment(%v)", n.Name))
 			gn.Edge(generate(n.Value, g), "Value")
 			gn.Edge(generate(n.Next, g), "Next")
 			return gn
@@ -132,9 +132,6 @@ func GenerateGraph(main Node, functions []*Function) error {
 			return g.Node(newID()).Label("ReadInt")
 		case *ReadFloat:
 			return g.Node(newID()).Label("ReadFloat")
-		case *PrintInt:
-			n := node.(*PrintInt)
-			return g.Node(newID()).Label(fmt.Sprintf("PrintInt(%v)", n.Arg))
 		case *WriteByte:
 			n := node.(*WriteByte)
 			return g.Node(newID()).Label(fmt.Sprintf("WriteByte(%v)", n.Arg))

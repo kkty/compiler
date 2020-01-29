@@ -27,7 +27,7 @@ type FloatNeg struct{ Inner Node }
 type Not struct{ Inner Node }
 type If struct{ Condition, True, False Node }
 
-type ValueBinding struct {
+type Assignment struct {
 	Name       string
 	Body, Next Node
 }
@@ -57,7 +57,6 @@ type ArrayGet struct{ Array, Index Node }
 type ArrayPut struct{ Array, Index, Value Node }
 type ReadInt struct{}
 type ReadFloat struct{}
-type PrintInt struct{ Inner Node }
 type WriteByte struct{ Inner Node }
 type IntToFloat struct{ Inner Node }
 type FloatToInt struct{ Inner Node }
@@ -85,7 +84,7 @@ func (n *FloatNeg) GetType(nameToType map[string]typing.Type) typing.Type { retu
 func (n *Not) GetType(nameToType map[string]typing.Type) typing.Type      { return typing.BoolType }
 func (n *If) GetType(nameToType map[string]typing.Type) typing.Type       { return n.True.GetType(nameToType) }
 
-func (n *ValueBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+func (n *Assignment) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Next.GetType(nameToType)
 }
 
@@ -120,7 +119,6 @@ func (n *ArrayGet) GetType(nameToType map[string]typing.Type) typing.Type {
 func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type   { return typing.UnitType }
 func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type    { return typing.IntType }
 func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.FloatType }
-func (n *PrintInt) GetType(nameToType map[string]typing.Type) typing.Type   { return typing.UnitType }
 func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type  { return typing.UnitType }
 func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type { return typing.FloatType }
 func (n *FloatToInt) GetType(nameToType map[string]typing.Type) typing.Type { return typing.IntType }
@@ -143,7 +141,7 @@ func (n *Neg) Children() []Node             { return []Node{n.Inner} }
 func (n *FloatNeg) Children() []Node        { return []Node{n.Inner} }
 func (n *Not) Children() []Node             { return []Node{n.Inner} }
 func (n *If) Children() []Node              { return []Node{n.Condition, n.True, n.False} }
-func (n *ValueBinding) Children() []Node    { return []Node{n.Body, n.Next} }
+func (n *Assignment) Children() []Node    { return []Node{n.Body, n.Next} }
 func (n *FunctionBinding) Children() []Node { return []Node{n.Body, n.Next} }
 func (n *Application) Children() []Node     { return n.Args }
 func (n *Tuple) Children() []Node           { return n.Elements }
@@ -153,7 +151,6 @@ func (n *ArrayGet) Children() []Node        { return []Node{n.Array, n.Index} }
 func (n *ArrayPut) Children() []Node        { return []Node{n.Array, n.Index, n.Value} }
 func (n *ReadInt) Children() []Node         { return []Node{} }
 func (n *ReadFloat) Children() []Node       { return []Node{} }
-func (n *PrintInt) Children() []Node        { return []Node{n.Inner} }
 func (n *WriteByte) Children() []Node       { return []Node{n.Inner} }
 func (n *IntToFloat) Children() []Node      { return []Node{n.Inner} }
 func (n *FloatToInt) Children() []Node      { return []Node{n.Inner} }

@@ -17,7 +17,7 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 
 	// rename all names in node
 	rename := func(node Node) {
-		valueBindings := []*ValueBinding{}
+		valueBindings := []*Assignment{}
 
 		// find all value bindings using bfs
 
@@ -43,8 +43,8 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 			case *IfLessThanZero:
 				n := node.(*IfLessThanZero)
 				queue = append(queue, n.True, n.False)
-			case *ValueBinding:
-				n := node.(*ValueBinding)
+			case *Assignment:
+				n := node.(*Assignment)
 				valueBindings = append(valueBindings, n)
 				queue = append(queue, n.Value, n.Next)
 			}
@@ -89,8 +89,8 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 			n.True = replaceApplications(n.True, function)
 			n.False = replaceApplications(n.False, function)
 			return n
-		case *ValueBinding:
-			n := node.(*ValueBinding)
+		case *Assignment:
+			n := node.(*Assignment)
 			n.Value = replaceApplications(n.Value, function)
 			n.Next = replaceApplications(n.Next, function)
 			return n
