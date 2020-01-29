@@ -64,18 +64,24 @@ func main() {
 	if *graph {
 		ir.GenerateGraph(main, functions)
 	} else if *interpret {
-		counter := ir.Execute(functions, main, os.Stdout, os.Stdin)
+		evaluated, called := ir.Execute(functions, main, os.Stdout, os.Stdin)
 		if *debug {
-			keys := []string{}
-			for key := range counter {
-				keys = append(keys, key)
+			print := func(m map[string]int) {
+				keys := []string{}
+				for key := range m {
+					keys = append(keys, key)
+				}
+				sort.Slice(keys, func(i, j int) bool {
+					return m[keys[i]] > m[keys[j]]
+				})
+				for _, key := range keys {
+					fmt.Fprintf(os.Stderr, "%s: %d\n", key, m[key])
+				}
+
 			}
-			sort.Slice(keys, func(i, j int) bool {
-				return counter[keys[i]] > counter[keys[j]]
-			})
-			for _, key := range keys {
-				fmt.Fprintf(os.Stderr, "%s: %d\n", key, counter[key])
-			}
+
+			print(evaluated)
+			print(called)
 		}
 	} else {
 		emit.Emit(functions, main, types, os.Stdout)
