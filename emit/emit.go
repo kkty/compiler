@@ -176,12 +176,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		}
 	}
 
-	var emit func(string, bool, ir.Node, []string)
+	var emit func(string, bool, ir.Node, []string, stringset.Set)
 	emit = func(
 		destination string,
 		tail bool,
 		node ir.Node,
 		variablesOnStack []string,
+		registersInUse stringset.Set,
 	) {
 		findPosition := func(variable string) int {
 			for i, v := range variablesOnStack {
@@ -243,9 +244,9 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		case *ir.Bool:
 			n := node.(*ir.Bool)
 			if n.Value {
-				emit(destination, tail, &ir.Int{Value: 1}, variablesOnStack)
+				emit(destination, tail, &ir.Int{Value: 1}, variablesOnStack, registersInUse)
 			} else {
-				emit(destination, tail, &ir.Int{Value: 0}, variablesOnStack)
+				emit(destination, tail, &ir.Int{Value: 0}, variablesOnStack, registersInUse)
 			}
 		case *ir.Float:
 			n := node.(*ir.Float)
@@ -458,13 +459,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "BZS %s, 1\n", floatTemporaryRegisters[0])
 			}
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack)
+			emit(destination, tail, n.True, variablesOnStack, registersInUse)
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack)
+			emit(destination, tail, n.False, variablesOnStack, registersInUse)
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
 				fmt.Fprintf(w, "NOP\n")
@@ -485,7 +486,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack)
+			emit(destination, tail, n.True, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -493,7 +494,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack)
+			emit(destination, tail, n.False, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -510,7 +511,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], intTemporaryRegisters[0])
 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack)
+			emit(destination, tail, n.True, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -518,7 +519,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack)
+			emit(destination, tail, n.False, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -540,7 +541,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack)
+			emit(destination, tail, n.True, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -549,7 +550,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack)
+			emit(destination, tail, n.False, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -571,7 +572,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack)
+			emit(destination, tail, n.True, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -580,7 +581,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack)
+			emit(destination, tail, n.False, variablesOnStack, registersInUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -588,8 +589,14 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 		case *ir.Assignment:
 			n := node.(*ir.Assignment)
-			emit(n.Name, false, n.Value, variablesOnStack)
-			emit(destination, tail, n.Next, variablesOnStack)
+			emit(n.Name, false, n.Value, variablesOnStack, registersInUse)
+			if isRegister(n.Name) {
+				restore := registersInUse.Join(stringset.NewFromSlice([]string{n.Name}))
+				emit(destination, tail, n.Next, variablesOnStack, registersInUse)
+				restore(registersInUse)
+			} else {
+				emit(destination, tail, n.Next, variablesOnStack, registersInUse)
+			}
 		case *ir.Application:
 			n := node.(*ir.Application)
 			f := findFunction(n.Function)
@@ -602,7 +609,11 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					}
 				}
 			} else {
-				registersToSave = functionToRegisters[n.Function].Slice()
+				for _, register := range functionToRegisters[n.Function].Slice() {
+					if registersInUse.Has(register) {
+						registersToSave = append(registersToSave, register)
+					}
+				}
 			}
 
 			for i, register := range registersToSave {
@@ -1026,11 +1037,19 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 	}) {
 		fmt.Fprintf(w, "%s:\n", function.Name)
 		if function.Name == "main" {
-			emit(intReturnRegister, true, function.Body, functionToSpills[function.Name])
-		} else if _, ok := types[function.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
-			emit(floatReturnRegister, true, function.Body, functionToSpills[function.Name])
+			emit(intReturnRegister, true, function.Body, functionToSpills[function.Name], stringset.New())
 		} else {
-			emit(intReturnRegister, true, function.Body, functionToSpills[function.Name])
+			registersInUse := stringset.New()
+			for _, arg := range function.Args {
+				if isRegister(arg) {
+					registersInUse.Add(arg)
+				}
+			}
+			if _, ok := types[function.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
+				emit(floatReturnRegister, true, function.Body, functionToSpills[function.Name], registersInUse)
+			} else {
+				emit(intReturnRegister, true, function.Body, functionToSpills[function.Name], registersInUse)
+			}
 		}
 	}
 }
