@@ -24,8 +24,8 @@ const (
 )
 
 var (
-	intTemporaryRegisters   = []string{"$itmp1", "$itmp2", "$itmp3"}
-	floatTemporaryRegisters = []string{"$ftmp1", "$ftmp2"}
+	intTemporaryRegisters   = []string{"$itmp1", "$itmp2"}
+	floatTemporaryRegisters = []string{"$ftmp1"}
 	intArgRegisters         = []string{"$iarg1", "$iarg2", "$iarg3"}
 	floatArgRegisters       = []string{"$farg1", "$farg2"}
 )
@@ -409,6 +409,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ADDI %s, %s, 1\n", intTemporaryRegisters[0], intZeroRegister)
 					fmt.Fprintf(w, "SUBS %s, %s, %s\n", floatTemporaryRegisters[0], registers[0], registers[1])
 					fmt.Fprintf(w, "BZS %s, 1\n", floatTemporaryRegisters[0])
+					fmt.Fprintf(w, "ADDI %s, %s, 0\n", intTemporaryRegisters[0], intZeroRegister)
 				}
 				fmt.Fprintf(w, "SW %s, %d(%s)\n", intTemporaryRegisters[0], findPosition(destination)*4, stackPointer)
 			}

@@ -89,6 +89,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			}
 		}
 
+		// liveVariables returns live variables at a node, creating the interference graphs at the same time.
 		var liveVariables func(ir.Node, stringset.Set) stringset.Set
 		liveVariables = func(node ir.Node, variablesToKeep stringset.Set) stringset.Set {
 			switch node.(type) {
@@ -160,6 +161,8 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 
 		addEdges(liveVariables(function.Body, stringset.New()))
 
+		// getNodes returns a list of nodes in a graph.
+		// Nodes are sorted so that the one with the highest degree comes first.
 		getNodes := func(graph map[string]stringset.Set) []string {
 			nodes := []string{}
 			for node := range graph {
@@ -171,6 +174,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			return nodes
 		}
 
+		// removeNode removes a node from a graph.
 		removeNode := func(node string, graph map[string]stringset.Set) {
 			for _, adjacent := range graph[node].Slice() {
 				graph[adjacent].Remove(node)
@@ -178,22 +182,14 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			delete(graph, node)
 		}
 
-		updateArgs := func(mapping map[string]string) {
-			for i, arg := range function.Args {
-				if updated, exists := mapping[arg]; exists {
-					function.Args[i] = updated
-				}
-			}
-		}
+		// variables names to register names
+		mapping := map[string]string{}
 
 		for _, i := range getNodes(intGraph) {
-			if colorMap, ok := colorGraph(intGraph, 21); ok {
-				mapping := map[string]string{}
+			if colorMap, ok := colorGraph(intGraph, 22); ok {
 				for variable, color := range colorMap {
 					mapping[variable] = fmt.Sprintf("$i%d", color+1)
 				}
-				function.Body.UpdateNames(mapping)
-				updateArgs(mapping)
 				break
 			}
 			removeNode(i, intGraph)
@@ -201,17 +197,22 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		}
 
 		for _, i := range getNodes(floatGraph) {
-			if colorMap, ok := colorGraph(floatGraph, 25); ok {
-				mapping := map[string]string{}
+			if colorMap, ok := colorGraph(floatGraph, 27); ok {
 				for variable, color := range colorMap {
 					mapping[variable] = fmt.Sprintf("$f%d", color+1)
 				}
-				function.Body.UpdateNames(mapping)
-				updateArgs(mapping)
 				break
 			}
 			removeNode(i, floatGraph)
 			spills[function.Name]++
+		}
+
+		function.Body.UpdateNames(mapping)
+
+		for i, arg := range function.Args {
+			if updated, exists := mapping[arg]; exists {
+				function.Args[i] = updated
+			}
 		}
 	}
 
