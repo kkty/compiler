@@ -155,10 +155,11 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 
 	// recursive functions
 
+	// number of inline expansions performed for each function
 	cnt := map[string]int{}
 
 	priority := func(f *Function) int {
-		return -(f.Body.Size() + cnt[f.Name]*5)
+		return -(f.Body.Size() + cnt[f.Name])
 	}
 
 	for i := 0; i < n; i++ {
