@@ -111,6 +111,9 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		// add items to functionToRegisters/functionToSpills
 		addVariables := func(variables []string) {
 			for _, variable := range variables {
+				if variable == "" {
+					continue
+				}
 				if isRegister(variable) {
 					functionToRegisters[function.Name].Add(variable)
 				} else {
@@ -690,17 +693,19 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				}
 			}
 
-			if _, ok := types[f.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
-				if isRegister(destination) {
-					fmt.Fprintf(w, "ADDS %s, %s, %s\n", destination, floatReturnRegister, floatZeroRegister)
+			if destination != "" {
+				if _, ok := types[f.Name].(*typing.FunctionType).Return.(*typing.FloatType); ok {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "ADDS %s, %s, %s\n", destination, floatReturnRegister, floatZeroRegister)
+					} else {
+						fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", floatReturnRegister, findPosition(destination)*4, stackPointer)
+					}
 				} else {
-					fmt.Fprintf(w, "SWC1 %s, %d(%s)\n", floatReturnRegister, findPosition(destination)*4, stackPointer)
-				}
-			} else {
-				if isRegister(destination) {
-					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, intReturnRegister, intZeroRegister)
-				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", intReturnRegister, findPosition(destination)*4, stackPointer)
+					if isRegister(destination) {
+						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, intReturnRegister, intZeroRegister)
+					} else {
+						fmt.Fprintf(w, "SW %s, %d(%s)\n", intReturnRegister, findPosition(destination)*4, stackPointer)
+					}
 				}
 			}
 

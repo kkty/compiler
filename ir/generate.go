@@ -9,8 +9,8 @@ import (
 
 // Generate generates Node from ast.Node.
 // K-normalization is performed and functions are separated from the main program.
-// Also, functions (and function applications) are modified so that they
-// do not have free variables.
+// Functions (and function applications) are modified so that they do not have free variables.
+// Variables with unit types, which will never be used as arguments, are renamed to "".
 func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Function, map[string]typing.Type) {
 	functions := map[string]*Function{}
 
@@ -140,7 +140,12 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			})
 		case *ast.Assignment:
 			n := node.(*ast.Assignment)
-			return &Assignment{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
+			name := n.Name
+			// use empty string for variables of unit type
+			if _,ok := n.Body.GetType(nameToType).(*typing.UnitType); ok {
+				name = ""
+			}
+			return &Assignment{Name: name, Value: construct(n.Body), Next: construct(n.Next)}
 		case *ast.FunctionAssignment:
 			n := node.(*ast.FunctionAssignment)
 			functions[n.Name] = &Function{Name: n.Name, Args: n.Args, Body: construct(n.Body)}

@@ -146,9 +146,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				copied.Join(variablesToKeep)
 				v.Join(liveVariables(n.Value, copied))
 				restore := v.Join(variablesToKeep)
-				v.Add(n.Name)
 				addEdges(v)
-				v.Remove(n.Name)
 				restore(v)
 				return v
 			default:

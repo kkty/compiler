@@ -17,9 +17,9 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 
 	// rename all names in node
 	rename := func(node Node) {
-		valueBindings := []*Assignment{}
+		assignments := []*Assignment{}
 
-		// find all value bindings using bfs
+		// find all assignments using bfs
 
 		queue := []Node{node}
 
@@ -45,16 +45,18 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 				queue = append(queue, n.True, n.False)
 			case *Assignment:
 				n := node.(*Assignment)
-				valueBindings = append(valueBindings, n)
+				assignments = append(assignments, n)
 				queue = append(queue, n.Value, n.Next)
 			}
 		}
 
 		mapping := map[string]string{}
-		for _, valueBinding := range valueBindings {
-			t := temporary()
-			types[t] = types[valueBinding.Name]
-			mapping[valueBinding.Name] = t
+		for _, assignment := range assignments {
+			if assignment.Name != "" {
+				t := temporary()
+				types[t] = types[assignment.Name]
+				mapping[assignment.Name] = t
+			}
 		}
 
 		node.UpdateNames(mapping)
