@@ -29,7 +29,7 @@ func GetTypes(root Node) map[string]typing.Type {
 			n := node.(*Add)
 			constraints = append(constraints,
 				typing.Constraint{getType(n.Left), &typing.IntType{}},
-				typing.Constraint{getType(n.Right),&typing.IntType{}})
+				typing.Constraint{getType(n.Right), &typing.IntType{}})
 			return &typing.IntType{}
 		case *Sub:
 			n := node.(*Sub)
@@ -95,8 +95,8 @@ func GetTypes(root Node) map[string]typing.Type {
 			n := node.(*Assignment)
 			nameToType[n.Name] = getType(n.Body)
 			return getType(n.Next)
-		case *FunctionBinding:
-			n := node.(*FunctionBinding)
+		case *FunctionAssignment:
+			n := node.(*FunctionAssignment)
 			argTypes := []typing.Type{}
 			for _, arg := range n.Args {
 				t := typing.NewTypeVar()

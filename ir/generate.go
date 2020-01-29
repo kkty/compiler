@@ -133,7 +133,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 				})
 			}
 			if c, ok := n.Condition.(*ast.Not); ok {
-				return construct(&ast.If{Condition: c.Inner	, True: n.False, False: n.True})
+				return construct(&ast.If{Condition: c.Inner, True: n.False, False: n.True})
 			}
 			return insert([]ast.Node{n.Condition, &ast.Bool{Value: true}}, func(names []string) Node {
 				return &IfEqual{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
@@ -141,8 +141,8 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		case *ast.Assignment:
 			n := node.(*ast.Assignment)
 			return &Assignment{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
-		case *ast.FunctionBinding:
-			n := node.(*ast.FunctionBinding)
+		case *ast.FunctionAssignment:
+			n := node.(*ast.FunctionAssignment)
 			functions[n.Name] = &Function{Name: n.Name, Args: n.Args, Body: construct(n.Body)}
 			return construct(n.Next)
 		case *ast.Application:

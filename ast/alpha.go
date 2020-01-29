@@ -36,8 +36,8 @@ func AlphaTransform(node Node) {
 			}
 
 			n.Name = newName
-		case *FunctionBinding:
-			n := node.(*FunctionBinding)
+		case *FunctionAssignment:
+			n := node.(*FunctionAssignment)
 
 			newName := getNewName(n.Name)
 			newArgNames := []string{}

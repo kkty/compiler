@@ -753,7 +753,7 @@ yydefault:
 		yyDollar = yyS[yypt-8 : yypt+1]
 //line grammar.y:138
 		{
-			yyVAL.node = &ast.FunctionBinding{yyDollar[3].val.(string), yyDollar[4].val.([]string), yyDollar[6].node, yyDollar[8].node}
+			yyVAL.node = &ast.FunctionAssignment{yyDollar[3].val.(string), yyDollar[4].val.([]string), yyDollar[6].node, yyDollar[8].node}
 		}
 	case 28:
 		yyDollar = yyS[yypt-2 : yypt+1]

@@ -135,7 +135,7 @@ exp: simple_exp
   { $$ = &ast.Assignment{$2.(string), $4, $6} }
 | LET REC IDENT formal_args EQUAL exp IN exp
   %prec prec_let
-  { $$ = &ast.FunctionBinding{$3.(string), $4.([]string), $6, $8} }
+  { $$ = &ast.FunctionAssignment{$3.(string), $4.([]string), $6, $8} }
 | IDENT actual_args
   %prec prec_app
   { $$ = &ast.Application{$1.(string), $2.([]ast.Node)} }

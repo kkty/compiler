@@ -9,7 +9,7 @@ import (
 func TestAlphaTransform(t *testing.T) {
 	n := &Assignment{
 		"x",
-		&FunctionBinding{
+		&FunctionAssignment{
 			"x", []string{"y"},
 			&Variable{"y"},
 			&Assignment{
@@ -25,18 +25,18 @@ func TestAlphaTransform(t *testing.T) {
 	// x.
 	assert.Equal(t, n.Name, n.Next.(*Add).Left.(*Variable).Name)
 	assert.Equal(t,
-		n.Body.(*FunctionBinding).Name,
-		n.Body.(*FunctionBinding).Next.(*Assignment).Body.(*Application).Function)
-	assert.NotEqual(t, n.Name, n.Body.(*FunctionBinding).Name)
+		n.Body.(*FunctionAssignment).Name,
+		n.Body.(*FunctionAssignment).Next.(*Assignment).Body.(*Application).Function)
+	assert.NotEqual(t, n.Name, n.Body.(*FunctionAssignment).Name)
 
 	// y.
 	assert.Equal(t,
-		n.Body.(*FunctionBinding).Args[0],
-		n.Body.(*FunctionBinding).Body.(*Variable).Name)
+		n.Body.(*FunctionAssignment).Args[0],
+		n.Body.(*FunctionAssignment).Body.(*Variable).Name)
 	assert.Equal(t,
-		n.Body.(*FunctionBinding).Next.(*Assignment).Name,
-		n.Body.(*FunctionBinding).Next.(*Assignment).Next.(*Variable).Name)
+		n.Body.(*FunctionAssignment).Next.(*Assignment).Name,
+		n.Body.(*FunctionAssignment).Next.(*Assignment).Next.(*Variable).Name)
 	assert.NotEqual(t,
-		n.Body.(*FunctionBinding).Args[0],
-		n.Body.(*FunctionBinding).Next.(*Assignment).Name)
+		n.Body.(*FunctionAssignment).Args[0],
+		n.Body.(*FunctionAssignment).Next.(*Assignment).Name)
 }

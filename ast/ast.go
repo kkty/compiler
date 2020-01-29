@@ -32,7 +32,7 @@ type Assignment struct {
 	Body, Next Node
 }
 
-type FunctionBinding struct {
+type FunctionAssignment struct {
 	Name       string
 	Args       []string
 	Body, Next Node
@@ -88,7 +88,7 @@ func (n *Assignment) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Next.GetType(nameToType)
 }
 
-func (n *FunctionBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+func (n *FunctionAssignment) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Next.GetType(nameToType)
 }
 
@@ -116,42 +116,44 @@ func (n *ArrayGet) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Array.GetType(nameToType).(*typing.ArrayType).Inner
 }
 
-func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type   { return &typing.UnitType{} }
-func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type    { return &typing.IntType{} }
-func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type  { return &typing.FloatType{} }
-func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type  { return &typing.UnitType{} }
-func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *ArrayPut) GetType(nameToType map[string]typing.Type) typing.Type  { return &typing.UnitType{} }
+func (n *ReadInt) GetType(nameToType map[string]typing.Type) typing.Type   { return &typing.IntType{} }
+func (n *ReadFloat) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.FloatType{} }
+func (n *WriteByte) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.UnitType{} }
+func (n *IntToFloat) GetType(nameToType map[string]typing.Type) typing.Type {
+	return &typing.FloatType{}
+}
 func (n *FloatToInt) GetType(nameToType map[string]typing.Type) typing.Type { return &typing.IntType{} }
 func (n *Sqrt) GetType(nameToType map[string]typing.Type) typing.Type       { return &typing.FloatType{} }
 
-func (n *Variable) Children() []Node        { return []Node{} }
-func (n *Unit) Children() []Node            { return []Node{} }
-func (n *Int) Children() []Node             { return []Node{} }
-func (n *Bool) Children() []Node            { return []Node{} }
-func (n *Float) Children() []Node           { return []Node{} }
-func (n *Add) Children() []Node             { return []Node{n.Left, n.Right} }
-func (n *Sub) Children() []Node             { return []Node{n.Left, n.Right} }
-func (n *FloatAdd) Children() []Node        { return []Node{n.Left, n.Right} }
-func (n *FloatSub) Children() []Node        { return []Node{n.Left, n.Right} }
-func (n *FloatDiv) Children() []Node        { return []Node{n.Left, n.Right} }
-func (n *FloatMul) Children() []Node        { return []Node{n.Left, n.Right} }
-func (n *Equal) Children() []Node           { return []Node{n.Left, n.Right} }
-func (n *LessThan) Children() []Node        { return []Node{n.Left, n.Right} }
-func (n *Neg) Children() []Node             { return []Node{n.Inner} }
-func (n *FloatNeg) Children() []Node        { return []Node{n.Inner} }
-func (n *Not) Children() []Node             { return []Node{n.Inner} }
-func (n *If) Children() []Node              { return []Node{n.Condition, n.True, n.False} }
-func (n *Assignment) Children() []Node    { return []Node{n.Body, n.Next} }
-func (n *FunctionBinding) Children() []Node { return []Node{n.Body, n.Next} }
-func (n *Application) Children() []Node     { return n.Args }
-func (n *Tuple) Children() []Node           { return n.Elements }
+func (n *Variable) Children() []Node           { return []Node{} }
+func (n *Unit) Children() []Node               { return []Node{} }
+func (n *Int) Children() []Node                { return []Node{} }
+func (n *Bool) Children() []Node               { return []Node{} }
+func (n *Float) Children() []Node              { return []Node{} }
+func (n *Add) Children() []Node                { return []Node{n.Left, n.Right} }
+func (n *Sub) Children() []Node                { return []Node{n.Left, n.Right} }
+func (n *FloatAdd) Children() []Node           { return []Node{n.Left, n.Right} }
+func (n *FloatSub) Children() []Node           { return []Node{n.Left, n.Right} }
+func (n *FloatDiv) Children() []Node           { return []Node{n.Left, n.Right} }
+func (n *FloatMul) Children() []Node           { return []Node{n.Left, n.Right} }
+func (n *Equal) Children() []Node              { return []Node{n.Left, n.Right} }
+func (n *LessThan) Children() []Node           { return []Node{n.Left, n.Right} }
+func (n *Neg) Children() []Node                { return []Node{n.Inner} }
+func (n *FloatNeg) Children() []Node           { return []Node{n.Inner} }
+func (n *Not) Children() []Node                { return []Node{n.Inner} }
+func (n *If) Children() []Node                 { return []Node{n.Condition, n.True, n.False} }
+func (n *Assignment) Children() []Node         { return []Node{n.Body, n.Next} }
+func (n *FunctionAssignment) Children() []Node { return []Node{n.Body, n.Next} }
+func (n *Application) Children() []Node        { return n.Args }
+func (n *Tuple) Children() []Node              { return n.Elements }
 func (n *TupleAssignment) Children() []Node    { return []Node{n.Tuple, n.Next} }
-func (n *ArrayCreate) Children() []Node     { return []Node{n.Size, n.Value} }
-func (n *ArrayGet) Children() []Node        { return []Node{n.Array, n.Index} }
-func (n *ArrayPut) Children() []Node        { return []Node{n.Array, n.Index, n.Value} }
-func (n *ReadInt) Children() []Node         { return []Node{} }
-func (n *ReadFloat) Children() []Node       { return []Node{} }
-func (n *WriteByte) Children() []Node       { return []Node{n.Inner} }
-func (n *IntToFloat) Children() []Node      { return []Node{n.Inner} }
-func (n *FloatToInt) Children() []Node      { return []Node{n.Inner} }
-func (n *Sqrt) Children() []Node            { return []Node{n.Inner} }
+func (n *ArrayCreate) Children() []Node        { return []Node{n.Size, n.Value} }
+func (n *ArrayGet) Children() []Node           { return []Node{n.Array, n.Index} }
+func (n *ArrayPut) Children() []Node           { return []Node{n.Array, n.Index, n.Value} }
+func (n *ReadInt) Children() []Node            { return []Node{} }
+func (n *ReadFloat) Children() []Node          { return []Node{} }
+func (n *WriteByte) Children() []Node          { return []Node{n.Inner} }
+func (n *IntToFloat) Children() []Node         { return []Node{n.Inner} }
+func (n *FloatToInt) Children() []Node         { return []Node{n.Inner} }
+func (n *Sqrt) Children() []Node               { return []Node{n.Inner} }

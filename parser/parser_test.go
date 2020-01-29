@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"let rec f x y = x + y in f 1 2",
-			&ast.FunctionBinding{
+			&ast.FunctionAssignment{
 				"f", []string{"x", "y"},
 				&ast.Add{&ast.Variable{"x"}, &ast.Variable{"y"}},
 				&ast.Application{"f", []ast.Node{&ast.Int{1}, &ast.Int{2}}},
