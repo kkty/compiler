@@ -5,7 +5,6 @@ import (
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
-	"sort"
 )
 
 var (
@@ -22,45 +21,7 @@ func init() {
 	}
 }
 
-// colorGraph colors a graph with k colors (0, 1, ... k - 1).
-// When failed, the second return value is set to false.
-func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
-	nodes := []string{}
-
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-
-	sort.Slice(nodes, func(i, j int) bool {
-		return len(graph[nodes[i]].Slice()) > len(graph[nodes[j]].Slice())
-	})
-
-	colorMap := map[string]int{}
-
-	for _, node := range nodes {
-		unavailable := map[int]struct{}{}
-		for _, adjacent := range graph[node].Slice() {
-			if c, exists := colorMap[adjacent]; exists {
-				unavailable[c] = struct{}{}
-			}
-		}
-		mapped := false
-		for i := 0; i < k; i++ {
-			if _, exists := unavailable[i]; !exists {
-				colorMap[node] = i
-				mapped = true
-				break
-			}
-		}
-		if !mapped {
-			return nil, false
-		}
-	}
-
-	return colorMap, true
-}
-
-// AllocateRegisters does register allocation with graph coloring.
+// AllocateRegisters does register allocation.
 // Variable names in ir.Node are replaced with register names like $i1.
 // Variables that are never referenced are renamed to "".
 // If a variable could not be assigned to any registers, its name will be kept unchanged
@@ -104,9 +65,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 			}
 		}
 
-		// liveVariables returns live variables at a node.
-		// At the same time, the interference graphs are constructed and the variables that are never referenced
-		// are renamed to "".
+		// liveVariables returns live variables at a node, creating the interference graphs at the same time.
 		var liveVariables func(ir.Node, stringset.Set) stringset.Set
 		liveVariables = func(node ir.Node, variablesToKeep stringset.Set) stringset.Set {
 			switch node.(type) {
@@ -181,64 +140,91 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 
 		addEdges(liveVariables(function.Body, stringset.New()))
 
-		// getNodes returns a list of nodes in a graph.
-		// Nodes are sorted so that the one with the highest degree comes first.
-		getNodes := func(graph map[string]stringset.Set) []string {
-			nodes := []string{}
-			for node := range graph {
-				nodes = append(nodes, node)
-			}
-			sort.Slice(nodes, func(i, j int) bool {
-				return len(graph[nodes[i]].Slice()) > len(graph[nodes[j]].Slice())
-			})
-			return nodes
-		}
-
-		// removeNode removes a node from a graph.
-		removeNode := func(node string, graph map[string]stringset.Set) {
-			for _, adjacent := range graph[node].Slice() {
-				graph[adjacent].Remove(node)
-			}
-			delete(graph, node)
-		}
-
-		// variable names to register names
 		mapping := map[string]string{}
 
-		for _, i := range getNodes(intGraph) {
-			if colorMap, ok := colorGraph(intGraph, len(intRegisters)); ok {
-				for variable, color := range colorMap {
-					mapping[variable] = intRegisters[color]
-				}
-				break
+		assign := func(variable string) {
+			if variable == "" {
+				return
 			}
-			removeNode(i, intGraph)
-			spills[function.Name]++
+
+			var graph map[string]stringset.Set
+			var registers []string
+
+			if _, ok := types[variable].(*typing.FloatType); ok {
+				graph, registers = floatGraph, floatRegisters
+			} else {
+				graph, registers = intGraph, intRegisters
+			}
+
+			unavailable := stringset.New()
+			for _, adjacent := range graph[variable].Slice() {
+				if register, exists := mapping[adjacent]; exists {
+					unavailable.Add(register)
+				}
+			}
+
+			mapped := false
+
+			for _, register := range registers {
+				if !unavailable.Has(register) {
+					mapping[variable] = register
+					mapped = true
+					break
+				}
+			}
+
+			if !mapped {
+				spills[function.Name]++
+			}
 		}
 
-		for _, i := range getNodes(floatGraph) {
-			if colorMap, ok := colorGraph(floatGraph, len(floatRegisters)); ok {
-				for variable, color := range colorMap {
-					mapping[variable] = floatRegisters[color]
+		// visit all nodes using dfs.
+		var visit func(ir.Node)
+		visit = func(node ir.Node) {
+			switch node.(type) {
+			case *ir.IfEqual:
+				n := node.(*ir.IfEqual)
+				visit(n.True)
+				visit(n.False)
+			case *ir.IfEqualZero:
+				n := node.(*ir.IfEqualZero)
+				visit(n.True)
+				visit(n.False)
+			case *ir.IfEqualTrue:
+				n := node.(*ir.IfEqualTrue)
+				visit(n.True)
+				visit(n.False)
+			case *ir.IfLessThan:
+				n := node.(*ir.IfLessThan)
+				visit(n.True)
+				visit(n.False)
+			case *ir.IfLessThanZero:
+				n := node.(*ir.IfLessThanZero)
+				visit(n.True)
+				visit(n.False)
+			case *ir.Assignment:
+				n := node.(*ir.Assignment)
+				if n.Name != "" {
+					assign(n.Name)
 				}
-				break
+				visit(n.Value)
+				visit(n.Next)
 			}
-			removeNode(i, floatGraph)
-			spills[function.Name]++
 		}
 
-		{
-			freeVariables := stringset.Set(function.Body.FreeVariables(stringset.New()))
-			for i, arg := range function.Args {
-				if !freeVariables.Has(arg) {
-					function.Args[i] = ""
-				} else if updated, exists := mapping[arg]; exists {
-					function.Args[i] = updated
-				}
-			}
+		for _, arg := range function.Args {
+			assign(arg)
 		}
+
+		visit(function.Body)
 
 		function.Body.UpdateNames(mapping)
+
+		for i, arg := range function.Args {
+			if updated, exists := mapping[arg]; exists {
+				function.Args[i] = updated
+			}
+		}
 	}
 
 	for _, function := range append(functions, &ir.Function{
