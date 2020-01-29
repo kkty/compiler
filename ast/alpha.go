@@ -75,8 +75,8 @@ func AlphaTransform(node Node) {
 			}
 
 			n.Function = mapping[n.Function]
-		case *TupleBinding:
-			n := node.(*TupleBinding)
+		case *TupleAssignment:
+			n := node.(*TupleAssignment)
 
 			transform(n.Tuple, mapping)
 

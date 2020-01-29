@@ -771,7 +771,7 @@ yydefault:
 		yyDollar = yyS[yypt-8 : yypt+1]
 //line grammar.y:146
 		{
-			yyVAL.node = &ast.TupleBinding{yyDollar[3].val.([]string), yyDollar[6].node, yyDollar[8].node}
+			yyVAL.node = &ast.TupleAssignment{yyDollar[3].val.([]string), yyDollar[6].node, yyDollar[8].node}
 		}
 	case 31:
 		yyDollar = yyS[yypt-7 : yypt+1]

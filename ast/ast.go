@@ -47,7 +47,7 @@ type Tuple struct {
 	Elements []Node
 }
 
-type TupleBinding struct {
+type TupleAssignment struct {
 	Names       []string
 	Tuple, Next Node
 }
@@ -104,7 +104,7 @@ func (n *Tuple) GetType(nameToType map[string]typing.Type) typing.Type {
 	return typing.TupleType{elementTypes}
 }
 
-func (n *TupleBinding) GetType(nameToType map[string]typing.Type) typing.Type {
+func (n *TupleAssignment) GetType(nameToType map[string]typing.Type) typing.Type {
 	return n.Next.GetType(nameToType)
 }
 
@@ -145,7 +145,7 @@ func (n *Assignment) Children() []Node    { return []Node{n.Body, n.Next} }
 func (n *FunctionBinding) Children() []Node { return []Node{n.Body, n.Next} }
 func (n *Application) Children() []Node     { return n.Args }
 func (n *Tuple) Children() []Node           { return n.Elements }
-func (n *TupleBinding) Children() []Node    { return []Node{n.Tuple, n.Next} }
+func (n *TupleAssignment) Children() []Node    { return []Node{n.Tuple, n.Next} }
 func (n *ArrayCreate) Children() []Node     { return []Node{n.Size, n.Value} }
 func (n *ArrayGet) Children() []Node        { return []Node{n.Array, n.Index} }
 func (n *ArrayPut) Children() []Node        { return []Node{n.Array, n.Index, n.Value} }

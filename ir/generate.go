@@ -155,8 +155,8 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			return insert(n.Elements, func(names []string) Node {
 				return &Tuple{Elements: names}
 			})
-		case *ast.TupleBinding:
-			n := node.(*ast.TupleBinding)
+		case *ast.TupleAssignment:
+			n := node.(*ast.TupleAssignment)
 			return insert([]ast.Node{n.Tuple}, func(names []string) Node {
 				tupleName := names[0]
 				var ret Node = construct(n.Next)

@@ -125,8 +125,8 @@ func GetTypes(root Node) map[string]typing.Type {
 				elements = append(elements, getType(element))
 			}
 			return typing.TupleType{elements}
-		case *TupleBinding:
-			n := node.(*TupleBinding)
+		case *TupleAssignment:
+			n := node.(*TupleAssignment)
 			ts := []typing.Type{}
 			for _, name := range n.Names {
 				t := typing.NewTypeVar()

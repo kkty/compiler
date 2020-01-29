@@ -143,7 +143,7 @@ exp: simple_exp
   %prec prec_tuple
   { $$ = &ast.Tuple{$1.([]ast.Node)} }
 | LET LPAREN pat RPAREN EQUAL exp IN exp
-  { $$ = &ast.TupleBinding{$3.([]string), $6, $8} }
+  { $$ = &ast.TupleAssignment{$3.([]string), $6, $8} }
 | simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp
   { $$ = &ast.ArrayPut{$1, $4, $7} }
 | exp SEMICOLON exp
