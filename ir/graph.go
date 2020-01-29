@@ -157,6 +157,7 @@ func GenerateGraph(main Node, functions []*Function) error {
 		Body: main,
 	}) {
 		g := dot.NewGraph(dot.Directed)
+		g.Node("args").Label(fmt.Sprintf("args = [%s]", strings.Join(function.Args, ", ")))
 		generate(function.Body, g)
 		if err := ioutil.WriteFile(
 			fmt.Sprintf("graphs/%s.dot", function.Name),
