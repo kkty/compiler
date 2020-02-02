@@ -899,8 +899,7 @@ func (n *Assignment) HasSideEffects(functionsWithoutSideEffects stringset.Set) b
 }
 
 func (n *Application) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
-	_, exists := functionsWithoutSideEffects[n.Function]
-	return !exists
+	return !functionsWithoutSideEffects.Has(n.Function)
 }
 
 func (n *Tuple) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool    { return false }

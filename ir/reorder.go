@@ -1,5 +1,7 @@
 package ir
 
+import "github.com/kkty/compiler/stringset"
+
 func Reorder(main Node, functions []*Function) Node {
 	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
 
@@ -48,12 +50,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
 					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
 					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -64,12 +66,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
 					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
 					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -80,12 +82,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
 					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
 					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -96,12 +98,12 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
 					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
 					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
@@ -112,24 +114,24 @@ func Reorder(main Node, functions []*Function) Node {
 					return n
 				}
 
-				if _, exists := next.True.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
 					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
 					return next
 				}
 
-				if _, exists := next.False.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
 					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
 					return next
 				}
 			case *Assignment:
 				next := n.Next.(*Assignment)
 
-				if _, exists := next.Value.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.Value.FreeVariables(stringset.New()).Has(n.Name) {
 					next.Next = &Assignment{n.Name, reorder(n.Value), reorder(next.Next)}
 					return next
 				}
 
-				if _, exists := next.Next.FreeVariables(map[string]struct{}{})[n.Name]; !exists {
+				if !next.Next.FreeVariables(stringset.New()).Has(n.Name) {
 					next.Value = &Assignment{n.Name, reorder(n.Value), reorder(next.Value)}
 					return next
 				}

@@ -1,5 +1,7 @@
 package ir
 
+import "github.com/kkty/compiler/stringset"
+
 func RemoveRedundantVariables(main Node, functions []*Function) Node {
 	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
 
@@ -33,7 +35,7 @@ func RemoveRedundantVariables(main Node, functions []*Function) Node {
 			return n
 		case *Assignment:
 			n := node.(*Assignment)
-			if _, hasFreeVariable := n.Next.FreeVariables(map[string]struct{}{})[n.Name]; n.Value.HasSideEffects(functionsWithoutSideEffects) || hasFreeVariable {
+			if _, hasFreeVariable := n.Next.FreeVariables(stringset.New())[n.Name]; n.Value.HasSideEffects(functionsWithoutSideEffects) || hasFreeVariable {
 				n.Value = removeRedundantVariables(n.Value)
 				n.Next = removeRedundantVariables(n.Next)
 				return n

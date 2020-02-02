@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"github.com/kkty/compiler/stringset"
 	"io/ioutil"
 	"testing"
 
@@ -38,7 +39,7 @@ func TestCompileAndExec(t *testing.T) {
 			for _, function := range functions {
 				assert.Equal(t, 0, len(function.FreeVariables()))
 			}
-			assert.Equal(t, 0, len(main.FreeVariables(map[string]struct{}{})))
+			assert.Equal(t, 0, len(main.FreeVariables(stringset.New())))
 
 			buf := bytes.Buffer{}
 			ir.Execute(functions, main, &buf, bytes.NewBufferString(c.input))

@@ -3,6 +3,7 @@ package ir
 import (
 	"fmt"
 	"github.com/kkty/compiler/ast"
+	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
 )
 
@@ -237,7 +238,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 
 	applicationsInMain := constructed.Applications()
 
-	appended := map[string]struct{}{}
+	appended := stringset.New()
 
 	// removes free variables in functions (lambda lifting)
 	for {
@@ -258,7 +259,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			delete(functionToApplications, "main")
 
 			for _, freeVariable := range freeVariables {
-				appended[freeVariable] = struct{}{}
+				appended.Add(freeVariable)
 				function.Args = append(function.Args, freeVariable)
 				nameToType[function.Name] = &typing.FunctionType{
 					append(nameToType[function.Name].(*typing.FunctionType).Args, nameToType[freeVariable]),
@@ -280,7 +281,7 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			for _, function := range functions {
 				mapping := map[string]string{}
 				for i, arg := range function.Args {
-					if _, shouldReplace := appended[arg]; shouldReplace {
+					if appended.Has(arg) {
 						v := newName()
 						mapping[arg] = v
 						nameToType[v] = nameToType[arg]
