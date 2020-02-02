@@ -1,6 +1,10 @@
 package ir
 
-import "math"
+import (
+	"github.com/kkty/compiler/stringmap"
+	"github.com/kkty/compiler/stringset"
+	"math"
+)
 
 type Function struct {
 	Name string
@@ -8,12 +12,12 @@ type Function struct {
 	Body Node
 }
 
-func FunctionsWithoutSideEffects(functions []*Function) map[string]struct{} {
-	functionsWithoutSideEffects := map[string]struct{}{}
+func FunctionsWithoutSideEffects(functions []*Function) stringset.Set {
+	functionsWithoutSideEffects := stringset.New()
 	n := 0
 	for {
 		for _, function := range functions {
-			functionsWithoutSideEffects[function.Name] = struct{}{}
+			functionsWithoutSideEffects.Add(function.Name)
 
 			if function.Body.HasSideEffects(functionsWithoutSideEffects) {
 				delete(functionsWithoutSideEffects, function.Name)
@@ -29,13 +33,13 @@ func FunctionsWithoutSideEffects(functions []*Function) map[string]struct{} {
 	return functionsWithoutSideEffects
 }
 
-func (f Function) FreeVariables() map[string]struct{} {
-	bound := map[string]struct{}{}
+func (f Function) FreeVariables() stringset.Set {
+	bound := stringset.New()
 
-	bound[f.Name] = struct{}{}
+	bound.Add(f.Name)
 
 	for _, arg := range f.Args {
-		bound[arg] = struct{}{}
+		bound.Add(arg)
 	}
 
 	return f.Body.FreeVariables(bound)
@@ -54,11 +58,11 @@ func (f *Function) IsRecursive() bool {
 }
 
 type Node interface {
-	UpdateNames(mapping map[string]string)
-	FreeVariables(bound map[string]struct{}) map[string]struct{}
+	UpdateNames(mapping stringmap.Map)
+	FreeVariables(bound stringset.Set) stringset.Set
 	FloatValues() []float32
 	Clone() Node
-	HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool
+	HasSideEffects(functionsWithoutSideEffects stringset.Set) bool
 	Applications() []*Application
 	Size() int
 	Evaluate(map[string]interface{}, []*Function) interface{}
@@ -160,538 +164,537 @@ type IntToFloat struct{ Arg string }
 type FloatToInt struct{ Arg string }
 type Sqrt struct{ Arg string }
 
-func replaceIfFound(k string, m map[string]string) string {
+func replaceIfFound(k string, m stringmap.Map) string {
 	if v, ok := m[k]; ok {
 		return v
 	}
-
 	return k
 }
 
-func (n *Variable) UpdateNames(mapping map[string]string) {
+func (n *Variable) UpdateNames(mapping stringmap.Map) {
 	n.Name = replaceIfFound(n.Name, mapping)
 }
 
-func (n *Unit) UpdateNames(mapping map[string]string)  {}
-func (n *Int) UpdateNames(mapping map[string]string)   {}
-func (n *Bool) UpdateNames(mapping map[string]string)  {}
-func (n *Float) UpdateNames(mapping map[string]string) {}
+func (n *Unit) UpdateNames(mapping stringmap.Map)  {}
+func (n *Int) UpdateNames(mapping stringmap.Map)   {}
+func (n *Bool) UpdateNames(mapping stringmap.Map)  {}
+func (n *Float) UpdateNames(mapping stringmap.Map) {}
 
-func (n *Add) UpdateNames(mapping map[string]string) {
+func (n *Add) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *AddImmediate) UpdateNames(mapping map[string]string) {
+func (n *AddImmediate) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 }
 
-func (n *Sub) UpdateNames(mapping map[string]string) {
+func (n *Sub) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *SubFromZero) UpdateNames(mapping map[string]string) {
+func (n *SubFromZero) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 }
 
-func (n *FloatAdd) UpdateNames(mapping map[string]string) {
+func (n *FloatAdd) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *FloatSub) UpdateNames(mapping map[string]string) {
+func (n *FloatSub) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *FloatSubFromZero) UpdateNames(mapping map[string]string) {
+func (n *FloatSubFromZero) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 }
 
-func (n *FloatDiv) UpdateNames(mapping map[string]string) {
+func (n *FloatDiv) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *FloatMul) UpdateNames(mapping map[string]string) {
+func (n *FloatMul) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *Not) UpdateNames(mapping map[string]string) {
+func (n *Not) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 }
 
-func (n *Equal) UpdateNames(mapping map[string]string) {
+func (n *Equal) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *LessThan) UpdateNames(mapping map[string]string) {
+func (n *LessThan) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
-func (n *IfEqual) UpdateNames(mapping map[string]string) {
+func (n *IfEqual) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
 
-func (n *IfEqualZero) UpdateNames(mapping map[string]string) {
+func (n *IfEqualZero) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
 
-func (n *IfEqualTrue) UpdateNames(mapping map[string]string) {
+func (n *IfEqualTrue) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
 
-func (n *IfLessThan) UpdateNames(mapping map[string]string) {
+func (n *IfLessThan) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
 
-func (n *IfLessThanZero) UpdateNames(mapping map[string]string) {
+func (n *IfLessThanZero) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
 }
 
-func (n *Assignment) UpdateNames(mapping map[string]string) {
+func (n *Assignment) UpdateNames(mapping stringmap.Map) {
 	n.Name = replaceIfFound(n.Name, mapping)
 	n.Value.UpdateNames(mapping)
 	n.Next.UpdateNames(mapping)
 }
 
-func (n *Application) UpdateNames(mapping map[string]string) {
+func (n *Application) UpdateNames(mapping stringmap.Map) {
 	for i := range n.Args {
 		n.Args[i] = replaceIfFound(n.Args[i], mapping)
 	}
 }
 
-func (n *Tuple) UpdateNames(mapping map[string]string) {
+func (n *Tuple) UpdateNames(mapping stringmap.Map) {
 	for i := range n.Elements {
 		n.Elements[i] = replaceIfFound(n.Elements[i], mapping)
 	}
 }
 
-func (n *ArrayCreate) UpdateNames(mapping map[string]string) {
+func (n *ArrayCreate) UpdateNames(mapping stringmap.Map) {
 	n.Length = replaceIfFound(n.Length, mapping)
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n *ArrayCreateImmediate) UpdateNames(mapping map[string]string) {
+func (n *ArrayCreateImmediate) UpdateNames(mapping stringmap.Map) {
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n *ArrayGet) UpdateNames(mapping map[string]string) {
+func (n *ArrayGet) UpdateNames(mapping stringmap.Map) {
 	n.Array = replaceIfFound(n.Array, mapping)
 	n.Index = replaceIfFound(n.Index, mapping)
 }
 
-func (n *ArrayGetImmediate) UpdateNames(mapping map[string]string) {
+func (n *ArrayGetImmediate) UpdateNames(mapping stringmap.Map) {
 	n.Array = replaceIfFound(n.Array, mapping)
 }
 
-func (n *ArrayPut) UpdateNames(mapping map[string]string) {
+func (n *ArrayPut) UpdateNames(mapping stringmap.Map) {
 	n.Array = replaceIfFound(n.Array, mapping)
 	n.Index = replaceIfFound(n.Index, mapping)
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n *ArrayPutImmediate) UpdateNames(mapping map[string]string) {
+func (n *ArrayPutImmediate) UpdateNames(mapping stringmap.Map) {
 	n.Array = replaceIfFound(n.Array, mapping)
 	n.Value = replaceIfFound(n.Value, mapping)
 }
 
-func (n *ReadInt) UpdateNames(mapping map[string]string)   {}
-func (n *ReadFloat) UpdateNames(mapping map[string]string) {}
+func (n *ReadInt) UpdateNames(mapping stringmap.Map)   {}
+func (n *ReadFloat) UpdateNames(mapping stringmap.Map) {}
 
-func (n *WriteByte) UpdateNames(mapping map[string]string) {
+func (n *WriteByte) UpdateNames(mapping stringmap.Map) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
-func (n *IntToFloat) UpdateNames(mapping map[string]string) {
+func (n *IntToFloat) UpdateNames(mapping stringmap.Map) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
-func (n *FloatToInt) UpdateNames(mapping map[string]string) {
+func (n *FloatToInt) UpdateNames(mapping stringmap.Map) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
-func (n *Sqrt) UpdateNames(mapping map[string]string) {
+func (n *Sqrt) UpdateNames(mapping stringmap.Map) {
 	n.Arg = replaceIfFound(n.Arg, mapping)
 }
 
-func (n *TupleGet) UpdateNames(mapping map[string]string) {
+func (n *TupleGet) UpdateNames(mapping stringmap.Map) {
 	n.Tuple = replaceIfFound(n.Tuple, mapping)
 }
 
-func (n *Variable) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	if _, ok := bound[n.Name]; !ok {
-		return map[string]struct{}{n.Name: struct{}{}}
-	}
-
-	return map[string]struct{}{}
-}
-
-func (n *Unit) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *Int) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *Bool) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *Float) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *Add) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+func (n *Variable) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Name) {
+		ret.Add(n.Name)
 	}
 	return ret
 }
 
-func (n *AddImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *Unit) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *Int) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *Bool) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *Float) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *Add) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	return ret
 }
 
-func (n *Sub) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+func (n *AddImmediate) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
 	return ret
 }
 
-func (n *SubFromZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+func (n *Sub) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	return ret
 }
 
-func (n *FloatAdd) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+func (n *SubFromZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	return ret
 }
 
-func (n *FloatSub) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *FloatAdd) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
-	}
-	return ret
-}
-
-func (n *FloatSubFromZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	return ret
 }
 
-func (n *FloatDiv) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *FloatSub) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
-	}
-	return ret
-}
-
-func (n *FloatMul) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	return ret
 }
 
-func (n *Not) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+func (n *FloatSubFromZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	return ret
 }
 
-func (n *Equal) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *FloatDiv) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
-	}
-	return ret
-}
-
-func (n *LessThan) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
-	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	return ret
 }
 
-func (n *IfEqual) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *FloatMul) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
+	}
+	return ret
+}
+
+func (n *Not) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	return ret
+}
+
+func (n *Equal) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
+	}
+	return ret
+}
+
+func (n *LessThan) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
+	}
+	return ret
+}
+
+func (n *IfEqual) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	for v := range n.True.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	for v := range n.False.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	return ret
 }
 
-func (n *IfEqualZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+func (n *IfEqualZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	for v := range n.True.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	for v := range n.False.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	return ret
 }
 
-func (n *IfEqualTrue) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+func (n *IfEqualTrue) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	for v := range n.True.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	for v := range n.False.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	return ret
 }
 
-func (n *IfLessThan) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Left]; !ok {
-		ret[n.Left] = struct{}{}
+func (n *IfLessThan) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
 	}
-	if _, ok := bound[n.Right]; !ok {
-		ret[n.Right] = struct{}{}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
 	}
 	for v := range n.True.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	for v := range n.False.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	return ret
 }
 
-func (n *IfLessThanZero) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Inner]; !ok {
-		ret[n.Inner] = struct{}{}
+func (n *IfLessThanZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	for v := range n.True.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	for v := range n.False.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	return ret
 }
 
-func (n *Assignment) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
+func (n *Assignment) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
 	for v := range n.Value.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
-	bound[n.Name] = struct{}{}
+	bound.Add(n.Name)
 	for v := range n.Next.FreeVariables(bound) {
-		ret[v] = struct{}{}
+		ret.Add(v)
 	}
 	delete(bound, n.Name)
 	return ret
 }
 
-func (n *Application) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
+func (n *Application) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
 	for _, arg := range n.Args {
-		if _, ok := bound[arg]; !ok {
-			ret[arg] = struct{}{}
+		if !bound.Has(arg) {
+			ret.Add(arg)
 		}
 	}
 	return ret
 }
 
-func (n *Tuple) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
+func (n *Tuple) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
 	for _, element := range n.Elements {
-		if _, ok := bound[element]; !ok {
-			ret[element] = struct{}{}
+		if !bound.Has(element) {
+			ret.Add(element)
 		}
 	}
 	return ret
 }
 
-func (n *ArrayCreate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Length]; !ok {
-		ret[n.Length] = struct{}{}
+func (n *ArrayCreate) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Length) {
+		ret.Add(n.Length)
 	}
-	if _, ok := bound[n.Value]; !ok {
-		ret[n.Value] = struct{}{}
-	}
-	return ret
-}
-
-func (n *ArrayCreateImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Value]; !ok {
-		ret[n.Value] = struct{}{}
+	if !bound.Has(n.Value) {
+		ret.Add(n.Value)
 	}
 	return ret
 }
 
-func (n *ArrayGet) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Array]; !ok {
-		ret[n.Array] = struct{}{}
-	}
-	if _, ok := bound[n.Index]; !ok {
-		ret[n.Index] = struct{}{}
+func (n *ArrayCreateImmediate) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Value) {
+		ret.Add(n.Value)
 	}
 	return ret
 }
 
-func (n *ArrayGetImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Array]; !ok {
-		ret[n.Array] = struct{}{}
+func (n *ArrayGet) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Array) {
+		ret.Add(n.Array)
+	}
+	if !bound.Has(n.Index) {
+		ret.Add(n.Index)
 	}
 	return ret
 }
 
-func (n *ArrayPut) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Array]; !ok {
-		ret[n.Array] = struct{}{}
-	}
-	if _, ok := bound[n.Index]; !ok {
-		ret[n.Index] = struct{}{}
-	}
-	if _, ok := bound[n.Value]; !ok {
-		ret[n.Value] = struct{}{}
+func (n *ArrayGetImmediate) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Array) {
+		ret.Add(n.Array)
 	}
 	return ret
 }
 
-func (n *ArrayPutImmediate) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Array]; !ok {
-		ret[n.Array] = struct{}{}
+func (n *ArrayPut) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Array) {
+		ret.Add(n.Array)
 	}
-	if _, ok := bound[n.Value]; !ok {
-		ret[n.Value] = struct{}{}
+	if !bound.Has(n.Index) {
+		ret.Add(n.Index)
 	}
-	return ret
-}
-
-func (n *ReadInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *ReadFloat) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	return map[string]struct{}{}
-}
-
-func (n *WriteByte) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Arg]; !ok {
-		ret[n.Arg] = struct{}{}
+	if !bound.Has(n.Value) {
+		ret.Add(n.Value)
 	}
 	return ret
 }
 
-func (n *IntToFloat) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Arg]; !ok {
-		ret[n.Arg] = struct{}{}
+func (n *ArrayPutImmediate) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Array) {
+		ret.Add(n.Array)
+	}
+	if !bound.Has(n.Value) {
+		ret.Add(n.Value)
 	}
 	return ret
 }
 
-func (n *FloatToInt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Arg]; !ok {
-		ret[n.Arg] = struct{}{}
+func (n *ReadInt) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *ReadFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	return stringset.New()
+}
+
+func (n *WriteByte) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Arg) {
+		ret.Add(n.Arg)
 	}
 	return ret
 }
 
-func (n *Sqrt) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Arg]; !ok {
-		ret[n.Arg] = struct{}{}
+func (n *IntToFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Arg) {
+		ret.Add(n.Arg)
 	}
 	return ret
 }
 
-func (n *TupleGet) FreeVariables(bound map[string]struct{}) map[string]struct{} {
-	ret := map[string]struct{}{}
-	if _, ok := bound[n.Tuple]; !ok {
-		ret[n.Tuple] = struct{}{}
+func (n *FloatToInt) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Arg) {
+		ret.Add(n.Arg)
+	}
+	return ret
+}
+
+func (n *Sqrt) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Arg) {
+		ret.Add(n.Arg)
+	}
+	return ret
+}
+
+func (n *TupleGet) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Tuple) {
+		ret.Add(n.Tuple)
 	}
 	return ret
 }
@@ -847,92 +850,92 @@ func (n *IntToFloat) Clone() Node { return &IntToFloat{n.Arg} }
 func (n *FloatToInt) Clone() Node { return &FloatToInt{n.Arg} }
 func (n *Sqrt) Clone() Node       { return &Sqrt{n.Arg} }
 
-func (n *Variable) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *Unit) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool     { return false }
-func (n *Int) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
-func (n *Bool) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool     { return false }
-func (n *Float) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
-func (n *Add) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
-func (n *AddImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *Variable) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *Unit) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool     { return false }
+func (n *Int) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *Bool) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool     { return false }
+func (n *Float) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool    { return false }
+func (n *Add) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *AddImmediate) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *Sub) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *SubFromZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *Sub) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *SubFromZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *FloatAdd) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *FloatSub) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *FloatSubFromZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *FloatAdd) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *FloatSub) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *FloatSubFromZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
-func (n *Not) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool      { return false }
-func (n *Equal) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
-func (n *LessThan) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *Not) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *Equal) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool    { return false }
+func (n *LessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
-func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfEqualZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *IfEqualZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfEqualTrue) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *IfEqualTrue) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfLessThan) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *IfLessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *IfLessThanZero) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *IfLessThanZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *Assignment) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *Assignment) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.Value.HasSideEffects(functionsWithoutSideEffects) || n.Next.HasSideEffects(functionsWithoutSideEffects)
 }
 
-func (n *Application) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *Application) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	_, exists := functionsWithoutSideEffects[n.Function]
 	return !exists
 }
 
-func (n *Tuple) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool    { return false }
-func (n *TupleGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *Tuple) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool    { return false }
+func (n *TupleGet) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
-func (n *ArrayCreate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *ArrayCreate) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
 
-func (n *ArrayCreateImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *ArrayCreateImmediate) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
 
-func (n *ArrayGet) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *ArrayGet) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
-func (n *ArrayGetImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *ArrayGetImmediate) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
 
-func (n *ArrayPut) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
+func (n *ArrayPut) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return true }
 
-func (n *ArrayPutImmediate) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *ArrayPutImmediate) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return true
 }
 
-func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool   { return true }
-func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
-func (n *WriteByte) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return true }
-func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *ReadInt) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool   { return true }
+func (n *ReadFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return true }
+func (n *WriteByte) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return true }
+func (n *IntToFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *FloatToInt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool {
+func (n *FloatToInt) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *Sqrt) HasSideEffects(functionsWithoutSideEffects map[string]struct{}) bool { return false }
+func (n *Sqrt) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
 func (n *Variable) Applications() []*Application         { return []*Application{} }
 func (n *Unit) Applications() []*Application             { return []*Application{} }

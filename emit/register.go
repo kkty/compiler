@@ -157,7 +157,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				return v
 			case *ir.Assignment:
 				n := node.(*ir.Assignment)
-				if !stringset.Set(n.Next.FreeVariables(stringset.New())).Has(n.Name) {
+				if !n.Next.FreeVariables(stringset.New()).Has(n.Name) {
 					n.Name = ""
 				}
 				v := stringset.New()
@@ -171,7 +171,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			default:
-				v := stringset.Set(node.FreeVariables(stringset.New()))
+				v := node.FreeVariables(stringset.New())
 				restore := v.Join(variablesToKeep)
 				addEdges(v)
 				restore(v)
@@ -228,7 +228,7 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		}
 
 		{
-			freeVariables := stringset.Set(function.Body.FreeVariables(stringset.New()))
+			freeVariables := function.Body.FreeVariables(stringset.New())
 			for i, arg := range function.Args {
 				if !freeVariables.Has(arg) {
 					function.Args[i] = ""
