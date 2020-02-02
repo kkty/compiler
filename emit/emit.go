@@ -59,7 +59,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			if isRegister(variable) {
 				registers = append(registers, variable)
 			} else {
-				idx := funk.IndexOf(storedVariables, variable)
+				idx := funk.IndexOfString(storedVariables, variable)
 				if idx == -1 {
 					log.Panicf("variable not found on stack: %s", variable)
 				}
