@@ -1,0 +1,42 @@
+on: [push]
+jobs:
+  raytracer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: kkty/simulator
+          path: simulator
+      - uses: actions/checkout@v2
+        with:
+          repository: kkty/peephole
+          path: peephole
+      - run: go run main.go test/min-rt.ml > /tmp/program.s
+      - run: go run peephole.go /tmp/program.s > /tmp/peep.s
+        working-directory: peephole
+      - run: |
+          cat > /tmp/in.txt <<EOF
+          0 0 0 0 30
+          1 0 0
+          255
+          0 1 2 0 40 10 40 0 -40 0 1 0.2 64 255 255 0
+          4 3 1 0 30 30 30 0 0 0 1 1 255 255 255 255
+          -1
+          0 -1
+          1 -1
+          -1
+          99 0 1 -1
+          -1
+          EOF
+      - run: mkdir /tmp/out
+      - run: cat /tmp/in.txt | go run simulator.go -native /tmp/peep.s > /tmp/out/out.ppm
+        working-directory: simulator
+      - run: convert /tmp/out/out.ppm /tmp/out/out.png
+      - uses: actions/upload-artifact@v1
+        with:
+          name: output
+          path: /tmp/out
