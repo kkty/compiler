@@ -33,7 +33,7 @@ jobs:
           -1
           EOF
       - run: mkdir /tmp/out
-      - run: cat /tmp/in.txt | go run simulator.go -native /tmp/peep.s > /tmp/out/out.ppm
+      - run: cat /tmp/in.txt | go run simulator.go -native /tmp/peep.s > /tmp/out/out.ppm 2> /tmp/out/stderr.log
         working-directory: simulator
       - run: convert /tmp/out/out.ppm /tmp/out/out.png
       - uses: actions/upload-artifact@v1
