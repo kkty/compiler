@@ -64,3 +64,10 @@ jobs:
         with:
           name: output
           path: /tmp/out
+      - run: echo ${{ secrets.SLACKCAT_TOKEN }} > ~/.slackcat
+      - run: |
+          curl -Lo slackcat https://github.com/bcicen/slackcat/releases/download/v1.6/slackcat-1.6-$(uname -s)-amd64
+          sudo mv slackcat /usr/local/bin/
+          sudo chmod +x /usr/local/bin/slackcat
+      - run: slackcat --channel ${{ secrets.SLACK_CHANNEL }} /tmp/out/out.png
+      - run: slackcat --channel ${{ secrets.SLACK_CHANNEL }} < /tmp/out/stderr.log
