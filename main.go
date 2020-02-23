@@ -3,14 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kkty/compiler/ast"
-	"github.com/kkty/compiler/emit"
-	"github.com/kkty/compiler/ir"
-	"github.com/kkty/compiler/parser"
 	"io/ioutil"
 	"log"
 	"os"
 	"sort"
+
+	"github.com/kkty/compiler/ast"
+	"github.com/kkty/compiler/emit"
+	"github.com/kkty/compiler/ir"
+	"github.com/kkty/compiler/parser"
 )
 
 func main() {
