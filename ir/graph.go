@@ -2,11 +2,12 @@ package ir
 
 import (
 	"fmt"
-	"github.com/emicklei/dot"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/emicklei/dot"
 )
 
 func GenerateGraph(main Node, functions []*Function) error {
@@ -17,9 +18,8 @@ func GenerateGraph(main Node, functions []*Function) error {
 	}
 	var generate func(Node, *dot.Graph) dot.Node
 	generate = func(node Node, g *dot.Graph) dot.Node {
-		switch node.(type) {
+		switch n := node.(type) {
 		case *Variable:
-			n := node.(*Variable)
 			return g.Node(newID()).Label(fmt.Sprintf("Variable(%s)", n.Name))
 		case *Unit:
 			return g.Node(newID()).Label("Unit")
@@ -30,116 +30,100 @@ func GenerateGraph(main Node, functions []*Function) error {
 		case *Float:
 			return g.Node(newID()).Label(fmt.Sprintf("Float(%v)", node.(*Float).Value))
 		case *Add:
-			n := node.(*Add)
 			return g.Node(newID()).Label(fmt.Sprintf("Add(%v, %v)", n.Left, n.Right))
 		case *AddImmediate:
-			n := node.(*AddImmediate)
 			return g.Node(newID()).Label(fmt.Sprintf("AddImmediate(%v, %v)", n.Left, n.Right))
 		case *Sub:
-			n := node.(*Sub)
 			return g.Node(newID()).Label(fmt.Sprintf("Sub(%v, %v)", n.Left, n.Right))
 		case *SubFromZero:
-			n := node.(*SubFromZero)
 			return g.Node(newID()).Label(fmt.Sprintf("SubFromZero(%v)", n.Inner))
 		case *FloatAdd:
-			n := node.(*FloatAdd)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatAdd(%v, %v)", n.Left, n.Right))
 		case *FloatSub:
-			n := node.(*FloatSub)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatSub(%v, %v)", n.Left, n.Right))
 		case *FloatSubFromZero:
-			n := node.(*FloatSubFromZero)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatSubFromZero(%v)", n.Inner))
 		case *FloatDiv:
-			n := node.(*FloatDiv)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatDiv(%v, %v)", n.Left, n.Right))
 		case *FloatMul:
-			n := node.(*FloatMul)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatMul(%v, %v)", n.Left, n.Right))
 		case *Not:
 			return g.Node(newID()).Label(fmt.Sprintf("Not(%v)", node.(*Not).Inner))
 		case *Equal:
-			n := node.(*Equal)
 			return g.Node(newID()).Label(fmt.Sprintf("Equal(%v, %v)", n.Left, n.Right))
 		case *LessThan:
-			n := node.(*LessThan)
 			return g.Node(newID()).Label(fmt.Sprintf("LessThan(%v, %v)", n.Left, n.Right))
+		case *LessThanFloat:
+			return g.Node(newID()).Label(fmt.Sprintf("LessThanFloat(%v, %v)", n.Left, n.Right))
 		case *IfEqual:
-			n := node.(*IfEqual)
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfEqual(%v, %v)", n.Left, n.Right))
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
 		case *IfEqualZero:
-			n := node.(*IfEqualZero)
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfEqualZero(%v)", n.Inner))
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
 		case *IfEqualTrue:
-			n := node.(*IfEqualTrue)
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfEqualTrue(%v)", n.Inner))
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
 		case *IfLessThan:
-			n := node.(*IfLessThan)
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfLessThan(%v, %v)", n.Left, n.Right))
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
+		case *IfLessThanFloat:
+			gn := g.Node(newID()).Label(fmt.Sprintf("IfLessThanFloat(%v, %v)", n.Left, n.Right))
+			gn.Edge(generate(n.True, g), "True")
+			gn.Edge(generate(n.False, g), "False")
+			return gn
 		case *IfLessThanZero:
-			n := node.(*IfLessThanZero)
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfLessThanZero(%v)", n.Inner))
 			gn.Edge(generate(n.True, g), "True")
 			gn.Edge(generate(n.False, g), "False")
 			return gn
+		case *IfLessThanZeroFloat:
+			gn := g.Node(newID()).Label(fmt.Sprintf("IfLessThanZeroFloat(%v)", n.Inner))
+			gn.Edge(generate(n.True, g), "True")
+			gn.Edge(generate(n.False, g), "False")
+			return gn
 		case *Assignment:
-			n := node.(*Assignment)
 			gn := g.Node(newID()).Label(fmt.Sprintf("Assignment(%v)", n.Name))
 			gn.Edge(generate(n.Value, g), "Value")
 			gn.Edge(generate(n.Next, g), "Next")
 			return gn
 		case *Application:
-			n := node.(*Application)
 			return g.Node(newID()).Label(
 				fmt.Sprintf("Application(%v, [%v])", n.Function,
 					strings.Join(n.Args, ", ")))
 		case *Tuple:
 			return g.Node(newID()).Label(fmt.Sprintf("Tuple([%v])", strings.Join(node.(*Tuple).Elements, ", ")))
 		case *TupleGet:
-			n := node.(*TupleGet)
 			return g.Node(newID()).Label(fmt.Sprintf("TupleGet(%v, %v)", n.Tuple, n.Index))
 		case *ArrayCreate:
-			n := node.(*ArrayCreate)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayCreate(%v, %v)", n.Value, n.Length))
 		case *ArrayCreateImmediate:
-			n := node.(*ArrayCreateImmediate)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayCreateImmediate(%v, %v)", n.Value, n.Length))
 		case *ArrayGet:
-			n := node.(*ArrayGet)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayGet(%v, %v)", n.Array, n.Index))
 		case *ArrayGetImmediate:
-			n := node.(*ArrayGetImmediate)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayGetImmediate(%v, %v)", n.Array, n.Index))
 		case *ArrayPut:
-			n := node.(*ArrayPut)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayPut(%v, %v, %v)", n.Array, n.Index, n.Value))
 		case *ArrayPutImmediate:
-			n := node.(*ArrayPutImmediate)
 			return g.Node(newID()).Label(fmt.Sprintf("ArrayPutImmediate(%v, %v, %v)", n.Array, n.Index, n.Value))
 		case *ReadInt:
 			return g.Node(newID()).Label("ReadInt")
 		case *ReadFloat:
 			return g.Node(newID()).Label("ReadFloat")
 		case *WriteByte:
-			n := node.(*WriteByte)
 			return g.Node(newID()).Label(fmt.Sprintf("WriteByte(%v)", n.Arg))
 		case *IntToFloat:
-			n := node.(*IntToFloat)
 			return g.Node(newID()).Label(fmt.Sprintf("IntToFloat(%v)", n.Arg))
 		case *FloatToInt:
-			n := node.(*FloatToInt)
 			return g.Node(newID()).Label(fmt.Sprintf("FloatToInt(%v)", n.Arg))
 		case *Sqrt:
 			return g.Node(newID()).Label("Sqrt")

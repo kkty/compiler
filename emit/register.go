@@ -2,23 +2,20 @@ package emit
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
-	"sort"
 )
 
 var (
-	intRegisters   []string
-	floatRegisters []string
+	registers []string
 )
 
 func init() {
-	for i := 0; i < 22; i++ {
-		intRegisters = append(intRegisters, fmt.Sprintf("$i%d", i+1))
-	}
-	for i := 0; i < 27; i++ {
-		floatRegisters = append(floatRegisters, fmt.Sprintf("$f%d", i+1))
+	for i := 0; i < 50; i++ {
+		registers = append(registers, fmt.Sprintf("$r%d", i))
 	}
 }
 
@@ -61,7 +58,7 @@ func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 }
 
 // AllocateRegisters does register allocation with graph coloring.
-// Variable names in ir.Node are replaced with register names like $i1.
+// Variable names in ir.Node are replaced with register names like $r0.
 // Variables that are never referenced are renamed to "".
 // If a variable could not be assigned to any registers, its name will be kept unchanged
 // and should be saved on the stack.
@@ -70,35 +67,18 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 	spills := map[string]int{}
 
 	allocate := func(function *ir.Function) {
-		intGraph := map[string]stringset.Set{}
-		floatGraph := map[string]stringset.Set{}
+		graph := map[string]stringset.Set{}
 
 		addEdges := func(variables stringset.Set) {
 			for _, i := range variables.Slice() {
-				if _, ok := types[i].(*typing.FloatType); ok {
-					if _, exists := floatGraph[i]; !exists {
-						floatGraph[i] = stringset.New()
-					}
-				} else {
-					if _, exists := intGraph[i]; !exists {
-						intGraph[i] = stringset.New()
-					}
+				if _, exists := graph[i]; !exists {
+					graph[i] = stringset.New()
 				}
 			}
 			for _, i := range variables.Slice() {
 				for _, j := range variables.Slice() {
 					if i != j {
-						if _, ok := types[i].(*typing.FloatType); ok {
-							if _, ok := types[j].(*typing.FloatType); ok {
-								floatGraph[i].Add(j)
-							}
-						}
-
-						if _, ok := types[i].(*typing.FloatType); !ok {
-							if _, ok := types[j].(*typing.FloatType); !ok {
-								intGraph[i].Add(j)
-							}
-						}
+						graph[i].Add(j)
 					}
 				}
 			}
@@ -109,9 +89,8 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		// are renamed to "".
 		var liveVariables func(ir.Node, stringset.Set) stringset.Set
 		liveVariables = func(node ir.Node, variablesToKeep stringset.Set) stringset.Set {
-			switch node.(type) {
+			switch n := node.(type) {
 			case *ir.IfEqual:
-				n := node.(*ir.IfEqual)
 				v := stringset.NewFromSlice([]string{n.Left, n.Right})
 				v.Join(liveVariables(n.True, variablesToKeep))
 				v.Join(liveVariables(n.False, variablesToKeep))
@@ -120,7 +99,6 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			case *ir.IfEqualZero:
-				n := node.(*ir.IfEqualZero)
 				v := stringset.NewFromSlice([]string{n.Inner})
 				v.Join(liveVariables(n.True, variablesToKeep))
 				v.Join(liveVariables(n.False, variablesToKeep))
@@ -129,7 +107,6 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			case *ir.IfEqualTrue:
-				n := node.(*ir.IfEqualTrue)
 				v := stringset.NewFromSlice([]string{n.Inner})
 				v.Join(liveVariables(n.True, variablesToKeep))
 				v.Join(liveVariables(n.False, variablesToKeep))
@@ -138,7 +115,14 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			case *ir.IfLessThan:
-				n := node.(*ir.IfLessThan)
+				v := stringset.NewFromSlice([]string{n.Left, n.Right})
+				v.Join(liveVariables(n.True, variablesToKeep))
+				v.Join(liveVariables(n.False, variablesToKeep))
+				restore := v.Join(variablesToKeep)
+				addEdges(v)
+				restore(v)
+				return v
+			case *ir.IfLessThanFloat:
 				v := stringset.NewFromSlice([]string{n.Left, n.Right})
 				v.Join(liveVariables(n.True, variablesToKeep))
 				v.Join(liveVariables(n.False, variablesToKeep))
@@ -147,7 +131,14 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			case *ir.IfLessThanZero:
-				n := node.(*ir.IfLessThanZero)
+				v := stringset.NewFromSlice([]string{n.Inner})
+				v.Join(liveVariables(n.True, variablesToKeep))
+				v.Join(liveVariables(n.False, variablesToKeep))
+				restore := v.Join(variablesToKeep)
+				addEdges(v)
+				restore(v)
+				return v
+			case *ir.IfLessThanZeroFloat:
 				v := stringset.NewFromSlice([]string{n.Inner})
 				v.Join(liveVariables(n.True, variablesToKeep))
 				v.Join(liveVariables(n.False, variablesToKeep))
@@ -156,7 +147,6 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 				restore(v)
 				return v
 			case *ir.Assignment:
-				n := node.(*ir.Assignment)
 				if !n.Next.FreeVariables(stringset.New()).Has(n.Name) {
 					n.Name = ""
 				}
@@ -205,25 +195,14 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		// variable names to register names
 		mapping := map[string]string{}
 
-		for _, i := range getNodes(intGraph) {
-			if colorMap, ok := colorGraph(intGraph, len(intRegisters)); ok {
+		for _, i := range getNodes(graph) {
+			if colorMap, ok := colorGraph(graph, len(registers)); ok {
 				for variable, color := range colorMap {
-					mapping[variable] = intRegisters[color]
+					mapping[variable] = registers[color]
 				}
 				break
 			}
-			removeNode(i, intGraph)
-			spills[function.Name]++
-		}
-
-		for _, i := range getNodes(floatGraph) {
-			if colorMap, ok := colorGraph(floatGraph, len(floatRegisters)); ok {
-				for variable, color := range colorMap {
-					mapping[variable] = floatRegisters[color]
-				}
-				break
-			}
-			removeNode(i, floatGraph)
+			removeNode(i, graph)
 			spills[function.Name]++
 		}
 

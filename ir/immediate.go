@@ -24,10 +24,8 @@ func Immediate(main Node, functions []*Function) Node {
 			}
 		}
 
-		switch node.(type) {
+		switch n := node.(type) {
 		case *IfEqual:
-			n := node.(*IfEqual)
-
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left == right {
@@ -95,8 +93,6 @@ func Immediate(main Node, functions []*Function) Node {
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
 		case *IfEqualZero:
-			n := node.(*IfEqualZero)
-
 			if inner, ok := values[n.Inner].(int32); ok {
 				if inner == 0 {
 					return n.True
@@ -116,8 +112,6 @@ func Immediate(main Node, functions []*Function) Node {
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
 		case *IfEqualTrue:
-			n := node.(*IfEqualTrue)
-
 			if inner, ok := values[n.Inner].(bool); ok {
 				if inner {
 					return n.True
@@ -129,8 +123,6 @@ func Immediate(main Node, functions []*Function) Node {
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
 		case *IfLessThan:
-			n := node.(*IfLessThan)
-
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
 					if left < right {
@@ -147,6 +139,9 @@ func Immediate(main Node, functions []*Function) Node {
 				}
 			}
 
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
+		case *IfLessThanFloat:
 			if left, ok := values[n.Left].(float32); ok {
 				if right, ok := values[n.Right].(float32); ok {
 					if left < right {
@@ -158,7 +153,7 @@ func Immediate(main Node, functions []*Function) Node {
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
-						return &IfLessThanZero{n.Left, n.True, n.False}
+						return &IfLessThanZeroFloat{n.Left, n.True, n.False}
 					}
 				}
 			}
@@ -166,11 +161,12 @@ func Immediate(main Node, functions []*Function) Node {
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
 		case *IfLessThanZero:
-			n := node.(*IfLessThanZero)
+			n.True = update(n.True, values)
+			n.False = update(n.False, values)
+		case *IfLessThanZeroFloat:
 			n.True = update(n.True, values)
 			n.False = update(n.False, values)
 		case *Assignment:
-			n := node.(*Assignment)
 			n.Value = update(n.Value, values)
 			valuesExtended := map[string]interface{}{}
 			for k, v := range values {
@@ -179,20 +175,14 @@ func Immediate(main Node, functions []*Function) Node {
 			valuesExtended[n.Name] = n.Value.Evaluate(values, functions)
 			n.Next = update(n.Next, valuesExtended)
 		case *ArrayCreate:
-			n := node.(*ArrayCreate)
-
 			if length, ok := values[n.Length].(int32); ok {
 				return &ArrayCreateImmediate{length, n.Value}
 			}
 		case *ArrayGet:
-			n := node.(*ArrayGet)
-
 			if index, ok := values[n.Index].(int32); ok {
 				return &ArrayGetImmediate{n.Array, index}
 			}
 		case *ArrayPut:
-			n := node.(*ArrayPut)
-
 			if index, ok := values[n.Index].(int32); ok {
 				return &ArrayPutImmediate{n.Array, index, n.Value}
 			}

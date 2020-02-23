@@ -28,8 +28,18 @@ func Reorder(main Node, functions []*Function) Node {
 			n.True = reorder(n.True)
 			n.False = reorder(n.False)
 			return n
+		case *IfLessThanFloat:
+			n := node.(*IfLessThanFloat)
+			n.True = reorder(n.True)
+			n.False = reorder(n.False)
+			return n
 		case *IfLessThanZero:
 			n := node.(*IfLessThanZero)
+			n.True = reorder(n.True)
+			n.False = reorder(n.False)
+			return n
+		case *IfLessThanZeroFloat:
+			n := node.(*IfLessThanZeroFloat)
 			n.True = reorder(n.True)
 			n.False = reorder(n.False)
 			return n
@@ -42,10 +52,8 @@ func Reorder(main Node, functions []*Function) Node {
 				return n
 			}
 
-			switch n.Next.(type) {
+			switch next := n.Next.(type) {
 			case *IfEqual:
-				next := n.Next.(*IfEqual)
-
 				if next.Left == n.Name || next.Right == n.Name {
 					return n
 				}
@@ -60,8 +68,6 @@ func Reorder(main Node, functions []*Function) Node {
 					return next
 				}
 			case *IfEqualZero:
-				next := n.Next.(*IfEqualZero)
-
 				if next.Inner == n.Name {
 					return n
 				}
@@ -76,8 +82,6 @@ func Reorder(main Node, functions []*Function) Node {
 					return next
 				}
 			case *IfEqualTrue:
-				next := n.Next.(*IfEqualTrue)
-
 				if next.Inner == n.Name {
 					return n
 				}
@@ -92,8 +96,20 @@ func Reorder(main Node, functions []*Function) Node {
 					return next
 				}
 			case *IfLessThan:
-				next := n.Next.(*IfLessThan)
+				if next.Left == n.Name || next.Right == n.Name {
+					return n
+				}
 
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
+					return next
+				}
+
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
+					return next
+				}
+			case *IfLessThanFloat:
 				if next.Left == n.Name || next.Right == n.Name {
 					return n
 				}
@@ -108,8 +124,20 @@ func Reorder(main Node, functions []*Function) Node {
 					return next
 				}
 			case *IfLessThanZero:
-				next := n.Next.(*IfLessThanZero)
+				if next.Inner == n.Name {
+					return n
+				}
 
+				if !next.True.FreeVariables(stringset.New()).Has(n.Name) {
+					next.False = &Assignment{n.Name, reorder(n.Value), reorder(next.False)}
+					return next
+				}
+
+				if !next.False.FreeVariables(stringset.New()).Has(n.Name) {
+					next.True = &Assignment{n.Name, reorder(n.Value), reorder(next.True)}
+					return next
+				}
+			case *IfLessThanZeroFloat:
 				if next.Inner == n.Name {
 					return n
 				}
@@ -124,8 +152,6 @@ func Reorder(main Node, functions []*Function) Node {
 					return next
 				}
 			case *Assignment:
-				next := n.Next.(*Assignment)
-
 				if !next.Value.FreeVariables(stringset.New()).Has(n.Name) {
 					next.Next = &Assignment{n.Name, reorder(n.Value), reorder(next.Next)}
 					return next

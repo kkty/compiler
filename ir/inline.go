@@ -2,8 +2,9 @@ package ir
 
 import (
 	"fmt"
-	"github.com/kkty/compiler/typing"
 	"os"
+
+	"github.com/kkty/compiler/typing"
 )
 
 // Inline does inline expansions for all non-recursive functions and n recursive functions.
@@ -40,7 +41,13 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 			case *IfLessThan:
 				n := node.(*IfLessThan)
 				queue = append(queue, n.True, n.False)
+			case *IfLessThanFloat:
+				n := node.(*IfLessThanFloat)
+				queue = append(queue, n.True, n.False)
 			case *IfLessThanZero:
+				n := node.(*IfLessThanZero)
+				queue = append(queue, n.True, n.False)
+			case *IfLessThanZeroFloat:
 				n := node.(*IfLessThanZero)
 				queue = append(queue, n.True, n.False)
 			case *Assignment:
@@ -86,8 +93,18 @@ func Inline(main Node, functions []*Function, n int, types map[string]typing.Typ
 			n.True = replaceApplications(n.True, function)
 			n.False = replaceApplications(n.False, function)
 			return n
+		case *IfLessThanFloat:
+			n := node.(*IfLessThanFloat)
+			n.True = replaceApplications(n.True, function)
+			n.False = replaceApplications(n.False, function)
+			return n
 		case *IfLessThanZero:
 			n := node.(*IfLessThanZero)
+			n.True = replaceApplications(n.True, function)
+			n.False = replaceApplications(n.False, function)
+			return n
+		case *IfLessThanZeroFloat:
+			n := node.(*IfLessThanZeroFloat)
 			n.True = replaceApplications(n.True, function)
 			n.False = replaceApplications(n.False, function)
 			return n

@@ -86,9 +86,9 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			}
 		case *LessThan:
 			n := node.(*LessThan)
-			if left, ok := values[n.Left].(int32); ok {
-				return left < values[n.Right].(int32)
-			}
+			return values[n.Left].(int32) < values[n.Right].(int32)
+		case *LessThanFloat:
+			n := node.(*LessThanFloat)
 			return values[n.Left].(float32) < values[n.Right].(float32)
 		case *IfEqual:
 			n := node.(*IfEqual)
@@ -123,35 +123,31 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			}
 		case *IfLessThan:
 			n := node.(*IfLessThan)
-
-			var condition bool
-			switch values[n.Left].(type) {
-			case int32:
-				condition = values[n.Left].(int32) < values[n.Right].(int32)
-			case float32:
-				condition = values[n.Left].(float32) < values[n.Right].(float32)
-			}
-
-			if condition {
+			if values[n.Left].(int32) < values[n.Right].(int32) {
 				return evaluate(n.True, values)
 			}
-
+			return evaluate(n.False, values)
+		case *IfLessThanFloat:
+			n := node.(*IfLessThanFloat)
+			if values[n.Left].(float32) < values[n.Right].(float32) {
+				return evaluate(n.True, values)
+			}
 			return evaluate(n.False, values)
 		case *IfLessThanZero:
 			n := node.(*IfLessThanZero)
 
-			if value, ok := values[n.Inner].(int32); ok {
-				if value < 0 {
-					return evaluate(n.True, values)
-				} else {
-					return evaluate(n.False, values)
-				}
-			} else if value, ok := values[n.Inner].(float32); ok {
-				if value < 0 {
-					return evaluate(n.True, values)
-				} else {
-					return evaluate(n.False, values)
-				}
+			if values[n.Inner].(int32) < 0 {
+				return evaluate(n.True, values)
+			} else {
+				return evaluate(n.False, values)
+			}
+		case *IfLessThanZeroFloat:
+			n := node.(*IfLessThanZeroFloat)
+
+			if values[n.Inner].(float32) < 0 {
+				return evaluate(n.True, values)
+			} else {
+				return evaluate(n.False, values)
 			}
 		case *Assignment:
 			n := node.(*Assignment)

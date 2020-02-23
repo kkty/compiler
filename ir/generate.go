@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+
 	"github.com/kkty/compiler/ast"
 	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
@@ -95,9 +96,15 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			})
 		case *ast.LessThan:
 			n := node.(*ast.LessThan)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
-				return &LessThan{Left: names[0], Right: names[1]}
-			})
+			if _, ok := n.Left.GetType(nameToType).(*typing.IntType); ok {
+				return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+					return &LessThan{Left: names[0], Right: names[1]}
+				})
+			} else {
+				return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+					return &LessThanFloat{Left: names[0], Right: names[1]}
+				})
+			}
 		case *ast.Neg:
 			n := node.(*ast.Neg)
 			if _, ok := n.GetType(nameToType).(*typing.IntType); ok {
@@ -122,9 +129,15 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		case *ast.If:
 			n := node.(*ast.If)
 			if c, ok := n.Condition.(*ast.LessThan); ok {
-				return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
-					return &IfLessThan{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
-				})
+				if _, ok := c.Left.GetType(nameToType).(*typing.IntType); ok {
+					return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
+						return &IfLessThan{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+					})
+				} else {
+					return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
+						return &IfLessThanFloat{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+					})
+				}
 			}
 			if c, ok := n.Condition.(*ast.Equal); ok {
 				return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {

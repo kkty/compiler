@@ -1,9 +1,10 @@
 package ir
 
 import (
+	"math"
+
 	"github.com/kkty/compiler/stringmap"
 	"github.com/kkty/compiler/stringset"
-	"math"
 )
 
 type Function struct {
@@ -92,6 +93,7 @@ type FloatMul struct{ Left, Right string }
 type Not struct{ Inner string }
 type Equal struct{ Left, Right string }
 type LessThan struct{ Left, Right string }
+type LessThanFloat struct{ Left, Right string }
 
 type IfEqual struct {
 	Left, Right string
@@ -113,7 +115,17 @@ type IfLessThan struct {
 	True, False Node
 }
 
+type IfLessThanFloat struct {
+	Left, Right string
+	True, False Node
+}
+
 type IfLessThanZero struct {
+	Inner       string
+	True, False Node
+}
+
+type IfLessThanZeroFloat struct {
 	Inner       string
 	True, False Node
 }
@@ -236,6 +248,11 @@ func (n *LessThan) UpdateNames(mapping stringmap.Map) {
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
+func (n *LessThanFloat) UpdateNames(mapping stringmap.Map) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+}
+
 func (n *IfEqual) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
@@ -262,7 +279,20 @@ func (n *IfLessThan) UpdateNames(mapping stringmap.Map) {
 	n.False.UpdateNames(mapping)
 }
 
+func (n *IfLessThanFloat) UpdateNames(mapping stringmap.Map) {
+	n.Left = replaceIfFound(n.Left, mapping)
+	n.Right = replaceIfFound(n.Right, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
+}
+
 func (n *IfLessThanZero) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+	n.True.UpdateNames(mapping)
+	n.False.UpdateNames(mapping)
+}
+
+func (n *IfLessThanZeroFloat) UpdateNames(mapping stringmap.Map) {
 	n.Inner = replaceIfFound(n.Inner, mapping)
 	n.True.UpdateNames(mapping)
 	n.False.UpdateNames(mapping)
@@ -479,6 +509,17 @@ func (n *LessThan) FreeVariables(bound stringset.Set) stringset.Set {
 	return ret
 }
 
+func (n *LessThanFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
+	}
+	return ret
+}
+
 func (n *IfEqual) FreeVariables(bound stringset.Set) stringset.Set {
 	ret := stringset.New()
 	if !bound.Has(n.Left) {
@@ -541,7 +582,38 @@ func (n *IfLessThan) FreeVariables(bound stringset.Set) stringset.Set {
 	return ret
 }
 
+func (n *IfLessThanFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Left) {
+		ret.Add(n.Left)
+	}
+	if !bound.Has(n.Right) {
+		ret.Add(n.Right)
+	}
+	for v := range n.True.FreeVariables(bound) {
+		ret.Add(v)
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret.Add(v)
+	}
+	return ret
+}
+
 func (n *IfLessThanZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	for v := range n.True.FreeVariables(bound) {
+		ret.Add(v)
+	}
+	for v := range n.False.FreeVariables(bound) {
+		ret.Add(v)
+	}
+	return ret
+}
+
+func (n *IfLessThanZeroFloat) FreeVariables(bound stringset.Set) stringset.Set {
 	ret := stringset.New()
 	if !bound.Has(n.Inner) {
 		ret.Add(n.Inner)
@@ -716,6 +788,7 @@ func (n *FloatMul) FloatValues() []float32         { return []float32{} }
 func (n *Not) FloatValues() []float32              { return []float32{} }
 func (n *Equal) FloatValues() []float32            { return []float32{} }
 func (n *LessThan) FloatValues() []float32         { return []float32{} }
+func (n *LessThanFloat) FloatValues() []float32    { return []float32{} }
 
 func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
@@ -733,7 +806,15 @@ func (n *IfLessThan) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
+func (n *IfLessThanFloat) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+
 func (n *IfLessThanZero) FloatValues() []float32 {
+	return append(n.True.FloatValues(), n.False.FloatValues()...)
+}
+
+func (n *IfLessThanZeroFloat) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
 }
 
@@ -774,6 +855,7 @@ func (n *FloatMul) Clone() Node         { return &FloatMul{n.Left, n.Right} }
 func (n *Not) Clone() Node              { return &Not{n.Inner} }
 func (n *Equal) Clone() Node            { return &Equal{n.Left, n.Right} }
 func (n *LessThan) Clone() Node         { return &LessThan{n.Left, n.Right} }
+func (n *LessThanFloat) Clone() Node    { return &LessThanFloat{n.Left, n.Right} }
 
 func (n *IfEqual) Clone() Node {
 	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
@@ -791,8 +873,16 @@ func (n *IfLessThan) Clone() Node {
 	return &IfLessThan{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
 }
 
+func (n *IfLessThanFloat) Clone() Node {
+	return &IfLessThanFloat{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
+}
+
 func (n *IfLessThanZero) Clone() Node {
 	return &IfLessThanZero{n.Inner, n.True.Clone(), n.False.Clone()}
+}
+
+func (n *IfLessThanZeroFloat) Clone() Node {
+	return &IfLessThanZeroFloat{n.Inner, n.True.Clone(), n.False.Clone()}
 }
 
 func (n *Assignment) Clone() Node {
@@ -868,11 +958,12 @@ func (n *FloatSub) HasSideEffects(functionsWithoutSideEffects stringset.Set) boo
 func (n *FloatSubFromZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return false
 }
-func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
-func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
-func (n *Not) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
-func (n *Equal) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool    { return false }
-func (n *LessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *Not) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool           { return false }
+func (n *Equal) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool         { return false }
+func (n *LessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
+func (n *LessThanFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
 func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
@@ -890,7 +981,15 @@ func (n *IfLessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) b
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
+func (n *IfLessThanFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
+}
+
 func (n *IfLessThanZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
+	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
+}
+
+func (n *IfLessThanZeroFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
 }
 
@@ -953,6 +1052,7 @@ func (n *FloatMul) Applications() []*Application         { return []*Application
 func (n *Not) Applications() []*Application              { return []*Application{} }
 func (n *Equal) Applications() []*Application            { return []*Application{} }
 func (n *LessThan) Applications() []*Application         { return []*Application{} }
+func (n *LessThanFloat) Applications() []*Application    { return []*Application{} }
 
 func (n *IfEqual) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
@@ -970,7 +1070,15 @@ func (n *IfLessThan) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
 }
 
+func (n *IfLessThanFloat) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
 func (n *IfLessThanZero) Applications() []*Application {
+	return append(n.True.Applications(), n.False.Applications()...)
+}
+
+func (n *IfLessThanZeroFloat) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
 }
 
@@ -1014,11 +1122,14 @@ func (n *FloatMul) Size() int             { return 1 }
 func (n *Not) Size() int                  { return 1 }
 func (n *Equal) Size() int                { return 1 }
 func (n *LessThan) Size() int             { return 1 }
+func (n *LessThanFloat) Size() int        { return 1 }
 func (n *IfEqual) Size() int              { return n.True.Size() + n.False.Size() }
 func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfEqualTrue) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfLessThan) Size() int           { return n.True.Size() + n.False.Size() }
+func (n *IfLessThanFloat) Size() int      { return n.True.Size() + n.False.Size() }
 func (n *IfLessThanZero) Size() int       { return n.True.Size() + n.False.Size() }
+func (n *IfLessThanZeroFloat) Size() int  { return n.True.Size() + n.False.Size() }
 func (n *Assignment) Size() int           { return n.Value.Size() + n.Next.Size() }
 func (n *Application) Size() int          { return 1 }
 func (n *Tuple) Size() int                { return 1 }
@@ -1177,6 +1288,10 @@ func (n *LessThan) Evaluate(values map[string]interface{}, functions []*Function
 		}
 	}
 
+	return nil
+}
+
+func (n *LessThanFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	if left, ok := values[n.Left].(float32); ok {
 		if right, ok := values[n.Right].(float32); ok {
 			return left < right
@@ -1263,6 +1378,10 @@ func (n *IfLessThan) Evaluate(values map[string]interface{}, functions []*Functi
 		}
 	}
 
+	return nil
+}
+
+func (n *IfLessThanFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	if left, ok := values[n.Left].(float32); ok {
 		if right, ok := values[n.Right].(float32); ok {
 			if left < right {
@@ -1285,6 +1404,10 @@ func (n *IfLessThanZero) Evaluate(values map[string]interface{}, functions []*Fu
 		}
 	}
 
+	return nil
+}
+
+func (n *IfLessThanZeroFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	if inner, ok := values[n.Inner].(float32); ok {
 		if inner < 0 {
 			return n.True.Evaluate(values, functions)
