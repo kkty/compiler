@@ -914,13 +914,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		}
 	}
 
-	// 900000
-	fmt.Fprintf(w, "LUI %s, %s, 13\n", stackPointer, zeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 48032\n", stackPointer, stackPointer)
+	// 210000
+	fmt.Fprintf(w, "LUI %s, %s, 3\n", stackPointer, zeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 13392\n", stackPointer, stackPointer)
 
-	// 1000000
-	fmt.Fprintf(w, "LUI %s, %s, 15\n", heapPointer, zeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 16960\n", heapPointer, heapPointer)
+	// 240000
+	fmt.Fprintf(w, "LUI %s, %s, 3\n", heapPointer, zeroRegister)
+	fmt.Fprintf(w, "ORI %s, %s, 43392\n", heapPointer, heapPointer)
 
 	fmt.Fprintf(w, "JAL main\n")
 	fmt.Fprintf(w, "EXIT\n")
