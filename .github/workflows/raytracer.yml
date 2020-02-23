@@ -15,7 +15,7 @@ jobs:
         with:
           repository: kkty/peephole
           path: peephole
-      - run: go run main.go test/min-rt.ml > /tmp/program.s
+      - run: go run main.go -inline 150 -iter 20 test/min-rt.ml > /tmp/program.s
       - run: go run peephole.go /tmp/program.s > /tmp/peep.s
         working-directory: peephole
       - run: |
