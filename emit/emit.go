@@ -53,7 +53,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				}
 				register := argRegisters[nextArgRegister]
 				nextArgRegister++
-				fmt.Fprintf(w, "LW %s, %d(%s)\n", register, idx, stackPointer)
+				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", register, idx, zeroRegister, stackPointer)
 				registers = append(registers, register)
 			}
 		}
@@ -178,14 +178,14 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					if isRegister(destination) {
 						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, n.Name, zeroRegister)
 					} else {
-						fmt.Fprintf(w, "SW %s, %d(%s)\n", n.Name, findPosition(destination), stackPointer)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", n.Name, findPosition(destination), zeroRegister, stackPointer)
 					}
 				} else {
 					if isRegister(destination) {
-						fmt.Fprintf(w, "LW %s, %d(%s)\n", destination, findPosition(n.Name), stackPointer)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, findPosition(n.Name), zeroRegister, stackPointer)
 					} else {
-						fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], findPosition(n.Name), stackPointer)
-						fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(n.Name), zeroRegister, stackPointer)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 					}
 				}
 			}
@@ -203,7 +203,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ADDI %s, %s, %d\n", destination, zeroRegister, n.Value)
 				} else {
 					fmt.Fprintf(w, "ADDI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, n.Value)
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -226,7 +226,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				} else {
 					fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
 					fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -240,7 +240,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -254,7 +254,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ADDI %s, %s, %d\n", destination, registers[0], n.Right)
 				} else {
 					fmt.Fprintf(w, "ADDI %s, %s, %d\n", temporaryRegisters[0], registers[0], n.Right)
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -268,7 +268,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -282,7 +282,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", destination, zeroRegister, registers[0])
 				} else {
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", temporaryRegisters[0], zeroRegister, registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -296,7 +296,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ADDS %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "ADDS %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -310,7 +310,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SUBS %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "SUBS %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -324,7 +324,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SUBS %s, %s, %s\n", destination, zeroRegister, registers[0])
 				} else {
 					fmt.Fprintf(w, "SUBS %s, %s, %s\n", temporaryRegisters[0], zeroRegister, registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -338,7 +338,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "DIVS %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "DIVS %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -352,7 +352,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "MULS %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "MULS %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -367,7 +367,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", destination, temporaryRegisters[0], registers[0])
 				} else {
 					fmt.Fprintf(w, "SUB %s, %s, %s\n", temporaryRegisters[1], temporaryRegisters[0], registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[1], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[1], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -382,7 +382,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SEQ %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "SEQ %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -397,7 +397,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SLT %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "SLT %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -412,7 +412,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SLTS %s, %s, %s\n", destination, registers[0], registers[1])
 				} else {
 					fmt.Fprintf(w, "SLTS %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -602,8 +602,8 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					}
 				}
 				for i, register := range registersToSave {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n",
-						register, (len(variablesOnStack) + i), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n",
+						register, (len(variablesOnStack) + i), zeroRegister, stackPointer)
 				}
 			}
 
@@ -696,7 +696,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 						for to := range tos {
 							if _, exists := memoryToRegister[to]; !exists {
 								if _, exists := memoryToMemory[to]; !exists {
-									fmt.Fprintf(w, "SW %s, %d(%s)\n", from, to, stackPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", from, to, zeroRegister, stackPointer)
 									delete(registerToMemory[from], to)
 									if len(registerToMemory[from]) == 0 {
 										delete(registerToMemory, from)
@@ -710,7 +710,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 						for to := range tos {
 							if _, exists := registerToRegister[to]; !exists {
 								if _, exists := registerToMemory[to]; !exists {
-									fmt.Fprintf(w, "LW %s, %d(%s)\n", to, from, stackPointer)
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", to, from, zeroRegister, stackPointer)
 									delete(memoryToRegister[from], to)
 									if len(memoryToRegister[from]) == 0 {
 										delete(memoryToRegister, from)
@@ -724,8 +724,8 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 						for to := range tos {
 							if _, exists := memoryToRegister[to]; !exists {
 								if _, exists := memoryToMemory[to]; !exists {
-									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], from, stackPointer)
-									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], from, zeroRegister, stackPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], to, zeroRegister, stackPointer)
 									delete(memoryToMemory[from], to)
 									if len(memoryToMemory[from]) == 0 {
 										delete(memoryToMemory, from)
@@ -743,10 +743,10 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					func() {
 						for from, tos := range registerToRegister {
 							idx := len(after)
-							fmt.Fprintf(w, "SW %s, %d(%s)\n", from, idx, heapPointer)
+							fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", from, idx, zeroRegister, heapPointer)
 							for to := range tos {
 								after = append(after, func() {
-									fmt.Fprintf(w, "LW %s, %d(%s)\n", to, idx, heapPointer)
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", to, idx, zeroRegister, heapPointer)
 								})
 							}
 							delete(registerToRegister, from)
@@ -754,11 +754,11 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 						}
 						for from, tos := range registerToMemory {
 							idx := len(after)
-							fmt.Fprintf(w, "SW %s, %d(%s)\n", from, idx, heapPointer)
+							fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", from, idx, zeroRegister, heapPointer)
 							for to := range tos {
 								after = append(after, func() {
-									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
-									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], idx, zeroRegister, heapPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], to, zeroRegister, stackPointer)
 								})
 							}
 							delete(registerToMemory, from)
@@ -766,12 +766,12 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 						}
 						for from, tos := range memoryToMemory {
 							idx := len(after)
-							fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], from, stackPointer)
-							fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
+							fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], from, zeroRegister, stackPointer)
+							fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], idx, zeroRegister, heapPointer)
 							for to := range tos {
 								after = append(after, func() {
-									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
-									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], idx, zeroRegister, heapPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], to, zeroRegister, stackPointer)
 								})
 							}
 							delete(memoryToMemory, from)
@@ -785,8 +785,8 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fn()
 			}
 
-			fmt.Fprintf(w, "SW %s, %d(%s)\n",
-				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), stackPointer)
+			fmt.Fprintf(w, "SW %s, %d(%s, %s)\n",
+				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
 
 			fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 				stackPointer, stackPointer, (len(variablesOnStack) + len(registersToSave) + 1))
@@ -796,14 +796,14 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "ADDI %s, %s, %d\n",
 				stackPointer, stackPointer, -(len(variablesOnStack) + len(registersToSave) + 1))
 
-			fmt.Fprintf(w, "LW %s, %d(%s)\n",
-				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), stackPointer)
+			fmt.Fprintf(w, "LW %s, %d(%s, %s)\n",
+				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
 
 			// restore registers
 			if !tail {
 				for i, register := range registersToSave {
-					fmt.Fprintf(w, "LW %s, %d(%s)\n",
-						register, (len(variablesOnStack) + i), stackPointer)
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n",
+						register, (len(variablesOnStack) + i), zeroRegister, stackPointer)
 				}
 			}
 
@@ -811,7 +811,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if isRegister(destination) {
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, returnRegister, zeroRegister)
 				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", returnRegister, findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -822,13 +822,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			if destination != "" {
 				for i, element := range n.Elements {
 					registers := loadVariables([]string{element}, variablesOnStack)
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", registers[0], i, heapPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[0], i, zeroRegister, heapPointer)
 				}
 
 				if isRegister(destination) {
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, heapPointer, zeroRegister)
 				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", heapPointer, findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", heapPointer, findPosition(destination), zeroRegister, stackPointer)
 				}
 
 				fmt.Fprintf(w, "ADDI %s, %s, %d\n", heapPointer, heapPointer, len(n.Elements))
@@ -843,10 +843,10 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 				if destination != "" {
 					if isRegister(destination) {
-						fmt.Fprintf(w, "LW %s, %d(%s)\n", destination, n.Index, registers[0])
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, registers[0])
 					} else {
-						fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], n.Index, registers[0])
-						fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, registers[0])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 					}
 				}
 			}
@@ -867,7 +867,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if isRegister(destination) {
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, heapPointer, zeroRegister)
 				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", heapPointer, findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", heapPointer, findPosition(destination), zeroRegister, stackPointer)
 				}
 
 				loopLabel := getLabel()
@@ -877,8 +877,8 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "BEQ %s, %s, 4\n",
 					temporaryRegisters[0], zeroRegister)
 
-				fmt.Fprintf(w, "SW %s, 0(%s)\n",
-					temporaryRegisters[1], heapPointer)
+				fmt.Fprintf(w, "SW %s, 0(%s, %s)\n",
+					temporaryRegisters[1], zeroRegister, heapPointer)
 
 				fmt.Fprintf(w, "ADDI %s, %s, 1\n", heapPointer, heapPointer)
 
@@ -901,12 +901,12 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if isRegister(destination) {
 					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, heapPointer, zeroRegister)
 				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", heapPointer, findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", heapPointer, findPosition(destination), zeroRegister, stackPointer)
 				}
 
 				for i := 0; i < int(n.Length); i++ {
-					fmt.Fprintf(w, "SW %s, %d(%s)\n",
-						temporaryRegisters[0], i, heapPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n",
+						temporaryRegisters[0], i, zeroRegister, heapPointer)
 				}
 
 				fmt.Fprintf(w, "ADDI %s, %s, %d\n", heapPointer, heapPointer, n.Length)
@@ -919,13 +919,11 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			if destination != "" {
 				registers := loadVariables([]string{n.Array, n.Index}, variablesOnStack)
 
-				fmt.Fprintf(w, "ADD %s, %s, %s\n", temporaryRegisters[0], registers[0], registers[1])
-
 				if isRegister(destination) {
-					fmt.Fprintf(w, "LW %s, 0(%s)\n", destination, temporaryRegisters[0])
+					fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", destination, registers[0], registers[1])
 				} else {
-					fmt.Fprintf(w, "LW %s, 0(%s)\n", temporaryRegisters[1], temporaryRegisters[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[1], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", temporaryRegisters[0], registers[0], registers[1])
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -937,10 +935,10 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				registers := loadVariables([]string{n.Array}, variablesOnStack)
 
 				if isRegister(destination) {
-					fmt.Fprintf(w, "LW %s, %d(%s)\n", destination, n.Index, registers[0])
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, registers[0])
 				} else {
-					fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], n.Index, registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, registers[0])
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -950,11 +948,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		case *ir.ArrayPut:
 			registers := loadVariables([]string{n.Array, n.Index, n.Value}, variablesOnStack)
 
-			fmt.Fprintf(w, "ADD %s, %s, %s\n",
-				temporaryRegisters[0], registers[0], registers[1])
-
-			fmt.Fprintf(w, "SW %s, 0(%s)\n",
-				registers[2], temporaryRegisters[0])
+			fmt.Fprintf(w, "SW %s, 0(%s, %s)\n", registers[2], registers[0], registers[1])
 
 			if tail {
 				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
@@ -962,8 +956,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		case *ir.ArrayPutImmediate:
 			registers := loadVariables([]string{n.Array, n.Value}, variablesOnStack)
 
-			fmt.Fprintf(w, "SW %s, %d(%s)\n",
-				registers[1], n.Index, registers[0])
+			fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[1], n.Index, zeroRegister, registers[0])
 
 			if tail {
 				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
@@ -975,7 +968,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "IN %s\n", destination)
 			} else {
 				fmt.Fprintf(w, "IN %s\n", temporaryRegisters[0])
-				fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 			}
 
 			if tail {
@@ -988,7 +981,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "INF %s\n", destination)
 			} else {
 				fmt.Fprintf(w, "INF %s\n", temporaryRegisters[0])
-				fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 			}
 
 			if tail {
@@ -1010,7 +1003,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "ITOF %s, %s\n", destination, registers[0])
 				} else {
 					fmt.Fprintf(w, "ITOF %s, %s\n", temporaryRegisters[0], registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -1025,7 +1018,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "FTOI %s, %s\n", destination, registers[0])
 				} else {
 					fmt.Fprintf(w, "FTOI %s, %s\n", temporaryRegisters[0], registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
@@ -1040,7 +1033,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					fmt.Fprintf(w, "SQRT %s, %s\n", destination, registers[0])
 				} else {
 					fmt.Fprintf(w, "SQRT %s, %s\n", temporaryRegisters[0], registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], findPosition(destination), stackPointer)
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 				}
 			}
 
