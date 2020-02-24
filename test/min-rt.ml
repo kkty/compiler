@@ -118,42 +118,71 @@ let rec print_int x =
   else print_char 48 in
 let rec int_of_float x = float_to_int x in
 let rec float_of_int x = int_to_float x in
-let rec floor x =
-  let y = float_of_int (int_of_float x) in
-  if y > x then y -. 1.0 else y in
+let rec floor x =  int_to_float (float_to_int (x -. 0.5)) in
 let pi = 3.1415926536 in
-let rec cos x =
-  if x < 0.0 then cos (-1.0 *. x) else
-  if x > 2.0 *. pi then cos (x -. 2.0 *. pi *. (floor (x /. 2.0 /. pi))) else
-  if x > pi then -1.0 *. cos (x -. pi) else
-  if x > pi *. 0.5 then -1.0 *. cos (pi -. x) else
+let rec kernel_cos x =
   let x2 = x *. x in
   let x4 = x2 *. x2 in
   let x6 = x2 *. x4 in
-  1.0 -. x2 /. 2.0 +. x4 /. 24.0  -. x6 /. 720.0 in
-let rec sin x =
-  if x < 0.0 then -1.0 *. sin (-1.0 *. x) else
-  if x > 2.0 *. pi then sin (x -. 2.0 *. pi *. (floor (x /. 2.0 /. pi))) else
-  if x > pi then -1.0 *. sin (x -. pi) else
-  if x > pi *. 0.5 then sin (pi -. x) else
-  if x > pi *. 0.25 then cos (pi *. 0.5 -. x) else
+  1.0 -. x2 *. 0.5 +. x4 *. 0.04166368 -. x6 *. 0.0013695068 in
+let rec kernel_sin x =
   let x2 = x *. x in
   let x3 = x2 *. x in
   let x5 = x3 *. x2 in
   let x7 = x5 *. x2 in
-  x -. x3 /. 6.0 +. x5 /. 120.0  -. x7 /. 5040.0 in
+  x -. x3 *. 0.16666668 +. x5 *. 0.008332824 -. x7 *. 0.00019587841 in
+let rec reduction_2pi x =
+  let x = x -. 2.0 *. pi *. int_to_float (float_to_int (x /. 2.0 /. pi)) in
+  if x < 0.0 then x +. 2.0 *. pi else x in
+let rec cos x =
+  let x = reduction_2pi x in
+  if x >= pi then
+    let x = x -. pi in
+    if x >= pi /. 2.0 then
+      let x = x -. pi /. 2.0 in
+      if x <= pi /. 4.0 then kernel_cos x else kernel_sin x
+    else
+      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin x)
+  else
+    if x >= pi /. 2.0 then
+      let x = x -. pi /. 2.0 in
+      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin x)
+    else
+      if x <= pi /. 4.0 then kernel_cos x else kernel_sin x in
+let rec sin x =
+  let x = reduction_2pi x in
+  if x >= pi then
+    let x = x -. pi in
+    if x >= pi /. 2.0 then
+      let x = pi -. x in
+      if x <= pi /. 4.0 then -(kernel_sin x) else -(kernel_cos (pi /. 2.0 -. x))
+    else
+      if x <= pi /. 4.0 then -(kernel_sin x) else -(kernel_cos (pi /. 2.0 -. x))
+  else
+    if x >= pi /. 2.0 then
+      let x = pi -. x in
+      if x <= pi /. 4.0 then kernel_sin x else kernel_cos (pi /. 2.0 -. x)
+    else
+      if x <= pi /. 4.0 then kernel_sin x else kernel_cos (pi /. 2.0 -. x) in
+let rec kernel_atan x =
+  let x2 = x *. x in
+  let x3 = x2 *. x in
+  let x5 = x3 *. x2 in
+  let x7 = x5 *. x2 in
+  let x9 = x7 *. x2 in
+  let x11 = x9 *. x2 in
+  let x13 = x11 *. x2 in
+  x -. x3 /. 3.0 +. x5 /. 5.0 -. x7 /. 7.0 +. x9 /. 9.0 -. x11 /. 11.0 +. x13 /. 13.0 in
+let rec atan_positive x =
+  if x >= 2.4375 then
+    pi *. 0.5 -. kernel_atan (1.0 /. x)
+  else
+    if x >= 0.4375 then
+      pi *. 0.25 +. kernel_atan ((x -. 1.0) /. (x +. 1.0))
+    else
+      kernel_atan x in
 let rec atan x =
-  if x < 0.0 then -1.0 *. atan (-1.0 *. x) else
-  if x < 0.4375 then (
-      let x2 = x *. x in
-      let x3 = x2 *. x in
-      let x5 = x3 *. x2 in
-      let x7 = x5 *. x2 in
-      let x9 = x7 *. x2 in
-      x -. x3 /. 3.0 +. x5 /. 5.0 -. x7 /. 7.0 +. x9 /. 9.0
-   ) else
-  if x < 2.4375 then pi *. 0.25 +. atan ((x -. 1.0) /. (x +. 1.0)) else
-  pi *. 0.5 -. atan 1.0 /. x in
+  if x < 0.0 then -(atan_positive (-x)) else atan_positive x in
 (****************************************************************)
 (*                                                              *)
 (* Ray Tracing Program for (Mini) Objective Caml                *)
