@@ -593,58 +593,196 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		case *ir.Application:
 			f := findFunction(n.Function)
 
+			// restore values on the registers that will be used by the callee
 			var registersToSave []string
-			if tail {
-				for _, arg := range f.Args {
-					if isRegister(arg) {
-						registersToSave = append(registersToSave, arg)
-					}
-				}
-			} else {
+			if !tail {
 				for _, register := range functionToRegisters[n.Function].Slice() {
 					if registersInUse.Has(register) {
 						registersToSave = append(registersToSave, register)
 					}
 				}
-			}
-
-			for i, register := range registersToSave {
-				fmt.Fprintf(w, "SW %s, %d(%s)\n",
-					register, (len(variablesOnStack) + i), stackPointer)
-			}
-
-			// pass arguments by stack
-			for i, arg := range f.Args {
-				if !isRegister(arg) && arg != "" {
-					registers := loadVariables([]string{n.Args[i]}, variablesOnStack)
-					idx := funk.IndexOfString(functionToSpills[f.Name], arg)
-					if idx == -1 {
-						panic("variable not found")
-					}
+				for i, register := range registersToSave {
 					fmt.Fprintf(w, "SW %s, %d(%s)\n",
-						registers[0], (len(variablesOnStack) + len(registersToSave) + 1 + idx), stackPointer)
+						register, (len(variablesOnStack) + i), stackPointer)
 				}
 			}
 
-			// pass arguments by registers
+			// move values among registers and stack
+
+			registerToRegister := map[string]map[string]struct{}{}
+			registerToMemory := map[string]map[int]struct{}{}
+			memoryToRegister := map[int]map[string]struct{}{}
+			memoryToMemory := map[int]map[int]struct{}{}
+
+			findPositionInF := func(variable string) int {
+				idx := funk.IndexOfString(functionToSpills[f.Name], variable)
+				if idx == -1 {
+					log.Panicf("variable not found: %s", variable)
+				}
+				return idx
+			}
+
 			for i, arg := range f.Args {
-				if isRegister(arg) {
-					if isRegister(n.Args[i]) {
-						idx := funk.IndexOfString(registersToSave, n.Args[i])
-						if idx == -1 {
-							fmt.Fprintf(w, "ADD %s, %s, %s\n",
-								arg, n.Args[i], zeroRegister)
-						} else {
-							fmt.Fprintf(w, "LW %s, %d(%s)\n", arg, (len(variablesOnStack) + idx), stackPointer)
+				if arg == "" {
+					continue
+				}
+				if isRegister(n.Args[i]) {
+					from := n.Args[i]
+					if isRegister(arg) {
+						to := arg
+						if from != to {
+							if _, exists := registerToRegister[from]; !exists {
+								registerToRegister[from] = map[string]struct{}{}
+							}
+							registerToRegister[from][to] = struct{}{}
 						}
 					} else {
-						idx := funk.IndexOfString(variablesOnStack, n.Args[i])
-						if idx == -1 {
-							log.Panicf("variable not found: %s", n.Args[i])
+						var to int
+						if tail {
+							to = findPositionInF(arg)
+						} else {
+							to = len(variablesOnStack) + len(registersToSave) + 1 + findPositionInF(arg)
 						}
-						fmt.Fprintf(w, "LW %s, %d(%s)\n", arg, idx, stackPointer)
+						if _, exists := registerToMemory[from]; !exists {
+							registerToMemory[from] = map[int]struct{}{}
+						}
+						registerToMemory[from][to] = struct{}{}
+					}
+				} else {
+					from := findPosition(n.Args[i])
+					if isRegister(arg) {
+						to := arg
+						if _, exists := memoryToRegister[from]; !exists {
+							memoryToRegister[from] = map[string]struct{}{}
+						}
+						memoryToRegister[from][to] = struct{}{}
+					} else {
+						var to int
+						if tail {
+							to = findPositionInF(arg)
+						} else {
+							to = len(variablesOnStack) + len(registersToSave) + 1 + findPositionInF(arg)
+						}
+						if from != to {
+							if _, exists := memoryToMemory[from]; !exists {
+								memoryToMemory[from] = map[int]struct{}{}
+							}
+							memoryToMemory[from][to] = struct{}{}
+						}
 					}
 				}
+			}
+
+			// this is used to break cycles
+			after := []func(){}
+
+			for len(registerToRegister)+len(registerToMemory)+len(memoryToRegister)+len(memoryToMemory) > 0 {
+				updated := func() bool {
+					for from, tos := range registerToRegister {
+						for to := range tos {
+							if _, exists := registerToRegister[to]; !exists {
+								if _, exists := registerToMemory[to]; !exists {
+									fmt.Fprintf(w, "ADD %s, %s, %s\n", to, from, zeroRegister)
+									delete(registerToRegister[from], to)
+									if len(registerToRegister[from]) == 0 {
+										delete(registerToRegister, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range registerToMemory {
+						for to := range tos {
+							if _, exists := memoryToRegister[to]; !exists {
+								if _, exists := memoryToMemory[to]; !exists {
+									fmt.Fprintf(w, "SW %s, %d(%s)\n", from, to, stackPointer)
+									delete(registerToMemory[from], to)
+									if len(registerToMemory[from]) == 0 {
+										delete(registerToMemory, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range memoryToRegister {
+						for to := range tos {
+							if _, exists := registerToRegister[to]; !exists {
+								if _, exists := registerToMemory[to]; !exists {
+									fmt.Fprintf(w, "LW %s, %d(%s)\n", to, from, stackPointer)
+									delete(memoryToRegister[from], to)
+									if len(memoryToRegister[from]) == 0 {
+										delete(memoryToRegister, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range memoryToMemory {
+						for to := range tos {
+							if _, exists := memoryToRegister[to]; !exists {
+								if _, exists := memoryToMemory[to]; !exists {
+									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], from, stackPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+									delete(memoryToMemory[from], to)
+									if len(memoryToMemory[from]) == 0 {
+										delete(memoryToMemory, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					return false
+				}()
+
+				if !updated {
+					// break a cycle by using heap
+					func() {
+						for from, tos := range registerToRegister {
+							idx := len(after)
+							fmt.Fprintf(w, "SW %s, %d(%s)\n", from, idx, heapPointer)
+							for to := range tos {
+								after = append(after, func() {
+									fmt.Fprintf(w, "LW %s, %d(%s)\n", to, idx, heapPointer)
+								})
+							}
+							delete(registerToRegister, from)
+							return
+						}
+						for from, tos := range registerToMemory {
+							idx := len(after)
+							fmt.Fprintf(w, "SW %s, %d(%s)\n", from, idx, heapPointer)
+							for to := range tos {
+								after = append(after, func() {
+									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+								})
+							}
+							delete(registerToMemory, from)
+							return
+						}
+						for from, tos := range memoryToMemory {
+							idx := len(after)
+							fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], from, stackPointer)
+							fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
+							for to := range tos {
+								after = append(after, func() {
+									fmt.Fprintf(w, "LW %s, %d(%s)\n", temporaryRegisters[0], idx, heapPointer)
+									fmt.Fprintf(w, "SW %s, %d(%s)\n", temporaryRegisters[0], to, stackPointer)
+								})
+							}
+							delete(memoryToMemory, from)
+							return
+						}
+					}()
+				}
+			}
+
+			for _, fn := range after {
+				fn()
 			}
 
 			fmt.Fprintf(w, "SW %s, %d(%s)\n",
