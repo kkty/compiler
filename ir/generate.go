@@ -48,144 +48,127 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			return ret
 		}
 
-		switch node.(type) {
+		switch node := node.(type) {
 		case *ast.Variable:
-			return &Variable{Name: node.(*ast.Variable).Name}
+			return &Variable{Name: node.Name}
 		case *ast.Unit:
 			return &Unit{}
 		case *ast.Int:
-			return &Int{Value: node.(*ast.Int).Value}
+			return &Int{Value: node.Value}
 		case *ast.Float:
-			return &Float{Value: node.(*ast.Float).Value}
+			return &Float{Value: node.Value}
 		case *ast.Bool:
-			return &Bool{Value: node.(*ast.Bool).Value}
+			return &Bool{Value: node.Value}
 		case *ast.Add:
-			n := node.(*ast.Add)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &Add{Left: names[0], Right: names[1]}
 			})
 		case *ast.Sub:
-			n := node.(*ast.Sub)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &Sub{Left: names[0], Right: names[1]}
 			})
 		case *ast.FloatAdd:
-			n := node.(*ast.FloatAdd)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &FloatAdd{Left: names[0], Right: names[1]}
 			})
 		case *ast.FloatSub:
-			n := node.(*ast.FloatSub)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &FloatSub{Left: names[0], Right: names[1]}
 			})
 		case *ast.FloatDiv:
-			n := node.(*ast.FloatDiv)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &FloatDiv{Left: names[0], Right: names[1]}
 			})
 		case *ast.FloatMul:
-			n := node.(*ast.FloatMul)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &FloatMul{Left: names[0], Right: names[1]}
 			})
 		case *ast.Equal:
-			n := node.(*ast.Equal)
-			return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 				return &Equal{Left: names[0], Right: names[1]}
 			})
 		case *ast.LessThan:
-			n := node.(*ast.LessThan)
-			if _, ok := n.Left.GetType(nameToType).(*typing.IntType); ok {
-				return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+			if _, ok := node.Left.GetType(nameToType).(*typing.IntType); ok {
+				return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 					return &LessThan{Left: names[0], Right: names[1]}
 				})
 			} else {
-				return insert([]ast.Node{n.Left, n.Right}, func(names []string) Node {
+				return insert([]ast.Node{node.Left, node.Right}, func(names []string) Node {
 					return &LessThanFloat{Left: names[0], Right: names[1]}
 				})
 			}
 		case *ast.Neg:
-			n := node.(*ast.Neg)
-			if _, ok := n.GetType(nameToType).(*typing.IntType); ok {
-				return insert([]ast.Node{&ast.Int{Value: 0}, n.Inner}, func(names []string) Node {
+			if _, ok := node.GetType(nameToType).(*typing.IntType); ok {
+				return insert([]ast.Node{&ast.Int{Value: 0}, node.Inner}, func(names []string) Node {
 					return &Sub{Left: names[0], Right: names[1]}
 				})
 			} else {
-				return insert([]ast.Node{&ast.Float{Value: 0}, n.Inner}, func(names []string) Node {
+				return insert([]ast.Node{&ast.Float{Value: 0}, node.Inner}, func(names []string) Node {
 					return &FloatSub{Left: names[0], Right: names[1]}
 				})
 			}
 		case *ast.FloatNeg:
-			n := node.(*ast.FloatNeg)
-			return insert([]ast.Node{&ast.Float{Value: 0}, n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{&ast.Float{Value: 0}, node.Inner}, func(names []string) Node {
 				return &FloatSub{Left: names[0], Right: names[1]}
 			})
 		case *ast.Not:
-			n := node.(*ast.Not)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{node.Inner}, func(names []string) Node {
 				return &Not{Inner: names[0]}
 			})
 		case *ast.If:
-			n := node.(*ast.If)
-			if c, ok := n.Condition.(*ast.LessThan); ok {
+			if c, ok := node.Condition.(*ast.LessThan); ok {
 				if _, ok := c.Left.GetType(nameToType).(*typing.IntType); ok {
 					return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
-						return &IfLessThan{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+						return &IfLessThan{Left: names[0], Right: names[1], True: construct(node.True), False: construct(node.False)}
 					})
 				} else {
 					return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
-						return &IfLessThanFloat{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+						return &IfLessThanFloat{Left: names[0], Right: names[1], True: construct(node.True), False: construct(node.False)}
 					})
 				}
 			}
-			if c, ok := n.Condition.(*ast.Equal); ok {
+			if c, ok := node.Condition.(*ast.Equal); ok {
 				return insert([]ast.Node{c.Left, c.Right}, func(names []string) Node {
-					return &IfEqual{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+					return &IfEqual{Left: names[0], Right: names[1], True: construct(node.True), False: construct(node.False)}
 				})
 			}
-			if c, ok := n.Condition.(*ast.Not); ok {
-				return construct(&ast.If{Condition: c.Inner, True: n.False, False: n.True})
+			if c, ok := node.Condition.(*ast.Not); ok {
+				return construct(&ast.If{Condition: c.Inner, True: node.False, False: node.True})
 			}
-			return insert([]ast.Node{n.Condition, &ast.Bool{Value: true}}, func(names []string) Node {
-				return &IfEqual{Left: names[0], Right: names[1], True: construct(n.True), False: construct(n.False)}
+			return insert([]ast.Node{node.Condition, &ast.Bool{Value: true}}, func(names []string) Node {
+				return &IfEqual{Left: names[0], Right: names[1], True: construct(node.True), False: construct(node.False)}
 			})
 		case *ast.Assignment:
-			n := node.(*ast.Assignment)
-			return &Assignment{Name: n.Name, Value: construct(n.Body), Next: construct(n.Next)}
+			return &Assignment{Name: node.Name, Value: construct(node.Body), Next: construct(node.Next)}
 		case *ast.FunctionAssignment:
-			n := node.(*ast.FunctionAssignment)
 			// TODO: this might better be in parser
-			args := n.Args
+			args := node.Args
 			if len(args) == 1 {
 				if _, ok := nameToType[args[0]].(*typing.UnitType); ok {
 					args = []string{}
 				}
 			}
-			functions[n.Name] = &Function{Name: n.Name, Args: args, Body: construct(n.Body)}
-			return construct(n.Next)
+			functions[node.Name] = &Function{Name: node.Name, Args: args, Body: construct(node.Body)}
+			return construct(node.Next)
 		case *ast.Application:
-			n := node.(*ast.Application)
 			// TODO: this might better be in parser
-			if len(n.Args) == 1 {
-				if _, ok := n.Args[0].GetType(nameToType).(*typing.UnitType); ok {
-					return &Application{Function: n.Function, Args: nil}
+			if len(node.Args) == 1 {
+				if _, ok := node.Args[0].GetType(nameToType).(*typing.UnitType); ok {
+					return &Application{Function: node.Function, Args: nil}
 				}
 			}
-			return insert(n.Args, func(names []string) Node {
-				return &Application{Function: n.Function, Args: names}
+			return insert(node.Args, func(names []string) Node {
+				return &Application{Function: node.Function, Args: names}
 			})
 		case *ast.Tuple:
-			n := node.(*ast.Tuple)
-			return insert(n.Elements, func(names []string) Node {
+			return insert(node.Elements, func(names []string) Node {
 				return &Tuple{Elements: names}
 			})
 		case *ast.TupleAssignment:
-			n := node.(*ast.TupleAssignment)
-			return insert([]ast.Node{n.Tuple}, func(names []string) Node {
+			return insert([]ast.Node{node.Tuple}, func(names []string) Node {
 				tupleName := names[0]
-				var ret Node = construct(n.Next)
-				for i, name := range n.Names {
+				var ret Node = construct(node.Next)
+				for i, name := range node.Names {
 					ret = &Assignment{
 						Name: name,
 						Value: &TupleGet{
@@ -198,18 +181,15 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 				return ret
 			})
 		case *ast.ArrayCreate:
-			n := node.(*ast.ArrayCreate)
-			return insert([]ast.Node{n.Size, n.Value}, func(names []string) Node {
+			return insert([]ast.Node{node.Size, node.Value}, func(names []string) Node {
 				return &ArrayCreate{Length: names[0], Value: names[1]}
 			})
 		case *ast.ArrayGet:
-			n := node.(*ast.ArrayGet)
-			return insert([]ast.Node{n.Array, n.Index}, func(names []string) Node {
+			return insert([]ast.Node{node.Array, node.Index}, func(names []string) Node {
 				return &ArrayGet{Array: names[0], Index: names[1]}
 			})
 		case *ast.ArrayPut:
-			n := node.(*ast.ArrayPut)
-			return insert([]ast.Node{n.Array, n.Index, n.Value}, func(names []string) Node {
+			return insert([]ast.Node{node.Array, node.Index, node.Value}, func(names []string) Node {
 				return &ArrayPut{Array: names[0], Index: names[1], Value: names[2]}
 			})
 		case *ast.ReadInt:
@@ -217,23 +197,19 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		case *ast.ReadFloat:
 			return &ReadFloat{}
 		case *ast.WriteByte:
-			n := node.(*ast.WriteByte)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{node.Inner}, func(names []string) Node {
 				return &WriteByte{Arg: names[0]}
 			})
 		case *ast.IntToFloat:
-			n := node.(*ast.IntToFloat)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{node.Inner}, func(names []string) Node {
 				return &IntToFloat{Arg: names[0]}
 			})
 		case *ast.FloatToInt:
-			n := node.(*ast.FloatToInt)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{node.Inner}, func(names []string) Node {
 				return &FloatToInt{Arg: names[0]}
 			})
 		case *ast.Sqrt:
-			n := node.(*ast.Sqrt)
-			return insert([]ast.Node{n.Inner}, func(names []string) Node {
+			return insert([]ast.Node{node.Inner}, func(names []string) Node {
 				return &Sqrt{Arg: names[0]}
 			})
 		default:
