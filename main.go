@@ -56,6 +56,11 @@ func main() {
 		}
 	}
 
+	if *graph {
+		ir.GenerateGraph(main, functions)
+		return
+	}
+
 	spills := emit.AllocateRegisters(main, functions, types)
 	if *debug {
 		for function, count := range spills {
@@ -63,9 +68,7 @@ func main() {
 		}
 	}
 
-	if *graph {
-		ir.GenerateGraph(main, functions)
-	} else if *interpret {
+	if *interpret {
 		evaluated, called := ir.Execute(functions, main, os.Stdout, os.Stdin)
 		if *debug {
 			print := func(m map[string]int) {
