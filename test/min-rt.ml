@@ -90,32 +90,17 @@ let rec div x y =
     else f x y (z + 1)
    in f x y 1 in
 let rec print_int x =
-  let y = x >= 100 in
   let x =
-    if x >= 200 then (print_char 50; x - 200)
-    else if x >= 100 then (print_char 49; x - 100)
+    if x >= 100 then
+      print_char (48 + x / 100);
+      x - (x / 100) * 100
     else x in
   let x =
-    if x >= 90 then (print_char 57; x - 90)
-    else if x >= 80 then (print_char 56; x - 80)
-    else if x >= 70 then (print_char 55; x - 70)
-    else if x >= 60 then (print_char 54; x - 60)
-    else if x >= 50 then (print_char 53; x - 50)
-    else if x >= 40 then (print_char 52; x - 40)
-    else if x >= 30 then (print_char 51; x - 30)
-    else if x >= 20 then (print_char 50; x - 20)
-    else if x >= 10 then (print_char 49; x - 10)
-    else ((if y then print_char 48 else ()); x) in
-  if x = 9 then print_char 57
-  else if x = 8 then print_char 56
-  else if x = 7 then print_char 55
-  else if x = 6 then print_char 54
-  else if x = 5 then print_char 53
-  else if x = 4 then print_char 52
-  else if x = 3 then print_char 51
-  else if x = 2 then print_char 50
-  else if x = 1 then print_char 49
-  else print_char 48 in
+    if x >= 10 then
+      print_char (48 + x / 10);
+      x - (x / 10) * 10
+    else x in
+  print_char (48 + x) in
 let rec int_of_float x = float_to_int x in
 let rec float_of_int x = int_to_float x in
 let rec floor x =  int_to_float (float_to_int (x -. 0.5)) in
@@ -930,9 +915,9 @@ in
 
 (***** 直方体オブジェクトの場合 ****)
 let rec solver_rect m dirvec b0 b1 b2 =
-  if      (solver_rect_surface m dirvec b0 b1 b2 0 1 2) = true then 1   (* YZ 平面 *)
-  else if (solver_rect_surface m dirvec b1 b2 b0 1 2 0) = true then 2   (* ZX 平面 *)
-  else if (solver_rect_surface m dirvec b2 b0 b1 2 0 1) = true then 3   (* XY 平面 *)
+  if      solver_rect_surface m dirvec b0 b1 b2 0 1 2 then 1   (* YZ 平面 *)
+  else if solver_rect_surface m dirvec b1 b2 b0 1 2 0 then 2   (* ZX 平面 *)
+  else if solver_rect_surface m dirvec b2 b0 b1 2 0 1 then 3   (* XY 平面 *)
   else                                                     0
 in
 
@@ -1408,7 +1393,7 @@ let rec shadow_check_one_or_group ofs or_group =
   else (
     let and_group = and_net.(head) in
     let shadow_p = shadow_check_and_group 0 and_group in
-    if shadow_p = true then
+    if shadow_p then
       true
     else
       shadow_check_one_or_group (ofs + 1) or_group
@@ -1569,7 +1554,7 @@ let rec solve_each_element_fast iand_ofs and_group dirvec =
 		tmin.(0) <- t;
 		vecset intersection_point q0 q1 q2;
 		intersected_object_id.(0) <- iobj;
-		intsec_rectside.(0) <- t0
+		intsec_rectside.(0) <- t0;
 	       )
 	    else ()
 	   )
@@ -1798,7 +1783,7 @@ let rec trace_reflections index diffuse hilight_scale dirvec =
 
     (*反射光を逆にたどり、実際にその鏡面に当たれば、反射光が届く可能性有り *)
     if judge_intersection_fast dvec then
-      let surface_id = mul intersected_object_id.(0)  4 + intsec_rectside.(0) in
+      let surface_id = intersected_object_id.(0) * 4 + intsec_rectside.(0) in
       if surface_id = r_surface_id rinfo then
 	(* 鏡面との衝突点が光源の影になっていなければ反射光は届く *)
         if not (shadow_check_one_or_matrix 0 or_net.(0)) then
@@ -1834,7 +1819,7 @@ let rec trace_ray nref energy dirvec pixel dist =
       utexture obj intersection_point; (*テクスチャを計算 *)
 
       (* pixel tupleに情報を格納する *)
-      surface_ids.(nref) <- mul obj_id 4 + intsec_rectside.(0);
+      surface_ids.(nref) <- obj_id * 4 + intsec_rectside.(0);
       let intersection_points = p_intersection_points pixel in
       veccpy intersection_points.(nref) intersection_point;
 
@@ -1848,7 +1833,7 @@ let rec trace_ray nref energy dirvec pixel dist =
 	veccpy energya.(nref) texture_color;
 	vecscale energya.(nref) ((1.0 /. 256.0) *. diffuse);
 	let nvectors = p_nvectors pixel in
-	veccpy nvectors.(nref) nvector
+	veccpy nvectors.(nref) nvector;
        );
 
       let w = (-2.0) *. veciprod dirvec nvector in
@@ -1878,7 +1863,7 @@ let rec trace_ray nref energy dirvec pixel dist =
 	if m_surface = 2 then (   (* 完全鏡面反射 *)
 	  let energy2 = energy *. (1.0 -. o_diffuse obj) in
 	  trace_ray (nref+1) energy2 dirvec pixel (dist +. tmin.(0))
-	 ) else ()
+	 ) else ();
 
        ) else ()
 
@@ -2028,7 +2013,7 @@ let rec do_without_neighbors pixel nref =
     let surface_ids = p_surface_ids pixel in
     if surface_ids.(nref) >= 0 then (
       let calc_diffuse = p_calc_diffuse pixel in
-      if calc_diffuse.(nref) = true then
+      if calc_diffuse.(nref) then
 	calc_diffuse_using_1point pixel nref
       else ();
       do_without_neighbors pixel (nref + 1)
@@ -2081,11 +2066,11 @@ let rec try_exploit_neighbors x y prev cur next nref =
     (* 衝突面番号が有効(非負)か *)
     if get_surface_id pixel nref >= 0 then
       (* 周囲4点を補完に使えるか *)
-      if neighbors_are_available x prev cur next nref = true then (
+      if neighbors_are_available x prev cur next nref then (
 
 	(* 間接受光を計算するフラグが立っていれば実際に計算する *)
 	let calc_diffuse = p_calc_diffuse pixel in
-        if calc_diffuse.(nref) = true then
+        if calc_diffuse.(nref) then
 	  calc_diffuse_using_5points x prev cur next nref
 	else ();
 
@@ -2172,7 +2157,7 @@ let rec pretrace_pixels line x group_id lc0 lc1 lc2 =
     ptrace_dirvec.(0) <- xdisp *. screenx_dir.(0) +. lc0;
     ptrace_dirvec.(1) <- xdisp *. screenx_dir.(1) +. lc1;
     ptrace_dirvec.(2) <- xdisp *. screenx_dir.(2) +. lc2;
-    vecunit_sgn ptrace_dirvec (false);
+    vecunit_sgn ptrace_dirvec false;
     vecbzero rgb;
     veccpy startp viewpoint;
 
@@ -2213,7 +2198,7 @@ let rec scan_pixel x y prev cur next =
     veccpy rgb (p_rgb cur.(x));
 
     (* 次に、直接光の各衝突点について、間接受光による寄与を加味する *)
-    if neighbors_exist x y next = true then
+    if neighbors_exist x y next then
       try_exploit_neighbors x y prev cur next 0
     else
       do_without_neighbors cur.(x) 0;
@@ -2234,7 +2219,7 @@ let rec scan_line y prev cur next group_id = (
       pretrace_line next (y + 1) group_id
     else ();
     scan_pixel 0 y prev cur next;
-    scan_line (y + 1) cur next prev (add_mod5 group_id 2)
+    scan_line (y + 1) cur next prev (add_mod5 group_id 2);
    ) else ()
 )
 in
@@ -2414,7 +2399,7 @@ in
 
 (* 直方体の各面について情報を追加する *)
 let rec setup_rect_reflection obj_id obj =
-  let sid = mul obj_id 4 in
+  let sid = obj_id * 4 in
   let nr = n_reflections.(0) in
   let br = 1.0 -. o_diffuse obj in
   let n0 = fneg light.(0) in
@@ -2428,7 +2413,7 @@ in
 
 (* 平面について情報を追加する *)
 let rec setup_surface_reflection obj_id obj =
-  let sid = mul obj_id 4 + 1 in
+  let sid = obj_id * 4 + 1 in
   let nr = n_reflections.(0) in
   let br = 1.0 -. o_diffuse obj in
   let p = veciprod light (o_param_abc obj) in
@@ -2468,8 +2453,8 @@ let rec rt size_x size_y =
 (
  image_size.(0) <- size_x;
  image_size.(1) <- size_y;
- image_center.(0) <- div size_x 2;
- image_center.(1) <- div size_y 2;
+ image_center.(0) <- size_x / 2;
+ image_center.(1) <- size_y / 2;
  scan_pitch.(0) <- 128.0 /. float_of_int size_x;
  let prev = create_pixelline () in
  let cur  = create_pixelline () in
