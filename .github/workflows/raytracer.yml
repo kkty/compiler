@@ -70,7 +70,7 @@ jobs:
       - name: post result to slack
         run: |
           convert ~/out/out.ppm ~/out/out.png
-          sed -i 's/EXIT/SW $zero, 0($zero)\n'$'BEQ $zero, $zero, -1/g' ~/out/peep.s
+          sed -i 's/EXIT/BEQ $zero, $zero, -1/g' ~/out/peep.s
           echo ${{ secrets.SLACKCAT_TOKEN }} > ~/.slackcat
           curl -Lo slackcat https://github.com/bcicen/slackcat/releases/download/v1.6/slackcat-1.6-$(uname -s)-amd64
           sudo mv slackcat /usr/local/bin/
