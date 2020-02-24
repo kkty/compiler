@@ -15,6 +15,8 @@ import "github.com/kkty/compiler/ast"
 %token<> NOT
 %token<> MINUS
 %token<> PLUS
+%token<> AST
+%token<> SLASH
 %token<> MINUS_DOT
 %token<> PLUS_DOT
 %token<> AST_DOT
@@ -57,7 +59,7 @@ import "github.com/kkty/compiler/ast"
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %left PLUS MINUS PLUS_DOT MINUS_DOT
-%left AST_DOT SLASH_DOT
+%left AST SLASH AST_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
 %left DOT
@@ -104,6 +106,11 @@ exp: simple_exp
   { $$ = &ast.Add{$1, $3} }
 | exp MINUS exp
   { $$ = &ast.Sub{$1, $3} }
+/* XXX */
+| exp AST exp
+  { $$ = &ast.FloatToInt{&ast.FloatMul{&ast.IntToFloat{$1}, &ast.IntToFloat{$3}}} }
+| exp SLASH exp
+  { $$ = &ast.FloatToInt{&ast.FloatSub{&ast.FloatDiv{&ast.IntToFloat{$1}, &ast.IntToFloat{$3}}, &ast.Float{0.4999}}} }
 | exp EQUAL exp
   { $$ = &ast.Equal{$1, $3} }
 | exp LESS_GREATER exp
@@ -148,6 +155,8 @@ exp: simple_exp
   { $$ = &ast.ArrayPut{$1, $4, $7} }
 | exp SEMICOLON exp
   { $$ = &ast.Assignment{"", $1, $3} }
+| exp SEMICOLON
+  { $$ = $1 }
 | ARRAY_CREATE simple_exp simple_exp
   %prec prec_app
   { $$ = &ast.ArrayCreate{$2, $3} }

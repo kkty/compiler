@@ -90,6 +90,8 @@ func (l *lexer) Lex(lval *yySymType) int {
 		{"[0-9]+(\\.[0-9]*)?([eE][\\+\\-]?[0-9]+)?", FLOAT, func(s string) { lval.val = atof(s) }},
 		{"-", MINUS, nil},
 		{"\\+", PLUS, nil},
+		{"\\*", AST, nil},
+		{"/", SLASH, nil},
 		{"-\\.", MINUS_DOT, nil},
 		{"\\+\\.", PLUS_DOT, nil},
 		{"\\*\\.", AST_DOT, nil},
