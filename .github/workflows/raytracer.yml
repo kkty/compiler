@@ -16,10 +16,13 @@ jobs:
           repository: kkty/peephole
           path: peephole
       - run: mkdir ~/out
-      - run: go run main.go -inline 150 -iter 20 ./test/min-rt.ml > ~/out/program.s
-      - run: go run peephole.go ~/out/program.s > ~/out/peep.s
+      - name: run compiler
+        run: go run main.go -inline 200 -iter 20 ./test/min-rt.ml > ~/out/program.s
+      - name: run peephole
+        run: go run peephole.go ~/out/program.s > ~/out/peep.s
         working-directory: peephole
-      - run: |
+      - name: create input file
+        run: |
           cat > ~/in.sld <<EOF
           -70  35 -20      20 30
           1 50 50
@@ -57,15 +60,22 @@ jobs:
           99 9 8 7 5 -1
           -1
           EOF
-      - run: go run simulator.go -native ~/out/peep.s < ~/in.sld > ~/out/out.ppm 2> ~/out/stderr.log
+      - name: run simulator
+        run: go run simulator.go -native ~/out/peep.s < ~/in.sld > ~/out/out.ppm 2> ~/out/stderr.log
         working-directory: simulator
-      - run: convert ~/out/out.ppm ~/out/out.png
-      - run: echo ${{ secrets.SLACKCAT_TOKEN }} > ~/.slackcat
-      - run: |
+      - uses: actions/upload-artifact@v1
+        with:
+          name: output
+          path: /home/runner/out
+      - name: post result to slack
+        run: |
+          convert ~/out/out.ppm ~/out/out.png
+          sed -i 's/EXIT/SW $zero, 0($zero)\n'$'BEQ $zero, $zero, -1/g' ~/out/peep.s
+          echo ${{ secrets.SLACKCAT_TOKEN }} > ~/.slackcat
           curl -Lo slackcat https://github.com/bcicen/slackcat/releases/download/v1.6/slackcat-1.6-$(uname -s)-amd64
           sudo mv slackcat /usr/local/bin/
           sudo chmod +x /usr/local/bin/slackcat
-      - run: slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/out.png
-      - run: slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/stderr.log
-      - run: sed -i 's/EXIT/SW $zero, 0($zero)\n'$'BEQ $zero, $zero, -1/g' ~/out/peep.s
-      - run: slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/peep.s
+          slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/out.png
+          slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/stderr.log
+          slackcat --channel ${{ secrets.SLACK_CHANNEL }} ~/out/peep.s
+        if: github.ref == 'refs/heads/master'
