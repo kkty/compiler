@@ -42,6 +42,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "optimizing (i=%d)\n", i)
 		}
 
+		main = ir.RemoveRedundantAssignments(main, functions)
 		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)

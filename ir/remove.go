@@ -1,6 +1,61 @@
 package ir
 
-import "github.com/kkty/compiler/stringset"
+import (
+	"github.com/kkty/compiler/stringset"
+)
+
+func RemoveRedundantAssignments(main Node, functions []*Function) Node {
+	var remove func(node Node) Node
+	remove = func(node Node) Node {
+		switch n := node.(type) {
+		case *IfEqual:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfEqualZero:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfEqualTrue:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfLessThan:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfLessThanFloat:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfLessThanZero:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *IfLessThanZeroFloat:
+			n.True = remove(n.True)
+			n.False = remove(n.False)
+			return n
+		case *Assignment:
+			n.Value = remove(n.Value)
+			n.Next = remove(n.Next)
+			if next, ok := n.Next.(*Variable); ok {
+				if next.Name == n.Name {
+					return n.Value
+				}
+			}
+			return n
+		default:
+			return n
+		}
+	}
+
+	for _, function := range functions {
+		function.Body = remove(function.Body)
+	}
+
+	return remove(main)
+}
 
 func RemoveRedundantVariables(main Node, functions []*Function) Node {
 	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
