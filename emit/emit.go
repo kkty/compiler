@@ -221,12 +221,20 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				u := math.Float32bits(n.Value)
 
 				if isRegister(destination) {
-					fmt.Fprintf(w, "ORI %s, %s, %d\n", destination, zeroRegister, u%(1<<16))
-					fmt.Fprintf(w, "LUI %s, %s, %d\n", destination, destination, u>>16)
+					if u == 0 {
+						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, zeroRegister, zeroRegister)
+					} else {
+						fmt.Fprintf(w, "ORI %s, %s, %d\n", destination, zeroRegister, u%(1<<16))
+						fmt.Fprintf(w, "LUI %s, %s, %d\n", destination, destination, u>>16)
+					}
 				} else {
-					fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
-					fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
-					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					if u == 0 {
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", zeroRegister, findPosition(destination), zeroRegister, stackPointer)
+					} else {
+						fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
+						fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
 				}
 			}
 
