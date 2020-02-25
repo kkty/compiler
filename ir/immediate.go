@@ -1,5 +1,9 @@
 package ir
 
+import (
+	"github.com/kkty/compiler/stringmap"
+)
+
 // Immediate applies immediate-value optimization.
 func Immediate(main Node, functions []*Function) Node {
 	// Updates a node to use immediate values, and evaluates the value of each node at the
@@ -161,6 +165,9 @@ func Immediate(main Node, functions []*Function) Node {
 						return n.False
 					}
 				}
+				if left == 0 {
+					return &IfLessThanZero{n.Right, n.False, n.True}
+				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
@@ -180,6 +187,9 @@ func Immediate(main Node, functions []*Function) Node {
 						return n.False
 					}
 				}
+				if left == 0 {
+					return &IfLessThanZeroFloat{n.Right, n.False, n.True}
+				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
 					if right == 0 {
@@ -198,6 +208,31 @@ func Immediate(main Node, functions []*Function) Node {
 			n.False = update(n.False, values)
 		case *Assignment:
 			n.Value = update(n.Value, values)
+
+			switch value := n.Value.(type) {
+			case *Int:
+				for k, v := range values {
+					if v == value.Value {
+						n.Next.UpdateNames(stringmap.Map{n.Name: k})
+						return update(n.Next, values)
+					}
+				}
+			case *Float:
+				for k, v := range values {
+					if v == value.Value {
+						n.Next.UpdateNames(stringmap.Map{n.Name: k})
+						return update(n.Next, values)
+					}
+				}
+			case *Bool:
+				for k, v := range values {
+					if v == value.Value {
+						n.Next.UpdateNames(stringmap.Map{n.Name: k})
+						return update(n.Next, values)
+					}
+				}
+			}
+
 			valuesExtended := map[string]interface{}{}
 			for k, v := range values {
 				valuesExtended[k] = v
