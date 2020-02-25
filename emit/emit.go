@@ -792,38 +792,36 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fn()
 			}
 
-			fmt.Fprintf(w, "SW %s, %d(%s, %s)\n",
-				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
+			if tail {
+				fmt.Fprintf(w, "J %s\n", n.Function)
+			} else {
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n",
+					returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
 
-			fmt.Fprintf(w, "ADDI %s, %s, %d\n",
-				stackPointer, stackPointer, (len(variablesOnStack) + len(registersToSave) + 1))
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
+					stackPointer, stackPointer, (len(variablesOnStack) + len(registersToSave) + 1))
 
-			fmt.Fprintf(w, "JAL %s\n", n.Function)
+				fmt.Fprintf(w, "JAL %s\n", n.Function)
 
-			fmt.Fprintf(w, "ADDI %s, %s, %d\n",
-				stackPointer, stackPointer, -(len(variablesOnStack) + len(registersToSave) + 1))
+				fmt.Fprintf(w, "ADDI %s, %s, %d\n",
+					stackPointer, stackPointer, -(len(variablesOnStack) + len(registersToSave) + 1))
 
-			fmt.Fprintf(w, "LW %s, %d(%s, %s)\n",
-				returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
+				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n",
+					returnAddressPointer, (len(variablesOnStack) + len(registersToSave)), zeroRegister, stackPointer)
 
-			// restore registers
-			if !tail {
+				// restore registers
 				for i, register := range registersToSave {
 					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n",
 						register, (len(variablesOnStack) + i), zeroRegister, stackPointer)
 				}
-			}
 
-			if destination != "" {
-				if isRegister(destination) {
-					fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, returnRegister, zeroRegister)
-				} else {
-					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, findPosition(destination), zeroRegister, stackPointer)
+				if destination != "" {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, returnRegister, zeroRegister)
+					} else {
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, findPosition(destination), zeroRegister, stackPointer)
+					}
 				}
-			}
-
-			if tail {
-				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
 			}
 		case *ir.Tuple:
 			if destination != "" {
