@@ -463,8 +463,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			continueLabel := getLabel()
 			registers := loadVariables([]string{n.Inner}, variablesOnStack)
 
-			fmt.Fprintf(w, "ADDI %s, %s, 1\n", temporaryRegisters[0], zeroRegister)
-			fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], temporaryRegisters[0])
+			fmt.Fprintf(w, "BLT %s, %s, 1\n", zeroRegister, registers[0])
 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			emit(destination, tail, n.True, variablesOnStack, registersInUse)
