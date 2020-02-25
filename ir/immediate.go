@@ -25,6 +25,36 @@ func Immediate(main Node, functions []*Function) Node {
 		}
 
 		switch n := node.(type) {
+		case *Add:
+			if left, ok := values[n.Left].(int32); ok {
+				return &AddImmediate{n.Right, left}
+			}
+			if right, ok := values[n.Right].(int32); ok {
+				return &AddImmediate{n.Left, right}
+			}
+		case *Sub:
+			if left, ok := values[n.Left].(int32); ok {
+				if left == 0 {
+					return &SubFromZero{n.Right}
+				}
+			}
+		case *FloatSub:
+			if left, ok := values[n.Left].(float32); ok {
+				if left == 0 {
+					return &FloatSubFromZero{n.Right}
+				}
+			}
+		case *FloatMul:
+			if left, ok := values[n.Left].(float32); ok {
+				if left == -1 {
+					return &FloatSubFromZero{n.Right}
+				}
+			}
+			if right, ok := values[n.Right].(float32); ok {
+				if right == -1 {
+					return &FloatSubFromZero{n.Left}
+				}
+			}
 		case *IfEqual:
 			if left, ok := values[n.Left].(int32); ok {
 				if right, ok := values[n.Right].(int32); ok {
