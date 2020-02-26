@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 30; i++ {
 		registers = append(registers, fmt.Sprintf("$r%d", i))
 	}
 }

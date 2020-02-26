@@ -166,10 +166,15 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 		}
 	}
 
-	// global variable v should be saved to memory[globalToPosition[v]]
+	// global variable v should be saved to memory[globalToPosition[v]] or globalToRegister[v]
 	globalToPosition := map[string]int{}
+	globalToRegister := map[string]string{}
 	for name := range globals {
-		globalToPosition[name] = len(globalToPosition) + len(floatValues)
+		if len(globalToRegister) < 20 {
+			globalToRegister[name] = fmt.Sprintf("$r%d", len(globalToRegister)+30)
+		} else {
+			globalToPosition[name] = len(globalToPosition) + len(floatValues)
+		}
 	}
 
 	var emit func(string, bool, ir.Node, []string, stringset.Set)
@@ -192,7 +197,13 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 		switch n := node.(type) {
 		case *ir.Variable:
 			if destination != "" {
-				if position, ok := globalToPosition[n.Name]; ok {
+				if register, ok := globalToRegister[n.Name]; ok {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, register, zeroRegister)
+					} else {
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", register, findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else if position, ok := globalToPosition[n.Name]; ok {
 					if isRegister(destination) {
 						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, position, zeroRegister, zeroRegister)
 					} else {
@@ -723,8 +734,10 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			registerToMemory := map[string]map[int]struct{}{}
 			memoryToRegister := map[int]map[string]struct{}{}
 			memoryToMemory := map[int]map[int]struct{}{}
-			globalToRegister := map[int]map[string]struct{}{}
-			globalToMemory := map[int]map[int]struct{}{}
+			globalMemoryToRegister := map[int]map[string]struct{}{}
+			globalMemoryToMemory := map[int]map[int]struct{}{}
+			globalRegisterToRegister := map[string]map[string]struct{}{}
+			globalRegisterToMemory := map[string]map[int]struct{}{}
 
 			findPositionInF := func(variable string) int {
 				idx := funk.IndexOfString(functionToSpills[f.Name], variable)
@@ -738,13 +751,34 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 				if arg == "" {
 					continue
 				}
-				if from, ok := globalToPosition[n.Args[i]]; ok {
+				if from, ok := globalToRegister[n.Args[i]]; ok {
 					if isRegister(arg) {
 						to := arg
-						if _, exists := globalToRegister[from]; !exists {
-							globalToRegister[from] = map[string]struct{}{}
+						if from != to {
+							if _, exists := globalRegisterToRegister[from]; !exists {
+								globalRegisterToRegister[from] = map[string]struct{}{}
+							}
+							globalRegisterToRegister[from][to] = struct{}{}
 						}
-						globalToRegister[from][to] = struct{}{}
+					} else {
+						var to int
+						if tail {
+							to = findPositionInF(arg)
+						} else {
+							to = len(variablesOnStack) + len(registersToSave) + 1 + findPositionInF(arg)
+						}
+						if _, exists := globalRegisterToMemory[from]; !exists {
+							globalRegisterToMemory[from] = map[int]struct{}{}
+						}
+						globalRegisterToMemory[from][to] = struct{}{}
+					}
+				} else if from, ok := globalToPosition[n.Args[i]]; ok {
+					if isRegister(arg) {
+						to := arg
+						if _, exists := globalMemoryToRegister[from]; !exists {
+							globalMemoryToRegister[from] = map[string]struct{}{}
+						}
+						globalMemoryToRegister[from][to] = struct{}{}
 					} else {
 						var to int
 						if tail {
@@ -753,10 +787,10 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 							to = len(variablesOnStack) + len(registersToSave) + 1 + findPositionInF(arg)
 						}
 						if from != to {
-							if _, exists := globalToMemory[from]; !exists {
-								globalToMemory[from] = map[int]struct{}{}
+							if _, exists := globalMemoryToMemory[from]; !exists {
+								globalMemoryToMemory[from] = map[int]struct{}{}
 							}
-							globalToMemory[from][to] = struct{}{}
+							globalMemoryToMemory[from][to] = struct{}{}
 						}
 					}
 				} else if isRegister(n.Args[i]) {
@@ -809,7 +843,7 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			// this is used to break cycles
 			after := []func(){}
 
-			for len(registerToRegister)+len(registerToMemory)+len(memoryToRegister)+len(memoryToMemory)+len(globalToRegister)+len(globalToMemory) > 0 {
+			for len(registerToRegister)+len(registerToMemory)+len(memoryToRegister)+len(memoryToMemory)+len(globalMemoryToRegister)+len(globalMemoryToMemory)+len(globalRegisterToRegister)+len(globalRegisterToMemory) > 0 {
 				updated := func() bool {
 					for from, tos := range registerToRegister {
 						for to := range tos {
@@ -868,29 +902,57 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 							}
 						}
 					}
-					for from, tos := range globalToRegister {
+					for from, tos := range globalMemoryToRegister {
 						for to := range tos {
 							if _, exists := registerToRegister[to]; !exists {
 								if _, exists := registerToMemory[to]; !exists {
 									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", to, from, zeroRegister, zeroRegister)
-									delete(globalToRegister[from], to)
-									if len(globalToRegister[from]) == 0 {
-										delete(globalToRegister, from)
+									delete(globalMemoryToRegister[from], to)
+									if len(globalMemoryToRegister[from]) == 0 {
+										delete(globalMemoryToRegister, from)
 									}
 									return true
 								}
 							}
 						}
 					}
-					for from, tos := range globalToMemory {
+					for from, tos := range globalMemoryToMemory {
 						for to := range tos {
 							if _, exists := memoryToRegister[to]; !exists {
 								if _, exists := memoryToMemory[to]; !exists {
 									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], from, zeroRegister, zeroRegister)
 									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], to, zeroRegister, stackPointer)
-									delete(globalToMemory[from], to)
-									if len(globalToMemory[from]) == 0 {
-										delete(globalToMemory, from)
+									delete(globalMemoryToMemory[from], to)
+									if len(globalMemoryToMemory[from]) == 0 {
+										delete(globalMemoryToMemory, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range globalRegisterToRegister {
+						for to := range tos {
+							if _, exists := registerToRegister[to]; !exists {
+								if _, exists := registerToMemory[to]; !exists {
+									fmt.Fprintf(w, "ADD %s, %s, %s\n", to, from, zeroRegister)
+									delete(globalRegisterToRegister[from], to)
+									if len(globalRegisterToRegister[from]) == 0 {
+										delete(globalRegisterToRegister, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range globalRegisterToMemory {
+						for to := range tos {
+							if _, exists := memoryToRegister[to]; !exists {
+								if _, exists := memoryToMemory[to]; !exists {
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", from, to, zeroRegister, stackPointer)
+									delete(globalRegisterToMemory[from], to)
+									if len(globalRegisterToMemory[from]) == 0 {
+										delete(globalRegisterToMemory, from)
 									}
 									return true
 								}
@@ -999,7 +1061,14 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			}
 		case *ir.TupleGet:
 			if destination != "" {
-				if position, ok := globalToPosition[n.Tuple]; ok {
+				if register, ok := globalToRegister[n.Tuple]; ok {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, register)
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, register)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else if position, ok := globalToPosition[n.Tuple]; ok {
 					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
 					if isRegister(destination) {
@@ -1086,7 +1155,15 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			}
 		case *ir.ArrayGet:
 			if destination != "" {
-				if position, ok := globalToPosition[n.Array]; ok {
+				if register, ok := globalToRegister[n.Array]; ok {
+					registers := loadVariables([]string{n.Index}, variablesOnStack)
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", destination, registers[0], register)
+					} else {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", temporaryRegisters[0], registers[0], register)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else if position, ok := globalToPosition[n.Array]; ok {
 					registers := loadVariables([]string{n.Index}, variablesOnStack)
 					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
@@ -1113,7 +1190,14 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			}
 		case *ir.ArrayGetImmediate:
 			if destination != "" {
-				if position, ok := globalToPosition[n.Array]; ok {
+				if register, ok := globalToRegister[n.Array]; ok {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, register)
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, register)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else if position, ok := globalToPosition[n.Array]; ok {
 					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
 					if isRegister(destination) {
@@ -1138,7 +1222,15 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
 			}
 		case *ir.ArrayPut:
-			if position, ok := globalToPosition[n.Array]; ok {
+			if register, ok := globalToRegister[n.Array]; ok {
+				registers := loadVariables([]string{n.Index, n.Value}, variablesOnStack)
+
+				fmt.Fprintf(w, "SW %s, 0(%s, %s)\n", registers[1], register, registers[0])
+
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
+			} else if position, ok := globalToPosition[n.Array]; ok {
 				registers := loadVariables([]string{n.Index, n.Value}, variablesOnStack)
 
 				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
@@ -1157,7 +1249,16 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 				}
 			}
 		case *ir.ArrayPutImmediate:
-			if position, ok := globalToPosition[n.Array]; ok {
+			if register, ok := globalToRegister[n.Array]; ok {
+				registers := loadVariables([]string{n.Value}, variablesOnStack)
+
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[0], n.Index, zeroRegister, register)
+
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
+
+			} else if position, ok := globalToPosition[n.Array]; ok {
 				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
 				registers := loadVariables([]string{n.Value}, variablesOnStack)
@@ -1283,7 +1384,11 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			for name, node := range globals {
 				if !defined.Has(name) && len(node.FreeVariables(defined)) == 0 {
 					emit(returnRegister, false, node, nil, stringset.New())
-					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, globalToPosition[name], zeroRegister, zeroRegister)
+					if register, ok := globalToRegister[name]; ok {
+						fmt.Fprintf(w, "ADD %s, %s, %s\n", register, returnRegister, zeroRegister)
+					} else {
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, globalToPosition[name], zeroRegister, zeroRegister)
+					}
 					defined.Add(name)
 				}
 			}
