@@ -241,13 +241,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					if n.Value == 0 {
 						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, zeroRegister, zeroRegister)
 					} else {
-						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, funk.LastIndexOfFloat32(floatValues, n.Value), zeroRegister, zeroRegister)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, funk.IndexOf(floatValues, n.Value), zeroRegister, zeroRegister)
 					}
 				} else {
 					if n.Value == 0 {
 						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", zeroRegister, findPosition(destination), zeroRegister, stackPointer)
 					} else {
-						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], funk.LastIndexOfFloat32(floatValues, n.Value), zeroRegister, zeroRegister)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], funk.IndexOf(floatValues, n.Value), zeroRegister, zeroRegister)
 						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 					}
 				}
