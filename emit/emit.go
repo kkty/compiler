@@ -160,7 +160,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		tail bool,
 		node ir.Node,
 		variablesOnStack []string,
-		registersInUse stringset.Set,
+		registersToUse stringset.Set,
 	) {
 		findPosition := func(variable string) int {
 			for i, v := range variablesOnStack {
@@ -212,9 +212,9 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 		case *ir.Bool:
 			if n.Value {
-				emit(destination, tail, &ir.Int{Value: 1}, variablesOnStack, registersInUse)
+				emit(destination, tail, &ir.Int{Value: 1}, variablesOnStack, registersToUse)
 			} else {
-				emit(destination, tail, &ir.Int{Value: 0}, variablesOnStack, registersInUse)
+				emit(destination, tail, &ir.Int{Value: 0}, variablesOnStack, registersToUse)
 			}
 		case *ir.Float:
 			if destination != "" {
@@ -433,13 +433,13 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			registers := loadVariables([]string{n.Left, n.Right}, variablesOnStack)
 			fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], registers[1])
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
 			}
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
 				fmt.Fprintf(w, "NOP\n")
@@ -452,7 +452,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "BEQ %s, %s, 1\n", registers[0], zeroRegister)
 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -460,7 +460,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -474,7 +474,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "BLT %s, %s, 1\n", zeroRegister, registers[0])
 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -482,7 +482,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -498,7 +498,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -507,7 +507,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -523,7 +523,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -532,7 +532,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -548,7 +548,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -557,7 +557,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
@@ -573,7 +573,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "J %s\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.True, variablesOnStack, registersInUse)
+			emit(destination, tail, n.True, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "J %s\n", continueLabel)
@@ -582,21 +582,28 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			fmt.Fprintf(w, "%s:\n", elseLabel)
 			fmt.Fprintf(w, "NOP\n")
 
-			emit(destination, tail, n.False, variablesOnStack, registersInUse)
+			emit(destination, tail, n.False, variablesOnStack, registersToUse)
 
 			if !tail {
 				fmt.Fprintf(w, "%s:\n", continueLabel)
 				fmt.Fprintf(w, "NOP\n")
 			}
 		case *ir.Assignment:
-			emit(n.Name, false, n.Value, variablesOnStack, registersInUse)
-			if isRegister(n.Name) {
-				restore := registersInUse.Join(stringset.NewFromSlice([]string{n.Name}))
-				emit(destination, tail, n.Next, variablesOnStack, registersInUse)
-				restore(registersInUse)
-			} else {
-				emit(destination, tail, n.Next, variablesOnStack, registersInUse)
+			registers := stringset.New()
+			for v := range n.Next.FreeVariables(stringset.NewFromSlice(func() []string {
+				if isRegister(n.Name) {
+					return []string{n.Name}
+				}
+				return nil
+			}())) {
+				if isRegister(v) {
+					registers.Add(v)
+				}
 			}
+			restore := registersToUse.Join(registers)
+			emit(n.Name, false, n.Value, variablesOnStack, registersToUse)
+			restore(registersToUse)
+			emit(destination, tail, n.Next, variablesOnStack, registersToUse)
 		case *ir.Application:
 			f := findFunction(n.Function)
 
@@ -604,7 +611,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			var registersToSave []string
 			if !tail {
 				for _, register := range functionToRegisters[n.Function].Slice() {
-					if registersInUse.Has(register) {
+					if registersToUse.Has(register) {
 						registersToSave = append(registersToSave, register)
 					}
 				}
@@ -1067,16 +1074,6 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		Body: main,
 	}) {
 		fmt.Fprintf(w, "%s:\n", function.Name)
-		if function.Name == "main" {
-			emit(returnRegister, true, function.Body, functionToSpills[function.Name], stringset.New())
-		} else {
-			registersInUse := stringset.New()
-			for _, arg := range function.Args {
-				if isRegister(arg) {
-					registersInUse.Add(arg)
-				}
-			}
-			emit(returnRegister, true, function.Body, functionToSpills[function.Name], registersInUse)
-		}
+		emit(returnRegister, true, function.Body, functionToSpills[function.Name], stringset.New())
 	}
 }
