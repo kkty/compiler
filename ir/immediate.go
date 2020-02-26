@@ -6,11 +6,10 @@ import (
 
 // Immediate applies immediate-value optimization.
 func Immediate(main Node, functions []*Function) Node {
-	// Updates a node to use immediate values, and evaluates the value of each node at the
-	// time. nil is used for unknown values.
-
 	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
 
+	// Updates a node to use immediate values, and evaluates the value of each node at the
+	// same time. nil is used for unknown values.
 	var update func(node Node, values map[string]interface{}) Node
 	update = func(node Node, values map[string]interface{}) Node {
 		if !node.HasSideEffects(functionsWithoutSideEffects) {
@@ -58,6 +57,30 @@ func Immediate(main Node, functions []*Function) Node {
 				if right == -1 {
 					return &FloatSubFromZero{n.Left}
 				}
+			}
+		case *Equal:
+			if left, ok := values[n.Left].(int32); ok && left == 0 {
+				return &EqualZero{n.Right}
+			} else if right, ok := values[n.Right].(int32); ok && right == 0 {
+				return &EqualZero{n.Left}
+			}
+
+			if left, ok := values[n.Left].(float32); ok && left == 0 {
+				return &EqualZero{n.Right}
+			} else if right, ok := values[n.Right].(float32); ok && right == 0 {
+				return &EqualZero{n.Left}
+			}
+		case *LessThan:
+			if left, ok := values[n.Left].(int32); ok && left == 0 {
+				return &GreaterThanZero{n.Right}
+			} else if right, ok := values[n.Right].(int32); ok && right == 0 {
+				return &LessThanZero{n.Left}
+			}
+		case *LessThanFloat:
+			if left, ok := values[n.Left].(float32); ok && left == 0 {
+				return &GreaterThanZeroFloat{n.Right}
+			} else if right, ok := values[n.Right].(float32); ok && right == 0 {
+				return &LessThanZeroFloat{n.Left}
 			}
 		case *IfEqual:
 			if left, ok := values[n.Left].(int32); ok {

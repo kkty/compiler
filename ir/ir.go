@@ -92,8 +92,13 @@ type FloatMul struct{ Left, Right string }
 
 type Not struct{ Inner string }
 type Equal struct{ Left, Right string }
+type EqualZero struct{ Inner string }
 type LessThan struct{ Left, Right string }
 type LessThanFloat struct{ Left, Right string }
+type LessThanZero struct{ Inner string }
+type LessThanZeroFloat struct{ Inner string }
+type GreaterThanZero struct{ Inner string }
+type GreaterThanZeroFloat struct{ Inner string }
 
 type IfEqual struct {
 	Left, Right string
@@ -243,6 +248,10 @@ func (n *Equal) UpdateNames(mapping stringmap.Map) {
 	n.Right = replaceIfFound(n.Right, mapping)
 }
 
+func (n *EqualZero) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
 func (n *LessThan) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
@@ -251,6 +260,22 @@ func (n *LessThan) UpdateNames(mapping stringmap.Map) {
 func (n *LessThanFloat) UpdateNames(mapping stringmap.Map) {
 	n.Left = replaceIfFound(n.Left, mapping)
 	n.Right = replaceIfFound(n.Right, mapping)
+}
+
+func (n *LessThanZero) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
+func (n *LessThanZeroFloat) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
+func (n *GreaterThanZero) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
+}
+
+func (n *GreaterThanZeroFloat) UpdateNames(mapping stringmap.Map) {
+	n.Inner = replaceIfFound(n.Inner, mapping)
 }
 
 func (n *IfEqual) UpdateNames(mapping stringmap.Map) {
@@ -498,6 +523,14 @@ func (n *Equal) FreeVariables(bound stringset.Set) stringset.Set {
 	return ret
 }
 
+func (n *EqualZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	return ret
+}
+
 func (n *LessThan) FreeVariables(bound stringset.Set) stringset.Set {
 	ret := stringset.New()
 	if !bound.Has(n.Left) {
@@ -505,6 +538,38 @@ func (n *LessThan) FreeVariables(bound stringset.Set) stringset.Set {
 	}
 	if !bound.Has(n.Right) {
 		ret.Add(n.Right)
+	}
+	return ret
+}
+
+func (n *LessThanZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	return ret
+}
+
+func (n *LessThanZeroFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	return ret
+}
+
+func (n *GreaterThanZero) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
+	}
+	return ret
+}
+
+func (n *GreaterThanZeroFloat) FreeVariables(bound stringset.Set) stringset.Set {
+	ret := stringset.New()
+	if !bound.Has(n.Inner) {
+		ret.Add(n.Inner)
 	}
 	return ret
 }
@@ -771,24 +836,29 @@ func (n *TupleGet) FreeVariables(bound stringset.Set) stringset.Set {
 	return ret
 }
 
-func (n *Variable) FloatValues() []float32         { return []float32{} }
-func (n *Unit) FloatValues() []float32             { return []float32{} }
-func (n *Int) FloatValues() []float32              { return []float32{} }
-func (n *Bool) FloatValues() []float32             { return []float32{} }
-func (n *Float) FloatValues() []float32            { return []float32{n.Value} }
-func (n *Add) FloatValues() []float32              { return []float32{} }
-func (n *AddImmediate) FloatValues() []float32     { return []float32{} }
-func (n *Sub) FloatValues() []float32              { return []float32{} }
-func (n *SubFromZero) FloatValues() []float32      { return []float32{} }
-func (n *FloatAdd) FloatValues() []float32         { return []float32{} }
-func (n *FloatSub) FloatValues() []float32         { return []float32{} }
-func (n *FloatSubFromZero) FloatValues() []float32 { return []float32{} }
-func (n *FloatDiv) FloatValues() []float32         { return []float32{} }
-func (n *FloatMul) FloatValues() []float32         { return []float32{} }
-func (n *Not) FloatValues() []float32              { return []float32{} }
-func (n *Equal) FloatValues() []float32            { return []float32{} }
-func (n *LessThan) FloatValues() []float32         { return []float32{} }
-func (n *LessThanFloat) FloatValues() []float32    { return []float32{} }
+func (n *Variable) FloatValues() []float32             { return []float32{} }
+func (n *Unit) FloatValues() []float32                 { return []float32{} }
+func (n *Int) FloatValues() []float32                  { return []float32{} }
+func (n *Bool) FloatValues() []float32                 { return []float32{} }
+func (n *Float) FloatValues() []float32                { return []float32{n.Value} }
+func (n *Add) FloatValues() []float32                  { return []float32{} }
+func (n *AddImmediate) FloatValues() []float32         { return []float32{} }
+func (n *Sub) FloatValues() []float32                  { return []float32{} }
+func (n *SubFromZero) FloatValues() []float32          { return []float32{} }
+func (n *FloatAdd) FloatValues() []float32             { return []float32{} }
+func (n *FloatSub) FloatValues() []float32             { return []float32{} }
+func (n *FloatSubFromZero) FloatValues() []float32     { return []float32{} }
+func (n *FloatDiv) FloatValues() []float32             { return []float32{} }
+func (n *FloatMul) FloatValues() []float32             { return []float32{} }
+func (n *Not) FloatValues() []float32                  { return []float32{} }
+func (n *Equal) FloatValues() []float32                { return []float32{} }
+func (n *EqualZero) FloatValues() []float32            { return []float32{} }
+func (n *LessThan) FloatValues() []float32             { return []float32{} }
+func (n *LessThanFloat) FloatValues() []float32        { return []float32{} }
+func (n *LessThanZero) FloatValues() []float32         { return []float32{} }
+func (n *LessThanZeroFloat) FloatValues() []float32    { return []float32{} }
+func (n *GreaterThanZero) FloatValues() []float32      { return []float32{} }
+func (n *GreaterThanZeroFloat) FloatValues() []float32 { return []float32{} }
 
 func (n *IfEqual) FloatValues() []float32 {
 	return append(n.True.FloatValues(), n.False.FloatValues()...)
@@ -838,24 +908,29 @@ func (n *IntToFloat) FloatValues() []float32           { return []float32{} }
 func (n *FloatToInt) FloatValues() []float32           { return []float32{} }
 func (n *Sqrt) FloatValues() []float32                 { return []float32{} }
 
-func (n *Variable) Clone() Node         { return &Variable{n.Name} }
-func (n *Unit) Clone() Node             { return &Unit{} }
-func (n *Int) Clone() Node              { return &Int{n.Value} }
-func (n *Bool) Clone() Node             { return &Bool{n.Value} }
-func (n *Float) Clone() Node            { return &Float{n.Value} }
-func (n *Add) Clone() Node              { return &Add{n.Left, n.Right} }
-func (n *AddImmediate) Clone() Node     { return &AddImmediate{n.Left, n.Right} }
-func (n *Sub) Clone() Node              { return &Sub{n.Left, n.Right} }
-func (n *SubFromZero) Clone() Node      { return &SubFromZero{n.Inner} }
-func (n *FloatAdd) Clone() Node         { return &FloatAdd{n.Left, n.Right} }
-func (n *FloatSub) Clone() Node         { return &FloatSub{n.Left, n.Right} }
-func (n *FloatSubFromZero) Clone() Node { return &FloatSubFromZero{n.Inner} }
-func (n *FloatDiv) Clone() Node         { return &FloatDiv{n.Left, n.Right} }
-func (n *FloatMul) Clone() Node         { return &FloatMul{n.Left, n.Right} }
-func (n *Not) Clone() Node              { return &Not{n.Inner} }
-func (n *Equal) Clone() Node            { return &Equal{n.Left, n.Right} }
-func (n *LessThan) Clone() Node         { return &LessThan{n.Left, n.Right} }
-func (n *LessThanFloat) Clone() Node    { return &LessThanFloat{n.Left, n.Right} }
+func (n *Variable) Clone() Node             { return &Variable{n.Name} }
+func (n *Unit) Clone() Node                 { return &Unit{} }
+func (n *Int) Clone() Node                  { return &Int{n.Value} }
+func (n *Bool) Clone() Node                 { return &Bool{n.Value} }
+func (n *Float) Clone() Node                { return &Float{n.Value} }
+func (n *Add) Clone() Node                  { return &Add{n.Left, n.Right} }
+func (n *AddImmediate) Clone() Node         { return &AddImmediate{n.Left, n.Right} }
+func (n *Sub) Clone() Node                  { return &Sub{n.Left, n.Right} }
+func (n *SubFromZero) Clone() Node          { return &SubFromZero{n.Inner} }
+func (n *FloatAdd) Clone() Node             { return &FloatAdd{n.Left, n.Right} }
+func (n *FloatSub) Clone() Node             { return &FloatSub{n.Left, n.Right} }
+func (n *FloatSubFromZero) Clone() Node     { return &FloatSubFromZero{n.Inner} }
+func (n *FloatDiv) Clone() Node             { return &FloatDiv{n.Left, n.Right} }
+func (n *FloatMul) Clone() Node             { return &FloatMul{n.Left, n.Right} }
+func (n *Not) Clone() Node                  { return &Not{n.Inner} }
+func (n *Equal) Clone() Node                { return &Equal{n.Left, n.Right} }
+func (n *EqualZero) Clone() Node            { return &EqualZero{n.Inner} }
+func (n *LessThan) Clone() Node             { return &LessThan{n.Left, n.Right} }
+func (n *LessThanFloat) Clone() Node        { return &LessThanFloat{n.Left, n.Right} }
+func (n *LessThanZero) Clone() Node         { return &LessThanZero{n.Inner} }
+func (n *LessThanZeroFloat) Clone() Node    { return &LessThanZeroFloat{n.Inner} }
+func (n *GreaterThanZero) Clone() Node      { return &GreaterThanZero{n.Inner} }
+func (n *GreaterThanZeroFloat) Clone() Node { return &GreaterThanZeroFloat{n.Inner} }
 
 func (n *IfEqual) Clone() Node {
 	return &IfEqual{n.Left, n.Right, n.True.Clone(), n.False.Clone()}
@@ -962,8 +1037,17 @@ func (n *FloatDiv) HasSideEffects(functionsWithoutSideEffects stringset.Set) boo
 func (n *FloatMul) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
 func (n *Not) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool           { return false }
 func (n *Equal) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool         { return false }
+func (n *EqualZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool     { return false }
 func (n *LessThan) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool      { return false }
 func (n *LessThanFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *LessThanZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool  { return false }
+func (n *LessThanZeroFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
+	return false
+}
+func (n *GreaterThanZero) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
+func (n *GreaterThanZeroFloat) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
+	return false
+}
 
 func (n *IfEqual) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool {
 	return n.True.HasSideEffects(functionsWithoutSideEffects) || n.False.HasSideEffects(functionsWithoutSideEffects)
@@ -1035,24 +1119,29 @@ func (n *FloatToInt) HasSideEffects(functionsWithoutSideEffects stringset.Set) b
 }
 func (n *Sqrt) HasSideEffects(functionsWithoutSideEffects stringset.Set) bool { return false }
 
-func (n *Variable) Applications() []*Application         { return []*Application{} }
-func (n *Unit) Applications() []*Application             { return []*Application{} }
-func (n *Int) Applications() []*Application              { return []*Application{} }
-func (n *Bool) Applications() []*Application             { return []*Application{} }
-func (n *Float) Applications() []*Application            { return []*Application{} }
-func (n *Add) Applications() []*Application              { return []*Application{} }
-func (n *AddImmediate) Applications() []*Application     { return []*Application{} }
-func (n *Sub) Applications() []*Application              { return []*Application{} }
-func (n *SubFromZero) Applications() []*Application      { return []*Application{} }
-func (n *FloatAdd) Applications() []*Application         { return []*Application{} }
-func (n *FloatSub) Applications() []*Application         { return []*Application{} }
-func (n *FloatSubFromZero) Applications() []*Application { return []*Application{} }
-func (n *FloatDiv) Applications() []*Application         { return []*Application{} }
-func (n *FloatMul) Applications() []*Application         { return []*Application{} }
-func (n *Not) Applications() []*Application              { return []*Application{} }
-func (n *Equal) Applications() []*Application            { return []*Application{} }
-func (n *LessThan) Applications() []*Application         { return []*Application{} }
-func (n *LessThanFloat) Applications() []*Application    { return []*Application{} }
+func (n *Variable) Applications() []*Application             { return []*Application{} }
+func (n *Unit) Applications() []*Application                 { return []*Application{} }
+func (n *Int) Applications() []*Application                  { return []*Application{} }
+func (n *Bool) Applications() []*Application                 { return []*Application{} }
+func (n *Float) Applications() []*Application                { return []*Application{} }
+func (n *Add) Applications() []*Application                  { return []*Application{} }
+func (n *AddImmediate) Applications() []*Application         { return []*Application{} }
+func (n *Sub) Applications() []*Application                  { return []*Application{} }
+func (n *SubFromZero) Applications() []*Application          { return []*Application{} }
+func (n *FloatAdd) Applications() []*Application             { return []*Application{} }
+func (n *FloatSub) Applications() []*Application             { return []*Application{} }
+func (n *FloatSubFromZero) Applications() []*Application     { return []*Application{} }
+func (n *FloatDiv) Applications() []*Application             { return []*Application{} }
+func (n *FloatMul) Applications() []*Application             { return []*Application{} }
+func (n *Not) Applications() []*Application                  { return []*Application{} }
+func (n *Equal) Applications() []*Application                { return []*Application{} }
+func (n *EqualZero) Applications() []*Application            { return []*Application{} }
+func (n *LessThan) Applications() []*Application             { return []*Application{} }
+func (n *LessThanFloat) Applications() []*Application        { return []*Application{} }
+func (n *LessThanZero) Applications() []*Application         { return []*Application{} }
+func (n *LessThanZeroFloat) Applications() []*Application    { return []*Application{} }
+func (n *GreaterThanZero) Applications() []*Application      { return []*Application{} }
+func (n *GreaterThanZeroFloat) Applications() []*Application { return []*Application{} }
 
 func (n *IfEqual) Applications() []*Application {
 	return append(n.True.Applications(), n.False.Applications()...)
@@ -1121,8 +1210,13 @@ func (n *FloatDiv) Size() int             { return 1 }
 func (n *FloatMul) Size() int             { return 1 }
 func (n *Not) Size() int                  { return 1 }
 func (n *Equal) Size() int                { return 1 }
+func (n *EqualZero) Size() int            { return 1 }
 func (n *LessThan) Size() int             { return 1 }
 func (n *LessThanFloat) Size() int        { return 1 }
+func (n *LessThanZero) Size() int         { return 1 }
+func (n *LessThanZeroFloat) Size() int    { return 1 }
+func (n *GreaterThanZero) Size() int      { return 1 }
+func (n *GreaterThanZeroFloat) Size() int { return 1 }
 func (n *IfEqual) Size() int              { return n.True.Size() + n.False.Size() }
 func (n *IfEqualZero) Size() int          { return n.True.Size() + n.False.Size() }
 func (n *IfEqualTrue) Size() int          { return n.True.Size() + n.False.Size() }
@@ -1281,6 +1375,18 @@ func (n *Equal) Evaluate(values map[string]interface{}, functions []*Function) i
 	return nil
 }
 
+func (n *EqualZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		return inner == 0
+	}
+
+	if inner, ok := values[n.Inner].(float32); ok {
+		return inner == 0
+	}
+
+	return nil
+}
+
 func (n *LessThan) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
 	if left, ok := values[n.Left].(int32); ok {
 		if right, ok := values[n.Right].(int32); ok {
@@ -1296,6 +1402,38 @@ func (n *LessThanFloat) Evaluate(values map[string]interface{}, functions []*Fun
 		if right, ok := values[n.Right].(float32); ok {
 			return left < right
 		}
+	}
+
+	return nil
+}
+
+func (n *LessThanZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		return inner < 0
+	}
+
+	return nil
+}
+
+func (n *LessThanZeroFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(float32); ok {
+		return inner < 0
+	}
+
+	return nil
+}
+
+func (n *GreaterThanZero) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(int32); ok {
+		return inner > 0
+	}
+
+	return nil
+}
+
+func (n *GreaterThanZeroFloat) Evaluate(values map[string]interface{}, functions []*Function) interface{} {
+	if inner, ok := values[n.Inner].(float32); ok {
+		return inner > 0
 	}
 
 	return nil

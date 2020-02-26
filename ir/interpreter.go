@@ -35,9 +35,8 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			evaluated[op]++
 		}
 
-		switch node.(type) {
+		switch n := node.(type) {
 		case *Variable:
-			n := node.(*Variable)
 			return values[n.Name]
 		case *Unit:
 			return nil
@@ -48,58 +47,52 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 		case *Float:
 			return node.(*Float).Value
 		case *Add:
-			n := node.(*Add)
 			return values[n.Left].(int32) + values[n.Right].(int32)
 		case *AddImmediate:
-			n := node.(*AddImmediate)
 			return values[n.Left].(int32) + n.Right
 		case *Sub:
-			n := node.(*Sub)
 			return values[n.Left].(int32) - values[n.Right].(int32)
 		case *SubFromZero:
-			n := node.(*SubFromZero)
 			return -values[n.Inner].(int32)
 		case *FloatAdd:
-			n := node.(*FloatAdd)
 			return values[n.Left].(float32) + values[n.Right].(float32)
 		case *FloatSub:
-			n := node.(*FloatSub)
 			return values[n.Left].(float32) - values[n.Right].(float32)
 		case *FloatSubFromZero:
-			n := node.(*FloatSubFromZero)
 			return -values[n.Inner].(float32)
 		case *FloatDiv:
-			n := node.(*FloatDiv)
 			return values[n.Left].(float32) / values[n.Right].(float32)
 		case *FloatMul:
-			n := node.(*FloatMul)
 			return values[n.Left].(float32) * values[n.Right].(float32)
 		case *Not:
-			n := node.(*Not)
 			return !values[n.Inner].(bool)
 		case *Equal:
-			n := node.(*Equal)
 			if values[n.Left] == values[n.Right] {
 				return true
 			} else {
 				return false
 			}
+		case *EqualZero:
+			return values[n.Inner] == int32(0) || values[n.Inner] == float32(0)
 		case *LessThan:
-			n := node.(*LessThan)
 			return values[n.Left].(int32) < values[n.Right].(int32)
 		case *LessThanFloat:
-			n := node.(*LessThanFloat)
 			return values[n.Left].(float32) < values[n.Right].(float32)
+		case *LessThanZero:
+			return values[n.Inner].(int32) < 0
+		case *LessThanZeroFloat:
+			return values[n.Inner].(float32) < 0
+		case *GreaterThanZero:
+			return values[n.Inner].(int32) > 0
+		case *GreaterThanZeroFloat:
+			return values[n.Inner].(float32) > 0
 		case *IfEqual:
-			n := node.(*IfEqual)
 			if values[n.Left] == values[n.Right] {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfEqualZero:
-			n := node.(*IfEqualZero)
-
 			if value, ok := values[n.Inner].(int32); ok {
 				if value == 0 {
 					return evaluate(n.True, values)
@@ -114,49 +107,39 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 				}
 			}
 		case *IfEqualTrue:
-			n := node.(*IfEqualTrue)
-
 			if values[n.Inner].(bool) {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfLessThan:
-			n := node.(*IfLessThan)
 			if values[n.Left].(int32) < values[n.Right].(int32) {
 				return evaluate(n.True, values)
 			}
 			return evaluate(n.False, values)
 		case *IfLessThanFloat:
-			n := node.(*IfLessThanFloat)
 			if values[n.Left].(float32) < values[n.Right].(float32) {
 				return evaluate(n.True, values)
 			}
 			return evaluate(n.False, values)
 		case *IfLessThanZero:
-			n := node.(*IfLessThanZero)
-
 			if values[n.Inner].(int32) < 0 {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfLessThanZeroFloat:
-			n := node.(*IfLessThanZeroFloat)
-
 			if values[n.Inner].(float32) < 0 {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *Assignment:
-			n := node.(*Assignment)
 			values[n.Name] = evaluate(n.Value, values)
 			ret := evaluate(n.Next, values)
 			delete(values, n.Name)
 			return ret
 		case *Application:
-			n := node.(*Application)
 			f := findFunction(n.Function)
 			called[f.Name]++
 			updated := map[string]interface{}{}
@@ -165,14 +148,12 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			}
 			return evaluate(f.Body, updated)
 		case *Tuple:
-			n := node.(*Tuple)
 			tuple := []interface{}{}
 			for _, element := range n.Elements {
 				tuple = append(tuple, values[element])
 			}
 			return tuple
 		case *ArrayCreate:
-			n := node.(*ArrayCreate)
 			length := values[n.Length].(int32)
 			value := values[n.Value]
 			array := []interface{}{}
@@ -181,7 +162,6 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			}
 			return array
 		case *ArrayCreateImmediate:
-			n := node.(*ArrayCreateImmediate)
 			value := values[n.Value]
 			array := []interface{}{}
 			for i := 0; i < int(n.Length); i++ {
@@ -189,23 +169,19 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			}
 			return array
 		case *ArrayGet:
-			n := node.(*ArrayGet)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			return array[index]
 		case *ArrayGetImmediate:
-			n := node.(*ArrayGetImmediate)
 			array := values[n.Array].([]interface{})
 			return array[n.Index]
 		case *ArrayPut:
-			n := node.(*ArrayPut)
 			array := values[n.Array].([]interface{})
 			index := values[n.Index].(int32)
 			value := values[n.Value]
 			array[index] = value
 			return nil
 		case *ArrayPutImmediate:
-			n := node.(*ArrayPutImmediate)
 			array := values[n.Array].([]interface{})
 			value := values[n.Value]
 			array[n.Index] = value
@@ -219,20 +195,15 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			fmt.Fscan(r, &value)
 			return value
 		case *WriteByte:
-			n := node.(*WriteByte)
 			w.Write([]byte{byte(values[n.Arg].(int32) % 256)})
 			return nil
 		case *IntToFloat:
-			n := node.(*IntToFloat)
 			return float32(values[n.Arg].(int32))
 		case *FloatToInt:
-			n := node.(*FloatToInt)
 			return int32(math.Round(float64(values[n.Arg].(float32))))
 		case *Sqrt:
-			n := node.(*Sqrt)
 			return float32(math.Sqrt(float64(values[n.Arg].(float32))))
 		case *TupleGet:
-			n := node.(*TupleGet)
 			tuple := values[n.Tuple].([]interface{})
 			return tuple[n.Index]
 		default:
