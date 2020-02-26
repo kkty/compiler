@@ -154,6 +154,25 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		}
 	}
 
+	floatValues := []float32{}
+	for _, function := range append(functions, &ir.Function{
+		Name: "main",
+		Body: main,
+	}) {
+		for _, floatValue := range function.Body.FloatValues() {
+			if !funk.ContainsFloat32(floatValues, floatValue) {
+				floatValues = append(floatValues, floatValue)
+			}
+		}
+	}
+
+	for i, value := range floatValues {
+		u := math.Float32bits(value)
+		fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
+		fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
+		fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], i, zeroRegister, zeroRegister)
+	}
+
 	var emit func(string, bool, ir.Node, []string, stringset.Set)
 	emit = func(
 		destination string,
@@ -218,21 +237,17 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 		case *ir.Float:
 			if destination != "" {
-				u := math.Float32bits(n.Value)
-
 				if isRegister(destination) {
-					if u == 0 {
+					if n.Value == 0 {
 						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, zeroRegister, zeroRegister)
 					} else {
-						fmt.Fprintf(w, "ORI %s, %s, %d\n", destination, zeroRegister, u%(1<<16))
-						fmt.Fprintf(w, "LUI %s, %s, %d\n", destination, destination, u>>16)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, funk.LastIndexOfFloat32(floatValues, n.Value), zeroRegister, zeroRegister)
 					}
 				} else {
-					if u == 0 {
+					if n.Value == 0 {
 						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", zeroRegister, findPosition(destination), zeroRegister, stackPointer)
 					} else {
-						fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
-						fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], funk.LastIndexOfFloat32(floatValues, n.Value), zeroRegister, zeroRegister)
 						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
 					}
 				}
