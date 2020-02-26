@@ -71,9 +71,6 @@ let reflections =
   create_array 180 (0, dummydv, 0.0) in
 (* reflectionsの有効な要素数 *)
 let n_reflections = create_array 1 0 in
-let rec mul x y =
-  if y < 0 then - (mul x (-y))
-  else let rec f x y = if y = 0 then 0 else x + (f x (y - 1)) in f x y in
 let rec fequal x y = x = y in
 let rec fless x y = x < y in
 let rec fispos x = x > 0.0 in
@@ -84,11 +81,6 @@ let rec fabs x = if x > 0.0 then x else x *. -1.0 in
 let rec fneg x = x *. -1.0 in
 let rec fhalf x = x /. 2.0 in
 let rec fsqr x = x *. x in
-let rec div x y =
-  let rec f x y z =
-    if mul y z > x then z - 1
-    else f x y (z + 1)
-   in f x y 1 in
 let rec print_int x =
   let x =
     if x >= 100 then
@@ -104,7 +96,6 @@ let rec print_int x =
 let rec int_of_float x = float_to_int x in
 let rec float_of_int x = int_to_float x in
 let rec floor x =  int_to_float (float_to_int (x -. 0.5)) in
-let pi = 3.1415926536 in
 let rec kernel_cos x =
   let x2 = x *. x in
   let x4 = x2 *. x2 in
@@ -117,10 +108,12 @@ let rec kernel_sin x =
   let x7 = x5 *. x2 in
   x -. x3 *. 0.16666668 +. x5 *. 0.008332824 -. x7 *. 0.00019587841 in
 let rec reduction_2pi x =
+  let pi = 3.1415926536 in
   let x = x -. 2.0 *. pi *. int_to_float (float_to_int (x /. 2.0 /. pi)) in
   if x < 0.0 then x +. 2.0 *. pi else x in
 let rec cos x =
   let x = reduction_2pi x in
+  let pi = 3.1415926536 in
   if x >= pi then
     let x = x -. pi in
     if x >= pi /. 2.0 then
@@ -136,6 +129,7 @@ let rec cos x =
       if x <= pi /. 4.0 then kernel_cos x else kernel_sin x in
 let rec sin x =
   let x = reduction_2pi x in
+  let pi = 3.1415926536 in
   if x >= pi then
     let x = x -. pi in
     if x >= pi /. 2.0 then
@@ -159,6 +153,7 @@ let rec kernel_atan x =
   let x13 = x11 *. x2 in
   x -. x3 /. 3.0 +. x5 /. 5.0 -. x7 /. 7.0 +. x9 /. 9.0 -. x11 /. 11.0 +. x13 /. 13.0 in
 let rec atan_positive x =
+  let pi = 3.1415926536 in
   if x >= 2.4375 then
     pi *. 0.5 -. kernel_atan (1.0 /. x)
   else
