@@ -2,9 +2,13 @@ package emit
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
 	"sort"
+	"strings"
 
 	"github.com/kkty/compiler/ir"
+	"github.com/kkty/compiler/stringmap"
 	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
 )
@@ -239,6 +243,70 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, globals map[strin
 
 	for _, node := range globals {
 		allocate(&ir.Function{Body: node})
+	}
+
+	findFunction := func(name string) *ir.Function {
+		for _, function := range functions {
+			if function.Name == name {
+				return function
+			}
+		}
+		return nil
+	}
+
+	// estimated cost of register moves in function applications
+	cost := func() int {
+		cost := 0
+		for _, function := range append(functions, &ir.Function{
+			Name: "main",
+			Args: nil,
+			Body: main,
+		}) {
+			for _, application := range function.Body.Applications() {
+				function := findFunction(application.Function)
+				for i, arg := range function.Args {
+					if strings.HasPrefix(arg, "$") && strings.HasPrefix(application.Args[i], "$") && arg != application.Args[i] {
+						cost++
+					}
+				}
+			}
+		}
+		return cost
+	}
+
+	if len(functions) > 0 {
+		sinceLastImprovement := 0
+		for sinceLastImprovement < 1000 {
+			function := functions[rand.Int()%len(functions)]
+			if len(function.Args) == 0 {
+				sinceLastImprovement++
+			} else {
+				i1, i2 := rand.Int()%len(function.Args), rand.Int()%len(function.Args)
+				if i1 != i2 && strings.HasPrefix(function.Args[i1], "$") && strings.HasPrefix(function.Args[i2], "$") {
+					swap := func() {
+						function.Body.UpdateNames(stringmap.Map{function.Args[i1]: "_swap_tmp"})
+						function.Body.UpdateNames(stringmap.Map{function.Args[i2]: function.Args[i1]})
+						function.Body.UpdateNames(stringmap.Map{"_swap_tmp": function.Args[i2]})
+						function.Args[i1], function.Args[i2] = function.Args[i2], function.Args[i1]
+					}
+					prevCost := cost()
+					swap()
+					newCost := cost()
+					if newCost > prevCost {
+						// rollback
+						swap()
+					}
+					if newCost < prevCost {
+						sinceLastImprovement = 0
+						fmt.Fprintln(os.Stderr, cost())
+					} else {
+						sinceLastImprovement++
+					}
+				} else {
+					sinceLastImprovement++
+				}
+			}
+		}
 	}
 
 	return spills
