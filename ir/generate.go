@@ -227,6 +227,9 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 			if _, ok := n.Body.GetType(nameToType).(*typing.ArrayType); ok {
 				return true
 			}
+			if _, ok := n.Body.GetType(nameToType).(*typing.TupleType); ok {
+				return true
+			}
 		}
 		return false
 	}() {

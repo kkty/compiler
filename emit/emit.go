@@ -999,9 +999,18 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 			}
 		case *ir.TupleGet:
 			if destination != "" {
-				registers := loadVariables([]string{n.Tuple}, variablesOnStack)
+				if position, ok := globalToPosition[n.Tuple]; ok {
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
-				if destination != "" {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, temporaryRegisters[0])
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[1], n.Index, zeroRegister, temporaryRegisters[0])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[1], findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else {
+					registers := loadVariables([]string{n.Tuple}, variablesOnStack)
+
 					if isRegister(destination) {
 						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, registers[0])
 					} else {
