@@ -2,7 +2,6 @@ package test
 
 import (
 	"bytes"
-	"github.com/kkty/compiler/stringset"
 	"io/ioutil"
 	"testing"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/kkty/compiler/emit"
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/parser"
-	"github.com/stretchr/testify/assert"
+	"github.com/kkty/compiler/stringset"
 )
 
 func TestCompileAndEmit(t *testing.T) {
@@ -32,21 +31,31 @@ func TestCompileAndEmit(t *testing.T) {
 			astNode := parser.Parse(program)
 			ast.AlphaTransform(astNode)
 			types := ast.GetTypes(astNode)
-			main, functions, _ := ir.Generate(astNode, types)
+			main, functions, globals, _ := ir.Generate(astNode, types)
 			main, _ = ir.Inline(main, functions, 5, types, false)
-			for i := 0; i < 10; i++ {
+			for i := 0; i < 5; i++ {
 				main = ir.RemoveRedundantVariables(main, functions)
 				main = ir.Immediate(main, functions)
 				main = ir.Reorder(main, functions)
 			}
 
-			for _, function := range functions {
-				assert.Equal(t, 0, len(function.FreeVariables()))
+			globalNames := stringset.New()
+			for name := range globals {
+				globalNames.Add(name)
 			}
-			assert.Equal(t, 0, len(main.FreeVariables(stringset.New())))
 
-			emit.AllocateRegisters(main, functions, types)
-			emit.Emit(functions, main, types, &bytes.Buffer{})
+			for _, function := range append(functions, &ir.Function{
+				Body: main,
+			}) {
+				for freeVariable := range function.FreeVariables() {
+					if !globalNames.Has(freeVariable) {
+						t.Fail()
+					}
+				}
+			}
+
+			emit.AllocateRegisters(main, functions, globals, types)
+			emit.Emit(functions, main, globals, types, &bytes.Buffer{})
 		})
 	}
 }

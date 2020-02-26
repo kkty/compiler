@@ -46,7 +46,7 @@ func TestExecute(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("Case%d", i), func(t *testing.T) {
 			buf := bytes.Buffer{}
-			Execute(c.functions, c.main, &buf, bytes.NewBufferString(c.input))
+			Execute(c.functions, c.main, nil, &buf, bytes.NewBufferString(c.input))
 			assert.Equal(t, c.output, buf.Bytes())
 		})
 	}

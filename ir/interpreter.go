@@ -12,7 +12,7 @@ import (
 // Execute interprets and executes the program.
 // Returns the number of evaluated nodes grouped by type, and the number of calls
 // for each function.
-func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[string]int, map[string]int) {
+func Execute(functions []*Function, main Node, globals map[string]Node, w io.Writer, r io.Reader) (map[string]int, map[string]int) {
 	findFunction := func(name string) *Function {
 		for _, function := range functions {
 			if function.Name == name {
@@ -27,6 +27,8 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 	evaluated := map[string]int{}
 	called := map[string]int{}
 
+	globalValues := map[string]interface{}{}
+
 	var evaluate func(Node, map[string]interface{}) interface{}
 	evaluate = func(node Node, values map[string]interface{}) interface{} {
 		{
@@ -37,6 +39,9 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 
 		switch n := node.(type) {
 		case *Variable:
+			if v, ok := globalValues[n.Name]; ok {
+				return v
+			}
 			return values[n.Name]
 		case *Unit:
 			return nil
@@ -144,7 +149,11 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 			called[f.Name]++
 			updated := map[string]interface{}{}
 			for i, arg := range f.Args {
-				updated[arg] = values[n.Args[i]]
+				if value, ok := globalValues[n.Args[i]]; ok {
+					updated[arg] = value
+				} else {
+					updated[arg] = values[n.Args[i]]
+				}
 			}
 			return evaluate(f.Body, updated)
 		case *Tuple:
@@ -211,6 +220,10 @@ func Execute(functions []*Function, main Node, w io.Writer, r io.Reader) (map[st
 		}
 
 		return nil
+	}
+
+	for name, node := range globals {
+		globalValues[name] = evaluate(node, globalValues)
 	}
 
 	evaluate(main, map[string]interface{}{})

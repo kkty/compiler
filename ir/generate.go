@@ -11,7 +11,8 @@ import (
 // Generate generates Node from ast.Node.
 // K-normalization is performed and functions are separated from the main program.
 // Functions (and function applications) are modified so that they do not have free variables.
-func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Function, map[string]typing.Type) {
+// Global variables are separated from the main program.
+func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Function, map[string]Node, map[string]typing.Type) {
 	functions := map[string]*Function{}
 
 	nextNameId := 0
@@ -19,6 +20,8 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		defer func() { nextNameId++ }()
 		return fmt.Sprintf("_irgen_%d", nextNameId)
 	}
+
+	globals := map[string]Node{}
 
 	// construct node recursively
 	var construct func(node ast.Node) Node
@@ -217,12 +220,33 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		}
 	}
 
+	// If the program starts with an array assignment, it is considered a global variable assignment
+	// and is removed from the program. This is repeated until the condition is met.
+	for func() bool {
+		if n, ok := root.(*ast.Assignment); ok {
+			if _, ok := n.Body.GetType(nameToType).(*typing.ArrayType); ok {
+				return true
+			}
+		}
+		return false
+	}() {
+		n := root.(*ast.Assignment)
+		globals[n.Name] = construct(n.Body)
+		root = n.Next
+	}
+
 	constructed := construct(root)
 
 	functionToApplications := map[string][]*Application{}
 
 	for _, function := range functions {
 		functionToApplications[function.Name] = function.Body.Applications()
+	}
+
+	// names of global variables
+	globalNames := stringset.New()
+	for n := range globals {
+		globalNames.Add(n)
 	}
 
 	applicationsInMain := constructed.Applications()
@@ -234,7 +258,9 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		for _, function := range functions {
 			freeVariables := []string{}
 			for freeVariable := range function.FreeVariables() {
-				freeVariables = append(freeVariables, freeVariable)
+				if !globalNames.Has(freeVariable) {
+					freeVariables = append(freeVariables, freeVariable)
+				}
 			}
 
 			functionToApplications["main"] = applicationsInMain
@@ -260,8 +286,10 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 
 		ok := true
 		for _, function := range functions {
-			if len(function.FreeVariables()) > 0 {
-				ok = false
+			for freeVariable := range function.FreeVariables() {
+				if !globalNames.Has(freeVariable) {
+					ok = false
+				}
 			}
 		}
 
@@ -288,5 +316,5 @@ func Generate(root ast.Node, nameToType map[string]typing.Type) (Node, []*Functi
 		functionsAsSlice = append(functionsAsSlice, function)
 	}
 
-	return constructed, functionsAsSlice, nameToType
+	return constructed, functionsAsSlice, globals, nameToType
 }

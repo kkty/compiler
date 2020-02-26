@@ -63,7 +63,12 @@ func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 // If a variable could not be assigned to any registers, its name will be kept unchanged
 // and should be saved on the stack.
 // The number of spills for each function is returned.
-func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]typing.Type) map[string]int {
+func AllocateRegisters(main ir.Node, functions []*ir.Function, globals map[string]ir.Node, types map[string]typing.Type) map[string]int {
+	globalNames := stringset.New()
+	for n := range globals {
+		globalNames.Add(n)
+	}
+
 	spills := map[string]int{}
 
 	allocate := func(function *ir.Function) {
@@ -71,12 +76,16 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 
 		addEdges := func(variables stringset.Set) {
 			for _, i := range variables.Slice() {
+				if globalNames.Has(i) {
+					continue
+				}
 				if _, exists := graph[i]; !exists {
 					graph[i] = stringset.New()
 				}
-			}
-			for _, i := range variables.Slice() {
 				for _, j := range variables.Slice() {
+					if globalNames.Has(j) {
+						continue
+					}
 					if i != j {
 						graph[i].Add(j)
 					}
@@ -226,6 +235,10 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, types map[string]
 		Body: main,
 	}) {
 		allocate(function)
+	}
+
+	for _, node := range globals {
+		allocate(&ir.Function{Body: node})
 	}
 
 	return spills

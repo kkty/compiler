@@ -27,7 +27,7 @@ var (
 )
 
 // Emit emits assembly code from IR.
-func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, w io.Writer) {
+func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, types map[string]typing.Type, w io.Writer) {
 	nextLabelId := 0
 	getLabel := func() string {
 		defer func() { nextLabelId++ }()
@@ -166,11 +166,10 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 		}
 	}
 
-	for i, value := range floatValues {
-		u := math.Float32bits(value)
-		fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
-		fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
-		fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], i, zeroRegister, zeroRegister)
+	// global variable v should be saved to memory[globalToPosition[v]]
+	globalToPosition := map[string]int{}
+	for name := range globals {
+		globalToPosition[name] = len(globalToPosition) + len(floatValues)
 	}
 
 	var emit func(string, bool, ir.Node, []string, stringset.Set)
@@ -187,13 +186,20 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 					return i
 				}
 			}
-			panic("variable not found on stack")
+			panic(fmt.Sprintf("variable not found on stack: %s", variable))
 		}
 
 		switch n := node.(type) {
 		case *ir.Variable:
 			if destination != "" {
-				if isRegister(n.Name) {
+				if position, ok := globalToPosition[n.Name]; ok {
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, position, zeroRegister, zeroRegister)
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
+				} else if isRegister(n.Name) {
 					if isRegister(destination) {
 						fmt.Fprintf(w, "ADD %s, %s, %s\n", destination, n.Name, zeroRegister)
 					} else {
@@ -717,6 +723,8 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			registerToMemory := map[string]map[int]struct{}{}
 			memoryToRegister := map[int]map[string]struct{}{}
 			memoryToMemory := map[int]map[int]struct{}{}
+			globalToRegister := map[int]map[string]struct{}{}
+			globalToMemory := map[int]map[int]struct{}{}
 
 			findPositionInF := func(variable string) int {
 				idx := funk.IndexOfString(functionToSpills[f.Name], variable)
@@ -730,7 +738,28 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				if arg == "" {
 					continue
 				}
-				if isRegister(n.Args[i]) {
+				if from, ok := globalToPosition[n.Args[i]]; ok {
+					if isRegister(arg) {
+						to := arg
+						if _, exists := globalToRegister[from]; !exists {
+							globalToRegister[from] = map[string]struct{}{}
+						}
+						globalToRegister[from][to] = struct{}{}
+					} else {
+						var to int
+						if tail {
+							to = findPositionInF(arg)
+						} else {
+							to = len(variablesOnStack) + len(registersToSave) + 1 + findPositionInF(arg)
+						}
+						if from != to {
+							if _, exists := globalToMemory[from]; !exists {
+								globalToMemory[from] = map[int]struct{}{}
+							}
+							globalToMemory[from][to] = struct{}{}
+						}
+					}
+				} else if isRegister(n.Args[i]) {
 					from := n.Args[i]
 					if isRegister(arg) {
 						to := arg
@@ -780,7 +809,7 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			// this is used to break cycles
 			after := []func(){}
 
-			for len(registerToRegister)+len(registerToMemory)+len(memoryToRegister)+len(memoryToMemory) > 0 {
+			for len(registerToRegister)+len(registerToMemory)+len(memoryToRegister)+len(memoryToMemory)+len(globalToRegister)+len(globalToMemory) > 0 {
 				updated := func() bool {
 					for from, tos := range registerToRegister {
 						for to := range tos {
@@ -833,6 +862,35 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 									delete(memoryToMemory[from], to)
 									if len(memoryToMemory[from]) == 0 {
 										delete(memoryToMemory, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range globalToRegister {
+						for to := range tos {
+							if _, exists := registerToRegister[to]; !exists {
+								if _, exists := registerToMemory[to]; !exists {
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", to, from, zeroRegister, zeroRegister)
+									delete(globalToRegister[from], to)
+									if len(globalToRegister[from]) == 0 {
+										delete(globalToRegister, from)
+									}
+									return true
+								}
+							}
+						}
+					}
+					for from, tos := range globalToMemory {
+						for to := range tos {
+							if _, exists := memoryToRegister[to]; !exists {
+								if _, exists := memoryToMemory[to]; !exists {
+									fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], from, zeroRegister, zeroRegister)
+									fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], to, zeroRegister, stackPointer)
+									delete(globalToMemory[from], to)
+									if len(globalToMemory[from]) == 0 {
+										delete(globalToMemory, from)
 									}
 									return true
 								}
@@ -1019,13 +1077,25 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 		case *ir.ArrayGet:
 			if destination != "" {
-				registers := loadVariables([]string{n.Array, n.Index}, variablesOnStack)
+				if position, ok := globalToPosition[n.Array]; ok {
+					registers := loadVariables([]string{n.Index}, variablesOnStack)
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
-				if isRegister(destination) {
-					fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", destination, registers[0], registers[1])
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", destination, temporaryRegisters[0], registers[0])
+					} else {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", temporaryRegisters[1], temporaryRegisters[0], registers[0])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[1], findPosition(destination), zeroRegister, stackPointer)
+					}
 				} else {
-					fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", temporaryRegisters[0], registers[0], registers[1])
-					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					registers := loadVariables([]string{n.Array, n.Index}, variablesOnStack)
+
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", destination, registers[0], registers[1])
+					} else {
+						fmt.Fprintf(w, "LW %s, 0(%s, %s)\n", temporaryRegisters[0], registers[0], registers[1])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
 				}
 			}
 
@@ -1034,13 +1104,24 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 			}
 		case *ir.ArrayGetImmediate:
 			if destination != "" {
-				registers := loadVariables([]string{n.Array}, variablesOnStack)
+				if position, ok := globalToPosition[n.Array]; ok {
+					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
-				if isRegister(destination) {
-					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, registers[0])
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, temporaryRegisters[0])
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[1], n.Index, zeroRegister, temporaryRegisters[0])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[1], findPosition(destination), zeroRegister, stackPointer)
+					}
 				} else {
-					fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, registers[0])
-					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					registers := loadVariables([]string{n.Array}, variablesOnStack)
+
+					if isRegister(destination) {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", destination, n.Index, zeroRegister, registers[0])
+					} else {
+						fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], n.Index, zeroRegister, registers[0])
+						fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], findPosition(destination), zeroRegister, stackPointer)
+					}
 				}
 			}
 
@@ -1048,20 +1129,43 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
 			}
 		case *ir.ArrayPut:
-			registers := loadVariables([]string{n.Array, n.Index, n.Value}, variablesOnStack)
+			if position, ok := globalToPosition[n.Array]; ok {
+				registers := loadVariables([]string{n.Index, n.Value}, variablesOnStack)
 
-			fmt.Fprintf(w, "SW %s, 0(%s, %s)\n", registers[2], registers[0], registers[1])
+				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
+				fmt.Fprintf(w, "SW %s, 0(%s, %s)\n", registers[1], temporaryRegisters[0], registers[0])
 
-			if tail {
-				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
+			} else {
+				registers := loadVariables([]string{n.Array, n.Index, n.Value}, variablesOnStack)
+
+				fmt.Fprintf(w, "SW %s, 0(%s, %s)\n", registers[2], registers[0], registers[1])
+
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
 			}
 		case *ir.ArrayPutImmediate:
-			registers := loadVariables([]string{n.Array, n.Value}, variablesOnStack)
+			if position, ok := globalToPosition[n.Array]; ok {
+				fmt.Fprintf(w, "LW %s, %d(%s, %s)\n", temporaryRegisters[0], position, zeroRegister, zeroRegister)
 
-			fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[1], n.Index, zeroRegister, registers[0])
+				registers := loadVariables([]string{n.Value}, variablesOnStack)
 
-			if tail {
-				fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[0], n.Index, zeroRegister, temporaryRegisters[0])
+
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
+			} else {
+				registers := loadVariables([]string{n.Array, n.Value}, variablesOnStack)
+
+				fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", registers[1], n.Index, zeroRegister, registers[0])
+
+				if tail {
+					fmt.Fprintf(w, "JR %s\n", returnAddressPointer)
+				}
 			}
 		case *ir.ReadInt:
 			if destination == "" {
@@ -1154,6 +1258,28 @@ func Emit(functions []*ir.Function, main ir.Node, types map[string]typing.Type, 
 	// 240000
 	fmt.Fprintf(w, "LUI %s, %s, 3\n", heapPointer, zeroRegister)
 	fmt.Fprintf(w, "ORI %s, %s, 43392\n", heapPointer, heapPointer)
+
+	// save float values to memory
+	for i, value := range floatValues {
+		u := math.Float32bits(value)
+		fmt.Fprintf(w, "ORI %s, %s, %d\n", temporaryRegisters[0], zeroRegister, u%(1<<16))
+		fmt.Fprintf(w, "LUI %s, %s, %d\n", temporaryRegisters[0], temporaryRegisters[0], u>>16)
+		fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", temporaryRegisters[0], i, zeroRegister, zeroRegister)
+	}
+
+	// calculate global variables and save them to memory
+	{
+		defined := stringset.New()
+		for len(defined) < len(globals) {
+			for name, node := range globals {
+				if !defined.Has(name) && len(node.FreeVariables(defined)) == 0 {
+					emit(returnRegister, false, node, nil, stringset.New())
+					fmt.Fprintf(w, "SW %s, %d(%s, %s)\n", returnRegister, globalToPosition[name], zeroRegister, zeroRegister)
+					defined.Add(name)
+				}
+			}
+		}
+	}
 
 	fmt.Fprintf(w, "JAL main\n")
 	fmt.Fprintf(w, "EXIT\n")

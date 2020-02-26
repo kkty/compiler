@@ -33,7 +33,7 @@ func main() {
 	ast.AlphaTransform(root)
 	types := ast.GetTypes(root)
 
-	main, functions, _ := ir.Generate(root, types)
+	main, functions, globals, _ := ir.Generate(root, types)
 
 	main, functions = ir.Inline(main, functions, *inline, types, *debug)
 
@@ -61,7 +61,8 @@ func main() {
 		return
 	}
 
-	spills := emit.AllocateRegisters(main, functions, types)
+	spills := emit.AllocateRegisters(main, functions, globals, types)
+
 	if *debug {
 		for function, count := range spills {
 			fmt.Fprintf(os.Stderr, "spilled %d variables in %s\n", count, function)
@@ -69,7 +70,7 @@ func main() {
 	}
 
 	if *interpret {
-		evaluated, called := ir.Execute(functions, main, os.Stdout, os.Stdin)
+		evaluated, called := ir.Execute(functions, main, globals, os.Stdout, os.Stdin)
 		if *debug {
 			print := func(m map[string]int) {
 				keys := []string{}
@@ -89,6 +90,6 @@ func main() {
 			print(called)
 		}
 	} else {
-		emit.Emit(functions, main, types, os.Stdout)
+		emit.Emit(functions, main, globals, types, os.Stdout)
 	}
 }
