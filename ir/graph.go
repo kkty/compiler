@@ -51,10 +51,20 @@ func GenerateGraph(main Node, functions []*Function) error {
 			return g.Node(newID()).Label(fmt.Sprintf("Not(%v)", node.(*Not).Inner))
 		case *Equal:
 			return g.Node(newID()).Label(fmt.Sprintf("Equal(%v, %v)", n.Left, n.Right))
+		case *EqualZero:
+			return g.Node(newID()).Label(fmt.Sprintf("EqualZero(%v)", n.Inner))
 		case *LessThan:
 			return g.Node(newID()).Label(fmt.Sprintf("LessThan(%v, %v)", n.Left, n.Right))
 		case *LessThanFloat:
 			return g.Node(newID()).Label(fmt.Sprintf("LessThanFloat(%v, %v)", n.Left, n.Right))
+		case *LessThanZero:
+			return g.Node(newID()).Label(fmt.Sprintf("LessThanZero(%v)", n.Inner))
+		case *LessThanZeroFloat:
+			return g.Node(newID()).Label(fmt.Sprintf("LessThanZeroFloat(%v)", n.Inner))
+		case *GreaterThanZero:
+			return g.Node(newID()).Label(fmt.Sprintf("GreaterThanZero(%v)", n.Inner))
+		case *GreaterThanZeroFloat:
+			return g.Node(newID()).Label(fmt.Sprintf("GreaterThanZeroFloat(%v)", n.Inner))
 		case *IfEqual:
 			gn := g.Node(newID()).Label(fmt.Sprintf("IfEqual(%v, %v)", n.Left, n.Right))
 			gn.Edge(generate(n.True, g), "True")
@@ -126,7 +136,7 @@ func GenerateGraph(main Node, functions []*Function) error {
 		case *FloatToInt:
 			return g.Node(newID()).Label(fmt.Sprintf("FloatToInt(%v)", n.Arg))
 		case *Sqrt:
-			return g.Node(newID()).Label("Sqrt")
+			return g.Node(newID()).Label(fmt.Sprintf("Sqrt(%v)", n.Arg))
 		}
 
 		panic("invalid node")
