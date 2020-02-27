@@ -18,12 +18,12 @@ const (
 	stackPointer         = "$sp"
 	returnAddressPointer = "$ra"
 	zeroRegister         = "$zero"
-	returnRegister       = "$r50"
+	returnRegister       = "$r54"
 )
 
 var (
-	argRegisters       = []string{"$r51", "$r52", "$r53"}
-	temporaryRegisters = []string{"$r54", "$r55", "$r56"}
+	argRegisters       = []string{"$r55", "$r56", "$r57"}
+	temporaryRegisters = []string{"$r58", "$r59"}
 )
 
 // Emit emits assembly code from IR.
@@ -170,8 +170,8 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 	globalToPosition := map[string]int{}
 	globalToRegister := map[string]string{}
 	for name := range globals {
-		if len(globalToRegister) < 20 {
-			globalToRegister[name] = fmt.Sprintf("$r%d", len(globalToRegister)+30)
+		if len(globalToRegister) < 30 {
+			globalToRegister[name] = fmt.Sprintf("$r%d", len(globalToRegister)+24)
 		} else {
 			globalToPosition[name] = len(globalToPosition) + len(floatValues)
 		}
