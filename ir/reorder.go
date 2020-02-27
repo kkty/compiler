@@ -1,7 +1,14 @@
 package ir
 
-import "github.com/kkty/compiler/stringset"
+import (
+	"github.com/kkty/compiler/stringset"
+)
 
+// Reorder pushes down variable assignments from root to leaves.
+// The idea is to convert
+// `let i = ... in if ... then (i is used here) else (i is not used here)`
+// to
+// `if ... then let i = ... in (i is used here) else (i is not used here)`
 func Reorder(main Node, functions []*Function) Node {
 	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
 
