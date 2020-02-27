@@ -43,7 +43,6 @@ func main() {
 		}
 
 		main = ir.RemoveRedundantAssignments(main, functions)
-		main = ir.RemoveRedundantVariables(main, functions)
 		main = ir.Immediate(main, functions)
 		main = ir.Reorder(main, functions)
 

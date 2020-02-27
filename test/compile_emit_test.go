@@ -10,6 +10,7 @@ import (
 	"github.com/kkty/compiler/ir"
 	"github.com/kkty/compiler/parser"
 	"github.com/kkty/compiler/stringset"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCompileAndEmit(t *testing.T) {
@@ -34,7 +35,7 @@ func TestCompileAndEmit(t *testing.T) {
 			main, functions, globals, _ := ir.Generate(astNode, types)
 			main, _ = ir.Inline(main, functions, 5, types, false)
 			for i := 0; i < 5; i++ {
-				main = ir.RemoveRedundantVariables(main, functions)
+				main = ir.RemoveRedundantAssignments(main, functions)
 				main = ir.Immediate(main, functions)
 				main = ir.Reorder(main, functions)
 			}
@@ -49,7 +50,7 @@ func TestCompileAndEmit(t *testing.T) {
 			}) {
 				for freeVariable := range function.FreeVariables() {
 					if !globalNames.Has(freeVariable) {
-						t.Fail()
+						assert.Fail(t, freeVariable)
 					}
 				}
 			}

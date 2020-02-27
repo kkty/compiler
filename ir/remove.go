@@ -4,7 +4,11 @@ import (
 	"github.com/kkty/compiler/stringset"
 )
 
+// RemoveRedundantAssignments traverses the program and removes variable
+// assignments if possible.
 func RemoveRedundantAssignments(main Node, functions []*Function) Node {
+	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
+
 	var remove func(node Node) Node
 	remove = func(node Node) Node {
 		switch n := node.(type) {
@@ -37,13 +41,37 @@ func RemoveRedundantAssignments(main Node, functions []*Function) Node {
 			n.False = remove(n.False)
 			return n
 		case *Assignment:
-			n.Value = remove(n.Value)
-			n.Next = remove(n.Next)
+			usedInNext := n.Next.FreeVariables(stringset.New()).Has(n.Name)
+			if !usedInNext && !n.Value.HasSideEffects(functionsWithoutSideEffects) {
+				return remove(n.Next)
+			}
 			if next, ok := n.Next.(*Variable); ok {
 				if next.Name == n.Name {
-					return n.Value
+					return remove(n.Value)
 				}
 			}
+			if next, ok := n.Next.(*IfEqualTrue); ok && !usedInNext {
+				switch value := n.Value.(type) {
+				case *Equal:
+					return &IfEqual{value.Left, value.Right, remove(next.True), remove(next.False)}
+				case *EqualZero:
+					return &IfEqualZero{value.Inner, remove(next.True), remove(next.False)}
+				case *LessThan:
+					return &IfLessThan{value.Left, value.Right, remove(next.True), remove(next.False)}
+				case *LessThanFloat:
+					return &IfLessThanFloat{value.Left, value.Right, remove(next.True), remove(next.False)}
+				case *LessThanZero:
+					return &IfLessThanZero{value.Inner, remove(next.True), remove(next.False)}
+				case *LessThanZeroFloat:
+					return &IfLessThanZeroFloat{value.Inner, remove(next.True), remove(next.False)}
+				case *GreaterThanZero:
+					return &IfLessThanZero{value.Inner, remove(next.False), remove(next.True)}
+				case *GreaterThanZeroFloat:
+					return &IfLessThanZeroFloat{value.Inner, remove(next.False), remove(next.True)}
+				}
+			}
+			n.Next = remove(n.Next)
+			n.Value = remove(n.Value)
 			return n
 		default:
 			return n
@@ -55,57 +83,4 @@ func RemoveRedundantAssignments(main Node, functions []*Function) Node {
 	}
 
 	return remove(main)
-}
-
-func RemoveRedundantVariables(main Node, functions []*Function) Node {
-	functionsWithoutSideEffects := FunctionsWithoutSideEffects(functions)
-
-	var removeRedundantVariables func(node Node) Node
-	removeRedundantVariables = func(node Node) Node {
-		switch n := node.(type) {
-		case *IfEqual:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfEqualZero:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfEqualTrue:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfLessThan:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfLessThanFloat:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfLessThanZero:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *IfLessThanZeroFloat:
-			n.True = removeRedundantVariables(n.True)
-			n.False = removeRedundantVariables(n.False)
-			return n
-		case *Assignment:
-			if _, hasFreeVariable := n.Next.FreeVariables(stringset.New())[n.Name]; n.Value.HasSideEffects(functionsWithoutSideEffects) || hasFreeVariable {
-				n.Value = removeRedundantVariables(n.Value)
-				n.Next = removeRedundantVariables(n.Next)
-				return n
-			}
-			return removeRedundantVariables(n.Next)
-		default:
-			return node
-		}
-	}
-
-	for _, function := range functions {
-		function.Body = removeRedundantVariables(function.Body)
-	}
-
-	return removeRedundantVariables(main)
 }

@@ -34,7 +34,7 @@ func TestCompileAndExec(t *testing.T) {
 			types := ast.GetTypes(astNode)
 			main, functions, globals, _ := ir.Generate(astNode, types)
 			main, functions = ir.Inline(main, functions, 5, types, false)
-			main = ir.RemoveRedundantVariables(main, functions)
+			main = ir.RemoveRedundantAssignments(main, functions)
 
 			for _, function := range functions {
 				assert.Equal(t, 0, len(function.FreeVariables()))
