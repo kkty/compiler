@@ -117,16 +117,16 @@ let rec cos x =
   if x >= pi then
     let x = x -. pi in
     if x >= pi /. 2.0 then
-      let x = x -. pi /. 2.0 in
-      if x <= pi /. 4.0 then kernel_cos x else kernel_sin x
+      let x = pi -. x in
+      if x <= pi /. 4.0 then kernel_cos x else kernel_sin (pi /. 2.0 -. x)
     else
-      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin x)
+      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin (pi /. 2.0 -. x))
   else
     if x >= pi /. 2.0 then
-      let x = x -. pi /. 2.0 in
-      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin x)
+      let x = pi -. x in
+      if x <= pi /. 4.0 then -(kernel_cos x) else -(kernel_sin (pi /. 2.0 -. x))
     else
-      if x <= pi /. 4.0 then kernel_cos x else kernel_sin x in
+      if x <= pi /. 4.0 then kernel_cos x else kernel_sin (pi /. 2.0 -. x) in
 let rec sin x =
   let x = reduction_2pi x in
   let pi = 3.1415926536 in
