@@ -1,4 +1,20 @@
-Toy compiler for subset of OCaml, which generates MIPS-like assembly that can be executed by https://github.com/kkty/simulator.
+Toy compiler for subset of OCaml, which generates assembly code that can be executed with https://github.com/kkty/simulator.
+
+## Features
+
+- Support for subset of OCaml
+  - `test/*.ml` files will give you some ideas of available syntax and built-in functions.
+- Constant folding
+  - `let rec double i = i + i in let six = double 3 in ...` will be converted to `... let six = 6 in ...`.
+- Inline expansion
+  - `let rec double i = i + i in let y = double x in ...` will be converted to `... let y = x + x in ...`.
+- Reordering of variable assignments
+  - `let i = ... in if ... then (i is used here) else (i is not used here)` will be converted to `if ... then let i = ... in (i is used here) else (i is not used here)`.
+- Removal of unused variables
+  - `let i = (code without side effects) in (code which does not use i)` will be converted to `(code which does not use i)`.
+- Register allocation with graph coloring
+- Visualization of IR (see below)
+- Interpreter of IR (see below)
 
 ## Requirements
 
@@ -39,7 +55,7 @@ $ simulator program.s
 
 ---
 
-Generates an image with ray tracing with some optimization.
+Generates an image with ray tracing (with some optimization flags).
 
 ```console
 $ compiler <this_repository>/test/min-rt.ml -iter 5 -inline 50 > program.s
@@ -59,7 +75,7 @@ EOF
 $ <open out.ppm>
 ```
 
-- The optimizer (immediate-value optimization, etc.) is run for 5 times.
+- The optimizer (constant folding, etc.) is run for 5 times.
 - Inline expansion is applied to all the non-recursive functions and 50 recursive functions in the program. 
 - With the `-debug` option, you can see which functions are inlined and how much the program size has got reduced.
 
@@ -83,6 +99,8 @@ Calculates the greatest common divisor of 72 and 120 with the built-in interpret
 $ compiler -i <this_repository>/gcd.ml
 24
 ```
+
+- A program is converted to IR and then is interpreted.
 
 ## Credits
 
