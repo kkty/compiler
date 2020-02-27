@@ -7,6 +7,8 @@ import (
 	"math"
 	"reflect"
 	"strings"
+
+	"github.com/kkty/compiler/stringset"
 )
 
 // Execute interprets and executes the program.
@@ -37,12 +39,19 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 			evaluated[op]++
 		}
 
-		switch n := node.(type) {
-		case *Variable:
-			if v, ok := globalValues[n.Name]; ok {
+		getValue := func(name string) interface{} {
+			if v, ok := values[name]; ok {
 				return v
 			}
-			return values[n.Name]
+			if v, ok := globalValues[name]; ok {
+				return v
+			}
+			panic(fmt.Sprintf("variable not found: %s", name))
+		}
+
+		switch n := node.(type) {
+		case *Variable:
+			return getValue(n.Name)
 		case *Unit:
 			return nil
 		case *Int:
@@ -52,59 +61,59 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 		case *Float:
 			return node.(*Float).Value
 		case *Add:
-			return values[n.Left].(int32) + values[n.Right].(int32)
+			return getValue(n.Left).(int32) + getValue(n.Right).(int32)
 		case *AddImmediate:
-			return values[n.Left].(int32) + n.Right
+			return getValue(n.Left).(int32) + n.Right
 		case *Sub:
-			return values[n.Left].(int32) - values[n.Right].(int32)
+			return getValue(n.Left).(int32) - getValue(n.Right).(int32)
 		case *SubFromZero:
-			return -values[n.Inner].(int32)
+			return -getValue(n.Inner).(int32)
 		case *FloatAdd:
-			return values[n.Left].(float32) + values[n.Right].(float32)
+			return getValue(n.Left).(float32) + getValue(n.Right).(float32)
 		case *FloatSub:
-			return values[n.Left].(float32) - values[n.Right].(float32)
+			return getValue(n.Left).(float32) - getValue(n.Right).(float32)
 		case *FloatSubFromZero:
-			return -values[n.Inner].(float32)
+			return -getValue(n.Inner).(float32)
 		case *FloatDiv:
-			return values[n.Left].(float32) / values[n.Right].(float32)
+			return getValue(n.Left).(float32) / getValue(n.Right).(float32)
 		case *FloatMul:
-			return values[n.Left].(float32) * values[n.Right].(float32)
+			return getValue(n.Left).(float32) * getValue(n.Right).(float32)
 		case *Not:
-			return !values[n.Inner].(bool)
+			return !getValue(n.Inner).(bool)
 		case *Equal:
-			if values[n.Left] == values[n.Right] {
+			if getValue(n.Left) == getValue(n.Right) {
 				return true
 			} else {
 				return false
 			}
 		case *EqualZero:
-			return values[n.Inner] == int32(0) || values[n.Inner] == float32(0)
+			return getValue(n.Inner) == int32(0) || getValue(n.Inner) == float32(0)
 		case *LessThan:
-			return values[n.Left].(int32) < values[n.Right].(int32)
+			return getValue(n.Left).(int32) < getValue(n.Right).(int32)
 		case *LessThanFloat:
-			return values[n.Left].(float32) < values[n.Right].(float32)
+			return getValue(n.Left).(float32) < getValue(n.Right).(float32)
 		case *LessThanZero:
-			return values[n.Inner].(int32) < 0
+			return getValue(n.Inner).(int32) < 0
 		case *LessThanZeroFloat:
-			return values[n.Inner].(float32) < 0
+			return getValue(n.Inner).(float32) < 0
 		case *GreaterThanZero:
-			return values[n.Inner].(int32) > 0
+			return getValue(n.Inner).(int32) > 0
 		case *GreaterThanZeroFloat:
-			return values[n.Inner].(float32) > 0
+			return getValue(n.Inner).(float32) > 0
 		case *IfEqual:
-			if values[n.Left] == values[n.Right] {
+			if getValue(n.Left) == getValue(n.Right) {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfEqualZero:
-			if value, ok := values[n.Inner].(int32); ok {
+			if value, ok := getValue(n.Inner).(int32); ok {
 				if value == 0 {
 					return evaluate(n.True, values)
 				} else {
 					return evaluate(n.False, values)
 				}
-			} else if value, ok := values[n.Inner].(float32); ok {
+			} else if value, ok := getValue(n.Inner).(float32); ok {
 				if value == 0 {
 					return evaluate(n.True, values)
 				} else {
@@ -112,29 +121,29 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 				}
 			}
 		case *IfEqualTrue:
-			if values[n.Inner].(bool) {
+			if getValue(n.Inner).(bool) {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfLessThan:
-			if values[n.Left].(int32) < values[n.Right].(int32) {
+			if getValue(n.Left).(int32) < getValue(n.Right).(int32) {
 				return evaluate(n.True, values)
 			}
 			return evaluate(n.False, values)
 		case *IfLessThanFloat:
-			if values[n.Left].(float32) < values[n.Right].(float32) {
+			if getValue(n.Left).(float32) < getValue(n.Right).(float32) {
 				return evaluate(n.True, values)
 			}
 			return evaluate(n.False, values)
 		case *IfLessThanZero:
-			if values[n.Inner].(int32) < 0 {
+			if getValue(n.Inner).(int32) < 0 {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
 			}
 		case *IfLessThanZeroFloat:
-			if values[n.Inner].(float32) < 0 {
+			if getValue(n.Inner).(float32) < 0 {
 				return evaluate(n.True, values)
 			} else {
 				return evaluate(n.False, values)
@@ -149,50 +158,46 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 			called[f.Name]++
 			updated := map[string]interface{}{}
 			for i, arg := range f.Args {
-				if value, ok := globalValues[n.Args[i]]; ok {
-					updated[arg] = value
-				} else {
-					updated[arg] = values[n.Args[i]]
-				}
+				updated[arg] = getValue(n.Args[i])
 			}
 			return evaluate(f.Body, updated)
 		case *Tuple:
 			tuple := []interface{}{}
 			for _, element := range n.Elements {
-				tuple = append(tuple, values[element])
+				tuple = append(tuple, getValue(element))
 			}
 			return tuple
 		case *ArrayCreate:
-			length := values[n.Length].(int32)
-			value := values[n.Value]
+			length := getValue(n.Length).(int32)
+			value := getValue(n.Value)
 			array := []interface{}{}
 			for i := 0; i < int(length); i++ {
 				array = append(array, value)
 			}
 			return array
 		case *ArrayCreateImmediate:
-			value := values[n.Value]
+			value := getValue(n.Value)
 			array := []interface{}{}
 			for i := 0; i < int(n.Length); i++ {
 				array = append(array, value)
 			}
 			return array
 		case *ArrayGet:
-			array := values[n.Array].([]interface{})
-			index := values[n.Index].(int32)
+			array := getValue(n.Array).([]interface{})
+			index := getValue(n.Index).(int32)
 			return array[index]
 		case *ArrayGetImmediate:
-			array := values[n.Array].([]interface{})
+			array := getValue(n.Array).([]interface{})
 			return array[n.Index]
 		case *ArrayPut:
-			array := values[n.Array].([]interface{})
-			index := values[n.Index].(int32)
-			value := values[n.Value]
+			array := getValue(n.Array).([]interface{})
+			index := getValue(n.Index).(int32)
+			value := getValue(n.Value)
 			array[index] = value
 			return nil
 		case *ArrayPutImmediate:
-			array := values[n.Array].([]interface{})
-			value := values[n.Value]
+			array := getValue(n.Array).([]interface{})
+			value := getValue(n.Value)
 			array[n.Index] = value
 			return nil
 		case *ReadInt:
@@ -204,16 +209,16 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 			fmt.Fscan(r, &value)
 			return value
 		case *WriteByte:
-			w.Write([]byte{byte(values[n.Arg].(int32) % 256)})
+			w.Write([]byte{byte(getValue(n.Arg).(int32) % 256)})
 			return nil
 		case *IntToFloat:
-			return float32(values[n.Arg].(int32))
+			return float32(getValue(n.Arg).(int32))
 		case *FloatToInt:
-			return int32(math.Round(float64(values[n.Arg].(float32))))
+			return int32(math.Round(float64(getValue(n.Arg).(float32))))
 		case *Sqrt:
-			return float32(math.Sqrt(float64(values[n.Arg].(float32))))
+			return float32(math.Sqrt(float64(getValue(n.Arg).(float32))))
 		case *TupleGet:
-			tuple := values[n.Tuple].([]interface{})
+			tuple := getValue(n.Tuple).([]interface{})
 			return tuple[n.Index]
 		default:
 			log.Fatal("invalid ir node")
@@ -222,8 +227,16 @@ func Execute(functions []*Function, main Node, globals map[string]Node, w io.Wri
 		return nil
 	}
 
-	for name, node := range globals {
-		globalValues[name] = evaluate(node, globalValues)
+	{
+		defined := stringset.New()
+		for len(defined) < len(globals) {
+			for name, node := range globals {
+				if !defined.Has(name) && len(node.FreeVariables(defined)) == 0 {
+					globalValues[name] = evaluate(node, globalValues)
+					defined.Add(name)
+				}
+			}
+		}
 	}
 
 	evaluate(main, map[string]interface{}{})
