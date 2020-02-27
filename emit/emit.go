@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	heapPointer          = "$hp"
-	stackPointer         = "$sp"
-	returnAddressPointer = "$ra"
-	zeroRegister         = "$zero"
-	returnRegister       = "$r54"
+	heapPointer              = "$hp"
+	stackPointer             = "$sp"
+	returnAddressPointer     = "$ra"
+	zeroRegister             = "$zero"
+	returnRegister           = "$r54"
+	initialStackPointerValue = 210000
+	initialHeapPointerValue  = 240000
 )
 
 var (
@@ -174,7 +176,7 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 	globalToRegister := map[string]string{}
 	for name := range globals {
 		if len(globalToRegister) < 30 {
-			globalToRegister[name] = fmt.Sprintf("$r%d", len(globalToRegister)+24)
+			globalToRegister[name] = fmt.Sprintf("$r%d", len(globalToRegister)+len(registers))
 		} else {
 			globalToPosition[name] = len(globalToPosition) + len(floatValues)
 		}
@@ -1365,12 +1367,12 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 	}
 
 	// set stack pointer to 210000
-	fmt.Fprintf(w, "LUI %s, %s, 3\n", stackPointer, zeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 13392\n", stackPointer, stackPointer)
+	fmt.Fprintf(w, "LUI %s, %s, %d\n", stackPointer, zeroRegister, initialStackPointerValue>>16)
+	fmt.Fprintf(w, "ORI %s, %s, %d\n", stackPointer, stackPointer, initialStackPointerValue%(1<<16))
 
 	// set heap pointer to 240000
-	fmt.Fprintf(w, "LUI %s, %s, 3\n", heapPointer, zeroRegister)
-	fmt.Fprintf(w, "ORI %s, %s, 43392\n", heapPointer, heapPointer)
+	fmt.Fprintf(w, "LUI %s, %s, %d\n", heapPointer, zeroRegister, initialHeapPointerValue>>16)
+	fmt.Fprintf(w, "ORI %s, %s, %d\n", heapPointer, heapPointer, initialHeapPointerValue%(1<<16))
 
 	// save float values to memory
 	for i, value := range floatValues {
