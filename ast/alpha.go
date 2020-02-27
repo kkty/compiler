@@ -8,6 +8,7 @@ import (
 
 // AlphaTransform renames all the names in a program so that they are different
 // from each other, without changing the program's behaviour.
+// This is to handle programs like `let x = (let x = ... in ...) in ...` properly.
 func AlphaTransform(node Node) {
 	nextId := 0
 
@@ -18,13 +19,10 @@ func AlphaTransform(node Node) {
 
 	var transform func(node Node, mapping stringmap.Map)
 	transform = func(node Node, mapping stringmap.Map) {
-		switch node.(type) {
+		switch n := node.(type) {
 		case *Variable:
-			n := node.(*Variable)
 			n.Name = mapping[n.Name]
 		case *Assignment:
-			n := node.(*Assignment)
-
 			transform(n.Body, mapping)
 
 			newName := getNewName(n.Name)
@@ -37,8 +35,6 @@ func AlphaTransform(node Node) {
 
 			n.Name = newName
 		case *FunctionAssignment:
-			n := node.(*FunctionAssignment)
-
 			newName := getNewName(n.Name)
 			newArgNames := []string{}
 			for _, argName := range n.Args {
@@ -68,16 +64,12 @@ func AlphaTransform(node Node) {
 
 			n.Name, n.Args = newName, newArgNames
 		case *Application:
-			n := node.(*Application)
-
 			for i := range n.Args {
 				transform(n.Args[i], mapping)
 			}
 
 			n.Function = mapping[n.Function]
 		case *TupleAssignment:
-			n := node.(*TupleAssignment)
-
 			transform(n.Tuple, mapping)
 
 			newNames := []string{}
