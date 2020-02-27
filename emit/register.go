@@ -11,7 +11,11 @@ import (
 	"github.com/kkty/compiler/stringmap"
 	"github.com/kkty/compiler/stringset"
 	"github.com/kkty/compiler/typing"
+	"github.com/thoas/go-funk"
 )
+
+// NumRegisters is the number of available general registers.
+const NumRegisters = 24
 
 var (
 	registers []string
@@ -19,7 +23,7 @@ var (
 
 func init() {
 	// general registers are named "$r0", "$r1", ...
-	for i := 0; i < 24; i++ {
+	for i := 0; i < NumRegisters; i++ {
 		registers = append(registers, fmt.Sprintf("$r%d", i))
 	}
 }
@@ -258,55 +262,66 @@ func AllocateRegisters(main ir.Node, functions []*ir.Function, globals map[strin
 
 	// estimated cost of register moves in function applications
 	cost := func() int {
-		cost := 0
+		count := 0
 		for _, function := range append(functions, &ir.Function{
 			Name: "main",
 			Args: nil,
 			Body: main,
 		}) {
 			for _, application := range function.Body.Applications() {
-				function := findFunction(application.Function)
-				for i, arg := range function.Args {
+				f := findFunction(application.Function)
+				for i, arg := range f.Args {
 					if strings.HasPrefix(arg, "$") && strings.HasPrefix(application.Args[i], "$") && arg != application.Args[i] {
-						cost++
+						count++
 					}
 				}
 			}
 		}
-		return cost
+		return count
 	}
 
+	// randomly shuffle registers to minimize cost()
 	if len(functions) > 0 {
 		sinceLastImprovement := 0
 		for sinceLastImprovement < 1000 {
 			function := functions[rand.Int()%len(functions)]
 			if len(function.Args) == 0 {
 				sinceLastImprovement++
-			} else {
-				i1, i2 := rand.Int()%len(function.Args), rand.Int()%len(function.Args)
-				if i1 != i2 && strings.HasPrefix(function.Args[i1], "$") && strings.HasPrefix(function.Args[i2], "$") {
-					swap := func() {
-						function.Body.UpdateNames(stringmap.Map{function.Args[i1]: "_swap_tmp"})
-						function.Body.UpdateNames(stringmap.Map{function.Args[i2]: function.Args[i1]})
-						function.Body.UpdateNames(stringmap.Map{"_swap_tmp": function.Args[i2]})
-						function.Args[i1], function.Args[i2] = function.Args[i2], function.Args[i1]
-					}
-					prevCost := cost()
-					swap()
-					newCost := cost()
-					if newCost > prevCost {
-						// rollback
-						swap()
-					}
-					if newCost < prevCost {
-						sinceLastImprovement = 0
-						fmt.Fprintln(os.Stderr, cost())
-					} else {
-						sinceLastImprovement++
-					}
-				} else {
-					sinceLastImprovement++
+				continue
+			}
+			r1, r2 := registers[rand.Int()%len(registers)], registers[rand.Int()%len(registers)]
+			if r1 == r2 {
+				sinceLastImprovement++
+				continue
+			}
+			swap := func() {
+				tmp := "_swap_tmp"
+				function.Body.UpdateNames(stringmap.Map{r1: tmp})
+				if funk.ContainsString(function.Args, r1) {
+					function.Args[funk.IndexOf(function.Args, r1)] = tmp
 				}
+				function.Body.UpdateNames(stringmap.Map{r2: r1})
+				if funk.ContainsString(function.Args, r2) {
+					function.Args[funk.IndexOf(function.Args, r2)] = r1
+				}
+				function.Body.UpdateNames(stringmap.Map{tmp: r2})
+				if funk.ContainsString(function.Args, tmp) {
+					function.Args[funk.IndexOf(function.Args, tmp)] = r2
+				}
+			}
+
+			prevCost := cost()
+			swap()
+			newCost := cost()
+			if newCost > prevCost {
+				// rollback
+				swap()
+			}
+			if newCost < prevCost {
+				sinceLastImprovement = 0
+				fmt.Fprintln(os.Stderr, cost())
+			} else {
+				sinceLastImprovement++
 			}
 		}
 	}
