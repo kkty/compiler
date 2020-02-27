@@ -18,12 +18,13 @@ var (
 )
 
 func init() {
+	// general registers are named "$r0", "$r1", ...
 	for i := 0; i < 24; i++ {
 		registers = append(registers, fmt.Sprintf("$r%d", i))
 	}
 }
 
-// colorGraph colors a graph with k colors (0, 1, ... k - 1).
+// colorGraph colors a graph with k colors (0, 1, ... k - 1) using Welsh–Powell algorithm.
 // When failed, the second return value is set to false.
 func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 	nodes := []string{}
@@ -66,6 +67,7 @@ func colorGraph(graph map[string]stringset.Set, k int) (map[string]int, bool) {
 // Variables that are never referenced are renamed to "".
 // If a variable could not be assigned to any registers, its name will be kept unchanged
 // and should be saved on the stack.
+// References to global variables are kept intact.
 // The number of spills for each function is returned.
 func AllocateRegisters(main ir.Node, functions []*ir.Function, globals map[string]ir.Node, types map[string]typing.Type) map[string]int {
 	globalNames := stringset.New()

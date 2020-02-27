@@ -135,6 +135,8 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 	}
 
 	// update functionToRegisters so that function applications are considered
+	// i.e. if function A uses register X and function B calls function A,
+	// function B uses register X.
 	for {
 		updated := false
 		for _, function := range append(functions, &ir.Function{
@@ -154,6 +156,7 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 		}
 	}
 
+	// floatValues[i] will later be saved to memory[i] and loaded when necessary
 	floatValues := []float32{}
 	for _, function := range append(functions, &ir.Function{
 		Name: "main",
@@ -166,7 +169,7 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 		}
 	}
 
-	// global variable v should be saved to memory[globalToPosition[v]] or globalToRegister[v]
+	// global variable v will later be saved to memory[globalToPosition[v]] or globalToRegister[v]
 	globalToPosition := map[string]int{}
 	globalToRegister := map[string]string{}
 	for name := range globals {
@@ -1361,11 +1364,11 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 		}
 	}
 
-	// 210000
+	// set stack pointer to 210000
 	fmt.Fprintf(w, "LUI %s, %s, 3\n", stackPointer, zeroRegister)
 	fmt.Fprintf(w, "ORI %s, %s, 13392\n", stackPointer, stackPointer)
 
-	// 240000
+	// set heap pointer to 240000
 	fmt.Fprintf(w, "LUI %s, %s, 3\n", heapPointer, zeroRegister)
 	fmt.Fprintf(w, "ORI %s, %s, 43392\n", heapPointer, heapPointer)
 
@@ -1379,6 +1382,8 @@ func Emit(functions []*ir.Function, main ir.Node, globals map[string]ir.Node, ty
 
 	// calculate global variables and save them to memory
 	{
+		// As global variables may use another global variable in their definitions,
+		// we have to be careful about their order here.
 		defined := stringset.New()
 		for len(defined) < len(globals) {
 			for name, node := range globals {
