@@ -188,9 +188,6 @@ func Immediate(main Node, functions []*Function) Node {
 						return n.False
 					}
 				}
-				if left == 0 {
-					return &IfLessThanZero{n.Right, n.False, n.True}
-				}
 			} else {
 				if right, ok := values[n.Right].(int32); ok {
 					if right == 0 {
@@ -209,9 +206,6 @@ func Immediate(main Node, functions []*Function) Node {
 					} else {
 						return n.False
 					}
-				}
-				if left == 0 {
-					return &IfLessThanZeroFloat{n.Right, n.False, n.True}
 				}
 			} else {
 				if right, ok := values[n.Right].(float32); ok {
